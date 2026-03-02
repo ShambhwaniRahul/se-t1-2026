@@ -11,18 +11,26 @@ class PerishableSKU(models.Model):
         LITERS = 'L', 'Liters'
         PIECES = 'Pc', 'Pieces'
     name = models.CharField(db_column='sku_name', max_length=100, unique=True)
-    unit = models.CharField(max_length=50, choices=UnitChoices.choices)
-    typical_shelf_life = models.IntegerField(help_text="Typical shelf life in days")
+    unit = models.CharField(db_column='unit', max_length=50, choices=UnitChoices.choices)
+    typical_shelf_life = models.IntegerField(db_column='typical_shelf_life', help_text="Typical shelf life in days")
+
+    class Meta:
+        verbose_name = 'Perishable SKU'
+        verbose_name_plural = 'Perishable SKUs'
 
     def __str__(self):
         return self.name
     
 
 class PerishableInventory(models.Model):
-    sku = models.ForeignKey(PerishableSKU, on_delete=models.CASCADE)
-    quantity = models.FloatField()
-    purchase_date = models.DateField()
-    
+    sku = models.ForeignKey(PerishableSKU, on_delete=models.CASCADE, db_column='sku_id')
+    quantity = models.FloatField(db_column='quantity')
+    purchase_date = models.DateField(db_column='purchase_date')
+
+    class Meta:
+        verbose_name = 'Perishable Inventory'
+        verbose_name_plural = 'Perishable Inventories'
+
     @property
     def expiration_date(self):
         return self.purchase_date + timedelta(days=self.sku.typical_shelf_life)
@@ -36,7 +44,11 @@ class PerishableInventory(models.Model):
 
 class NonPerishableInventory(models.Model):
     name = models.CharField(db_column='sku_name', max_length=100, unique=True)
-    quantity = models.IntegerField()
+    quantity = models.IntegerField(db_column='quantity')
+
+    class Meta:
+        verbose_name = 'Non-Perishable Inventory'
+        verbose_name_plural = 'Non-Perishable Inventories'
 
     def __str__(self):
         return self.name
