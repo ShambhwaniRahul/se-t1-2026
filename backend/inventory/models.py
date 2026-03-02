@@ -26,7 +26,6 @@ class PerishableInventory(models.Model):
     sku = models.ForeignKey(PerishableSKU, on_delete=models.CASCADE, db_column='sku_id')
     quantity = models.FloatField(db_column='quantity')
     purchase_date = models.DateField(db_column='purchase_date')
-
     class Meta:
         verbose_name = 'Perishable Inventory'
         verbose_name_plural = 'Perishable Inventories'
@@ -40,7 +39,6 @@ class PerishableInventory(models.Model):
     
     def __str__(self):
         return self.sku.name
-
 
 class NonPerishableInventory(models.Model):
     name = models.CharField(db_column='sku_name', max_length=100, unique=True)
