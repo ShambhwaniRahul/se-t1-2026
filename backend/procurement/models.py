@@ -144,36 +144,5 @@ class NonPerishableVendorInvoice(models.Model):
         verbose_name_plural = 'Non-Perishable Vendor Invoices'
     
     def __str__(self):
-        return f"Invoice for {self.purchase.vendor.name} - {self.purchase.purchase_date}"
-    
+        return f"Invoice for {self.purchase.vendor.name} - {self.purchase.purchase_date}"   
 
-class PerishablePaymentLog(models.Model):
-    """
-    Log table to capture payment details for a perishable purchase
-    """
-    purchase = models.OneToOneField(PerishablePurchase, on_delete=models.CASCADE, db_column='purchase_id')
-    transaction_id = models.CharField(db_column='transaction_id', max_length=100, unique=True)
-    timestamp = models.DateTimeField(db_column='timestamp', auto_now_add=True)
-
-    class Meta:
-        verbose_name = 'Perishable Payment Log'
-        verbose_name_plural = 'Perishable Payment Logs'
-    
-    def __str__(self):
-        return f"Payment for {self.purchase.vendor.name} - {self.purchase.purchase_date}"
-    
-
-class NonPerishablePaymentLog(models.Model):
-    """
-    Log table to capture payment details for a non-perishable purchase
-    """
-    purchase = models.OneToOneField(NonPerishablePurchase, on_delete=models.CASCADE, db_column='purchase_id')
-    transaction_id = models.CharField(db_column='transaction_id', max_length=100, unique=True)
-    timestamp = models.DateTimeField(db_column='timestamp', auto_now_add=True)
-
-    class Meta:
-        verbose_name = 'Non-Perishable Payment Log'
-        verbose_name_plural = 'Non-Perishable Payment Logs'
-    
-    def __str__(self):
-        return f"Payment for {self.purchase.vendor.name} - {self.purchase.purchase_date}"
