@@ -23,10 +23,10 @@ class Employee(models.Model):
         FEMALE = 1, "Female"
 
     name = models.CharField(max_length=100)
-    gender = models.IntegerField(GenderChoices.choices,validators=[MaxValueValidator(1), MinValueValidator(0)])
+    gender = models.IntegerField(choices=GenderChoices.choices)
     email = models.EmailField(max_length=100, unique=True)
     phone_no = models.CharField(max_length=10, unique=True)
-    role = models.IntegerField(RoleChoices.choices,validators=[MaxValueValidator(7), MinValueValidator(0)])
+    role = models.IntegerField(choices=RoleChoices.choices)
     monthly_salary = models.FloatField(help_text="The monthly salary in INR")
     joining_date = models.DateField(auto_now_add=True)
     is_working = models.BooleanField(default=True)
@@ -73,7 +73,7 @@ class SalarySlipBreakdown(models.Model):
     salary_slip = models.ForeignKey(SalarySlip, on_delete=models.CASCADE)
     name = models.CharField(max_length=100, help_text="Name of the part of salary it is, like 'Basic Pay'")
     amount = models.FloatField()
-    type_pay = models.IntegerField(TypeChoices.choices)
+    type_pay = models.IntegerField(choices=TypeChoices.choices)
 
 
     class Meta:

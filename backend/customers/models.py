@@ -11,7 +11,7 @@ class Customer(models.Model):
         FEMALE = 1, "Female"
 
     name = models.CharField(max_length=100)
-    gender = models.IntegerField(GenderChoices.choices)
+    gender = models.IntegerField(choices=GenderChoices.choices)
     email = models.EmailField(max_length=100, unique=True)
     phone_no = models.CharField(max_length=10, unique=True)
 
