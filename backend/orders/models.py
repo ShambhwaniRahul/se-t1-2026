@@ -4,36 +4,6 @@ from customers.models import Customer
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 # Create your models here.
-# class ItemSize(models.Model):
-
-#     class SizeChoices(models.IntegerChoices):
-#         DEFAULT = 0, "Default"
-#         SMALL = 1, "Small"
-#         MEDIUM = 2, "Medium"
-#         LARGE = 3, "Large"
-#         X_LARGE = 4, "X-Large"
-
-#     size = models.IntegerField(choices=SizeChoices.choices, unique=True)
-
-#     @property
-#     def multiplier(self):
-#         mapping = {
-#             self.SizeChoices.DEFAULT: 1.0,
-#             self.SizeChoices.SMALL: 0.75,
-#             self.SizeChoices.MEDIUM: 1.2,
-#             self.SizeChoices.LARGE: 1.5,
-#             self.SizeChoices.X_LARGE: 1.75,
-#         }
-#         return mapping.get(self.size, 1.0)
-
-#     class Meta:
-#         verbose_name = 'Item Size'
-#         verbose_name_plural = 'Item Sizes'
-
-#     def __str__(self):
-#         return self.get_size_display()
-
-
 
 class MenuItem(models.Model):
     """
@@ -57,31 +27,12 @@ class MenuItem(models.Model):
         return f'{self.name} - {self.price}'
     
 
-# class MenuItemSize(models.Model):
-#     """
-#     A lookup table
-#     """    
-#     menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE )
-#     # size = models.ForeignKey(ItemSize, on_delete=models.CASCADE)
-
-#     extra_charge = models.FloatField(default=0.0)
-#     extra_prep_time = models.IntegerField(default=0)
-    
-
-#     class Meta:
-#         unique_together = ('menu_item', 'size')
-
-#     def __str__(self):
-#         return f"{self.menu_item.name} - {self.size.get_size_display()}"
-    
-
 class MenuItemIngredient(models.Model):
     """
     Lookup table for Menu Items and ingredients.
     """    
     menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
     ingredient_name = models.ForeignKey(PerishableInventory, on_delete=models.CASCADE)
-    # item_size = models.ForeignKey(ItemSize, on_delete=models.CASCADE)
     quantity_required = models.FloatField(help_text="Quantity of the perishable item required for the Default size of the menu item")
     @property
     def is_available(self):
