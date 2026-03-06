@@ -32,6 +32,9 @@ class Vendor(models.Model):
 
 
 class PerishablePurchase(models.Model):
+    """
+    Table to record purchase orders placed with vendors for perishable inventory items.
+    """
     class StatusChoices(models.TextChoices):
         PENDING = 'Pending', 'Pending'
         RECEIVED = 'Received', 'Received'
@@ -57,6 +60,9 @@ class PerishablePurchase(models.Model):
 
 
 class NonPerishablePurchase(models.Model):
+    """
+    Table to record purchase orders placed with vendors for non-perishable inventory items.
+    """
     class StatusChoices(models.TextChoices):
         PENDING = 'Pending', 'Pending'
         RECEIVED = 'Received', 'Received'

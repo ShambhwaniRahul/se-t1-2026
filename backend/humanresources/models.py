@@ -41,6 +41,9 @@ class Employee(models.Model):
     
 
 class SalarySlip(models.Model):
+    """
+    Table to record salary slip details for an employee, including the transaction reference and total amount paid.
+    """
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, db_column="employee_id")
     date_paid = models.DateField(auto_now_add=True, db_column="date_paid")
     total_amount = models.FloatField(db_column="total_amount")
