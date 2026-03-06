@@ -2,15 +2,16 @@ from django.db import models
 from orders.models import OrderMenuItem, MenuItemOrderStatus, Order
 # from customers.models import Customer
 from procurement.models import PerishablePurchase, NonPerishablePurchase
+from core.models import TimeStampedModel
 # Create your models here.
 
-class PerishablePaymentLog(models.Model):
+class PerishablePaymentLog(TimeStampedModel):
     """
     Log table to capture payment details for a perishable purchase
     """
     purchase = models.OneToOneField(PerishablePurchase, on_delete=models.CASCADE, db_column='purchase_id')
     transaction_id = models.CharField(db_column='transaction_id', max_length=100, unique=True)
-    timestamp = models.DateTimeField(db_column='timestamp', auto_now_add=True)
+    # timestamp = models.DateTimeField(db_column='timestamp', auto_now_add=True)
 
     class Meta:
         verbose_name = 'Perishable Payment Log'
@@ -20,13 +21,13 @@ class PerishablePaymentLog(models.Model):
         return f"Payment for {self.purchase.vendor.name} - {self.purchase.purchase_date}"
     
 
-class NonPerishablePaymentLog(models.Model):
+class NonPerishablePaymentLog(TimeStampedModel):
     """
     Log table to capture payment details for a non-perishable purchase
     """
     purchase = models.OneToOneField(NonPerishablePurchase, on_delete=models.CASCADE, db_column='purchase_id')
     transaction_id = models.CharField(db_column='transaction_id', max_length=100, unique=True)
-    timestamp = models.DateTimeField(db_column='timestamp', auto_now_add=True)
+    # timestamp = models.DateTimeField(db_column='timestamp', auto_now_add=True)
 
     class Meta:
         verbose_name = 'Non-Perishable Payment Log'
@@ -37,13 +38,13 @@ class NonPerishablePaymentLog(models.Model):
 
 
 
-class MenuItemStatusLog(models.Model):
+class MenuItemStatusLog(TimeStampedModel):
     """
     Log table for the status update of a menu item
     """
     order_menu_item  = models.ForeignKey(OrderMenuItem, on_delete=models.CASCADE, db_column="order_menu_item_id")
     status = models.IntegerField(choices=MenuItemOrderStatus.StatusChoices.choices, db_column="status")
-    timestamp = models.DateTimeField(auto_now_add=True, db_column="timestamp")
+    # timestamp = models.DateTimeField(auto_now_add=True, db_column="timestamp")
 
     class Meta:
         verbose_name = "Menu Item Status Log"
@@ -55,7 +56,7 @@ class MenuItemStatusLog(models.Model):
 
 
 
-class CustomerLoyaltyLog(models.Model):
+class CustomerLoyaltyLog(TimeStampedModel):
     """
     Logs to see the orders of the customer
     """
@@ -67,7 +68,7 @@ class CustomerLoyaltyLog(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, db_column="order_id")
     loyalty_points = models.IntegerField(db_column="loyalty_points")
     usage_type = models.IntegerField(choices=TypeChoices.choices, db_column="usage_type")
-    timestamp = models.DateTimeField(auto_now_add=True, db_column="timestamp")
+    # timestamp = models.DateTimeField(auto_now_add=True, db_column="timestamp")
     
     
     class Meta:
