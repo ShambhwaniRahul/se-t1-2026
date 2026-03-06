@@ -2,9 +2,10 @@ venv/
 .env
 __pycache__/
 *.pyc
-migrations/
 db.sqlite3
 *.png
 *.jpg
 *.jpeg
 *.log
+*.csv
+*.json

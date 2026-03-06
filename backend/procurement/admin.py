@@ -1,11 +1,5 @@
 from django.contrib import admin
-from .models import (
-    Vendor,
-    PerishablePurchase, PerishablePurchaseSKU,
-    NonPerishablePurchase, NonPerishablePurchaseItem,
-    PerishableVendorInvoice, NonPerishableVendorInvoice,
-    PerishablePaymentLog, NonPerishablePaymentLog,
-)
+from .models import *
 
 
 # Register your models here.
@@ -51,15 +45,3 @@ class PerishableVendorInvoiceAdmin(admin.ModelAdmin):
 class NonPerishableVendorInvoiceAdmin(admin.ModelAdmin):
     list_display = ('purchase', 'delivery_date')
     search_fields = ('purchase__vendor__name',)
-
-
-@admin.register(PerishablePaymentLog)
-class PerishablePaymentLogAdmin(admin.ModelAdmin):
-    list_display = ('purchase', 'transaction_id', 'timestamp')
-    search_fields = ('transaction_id', 'purchase__vendor__name')
-
-
-@admin.register(NonPerishablePaymentLog)
-class NonPerishablePaymentLogAdmin(admin.ModelAdmin):
-    list_display = ('purchase', 'transaction_id', 'timestamp')
-    search_fields = ('transaction_id', 'purchase__vendor__name')
