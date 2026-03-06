@@ -11,9 +11,9 @@ class CustomerPayment(models.Model):
         UPI = 1, "Upi"
         CARD = 2, "Card"
 
-    payment_mode = models.IntegerField(choices=ModeChoices.choices)
-    timestamp = models.DateTimeField(auto_now_add=True)
-    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    payment_mode = models.IntegerField(choices=ModeChoices.choices, db_column="payment_mode")
+    timestamp = models.DateTimeField(auto_now_add=True, db_column="timestamp")
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, db_column="order_id")
 
     class Meta:
         verbose_name = 'Customer Payment'

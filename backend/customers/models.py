@@ -10,10 +10,10 @@ class Customer(models.Model):
         MALE = 0, "Male"
         FEMALE = 1, "Female"
 
-    name = models.CharField(max_length=100)
-    gender = models.IntegerField(choices=GenderChoices.choices)
-    email = models.EmailField(max_length=100, unique=True)
-    phone_no = models.CharField(max_length=10, unique=True)
+    name = models.CharField(max_length=100, db_column="name")
+    gender = models.IntegerField(choices=GenderChoices.choices, db_column="gender")
+    email = models.EmailField(max_length=100, unique=True, db_column="email")
+    phone_no = models.CharField(max_length=10, unique=True, db_column="phone_no")
 
 
     @property
