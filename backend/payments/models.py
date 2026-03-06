@@ -1,8 +1,9 @@
 from django.db import models
 from orders.models import Order
+from core.models import TimeStampedModel
 
 # Create your models here.
-class CustomerPayment(models.Model):
+class CustomerPayment(TimeStampedModel):
     """
      A table for customer payments
     """

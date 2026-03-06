@@ -1,9 +1,10 @@
 from django.db import models
 from django.core.validators import RegexValidator
 from inventory.models import PerishableSKU, NonPerishableInventory
+from core.models import TimeStampedModel
 
 # Create your models here.
-class Vendor(models.Model):
+class Vendor(TimeStampedModel):
     """
     Lookup table for vendors
     """
@@ -31,7 +32,7 @@ class Vendor(models.Model):
         return self.name
 
 
-class PerishablePurchase(models.Model):
+class PerishablePurchase(TimeStampedModel):
     """
     Table to record purchase orders placed with vendors for perishable inventory items.
     """
@@ -59,7 +60,7 @@ class PerishablePurchase(models.Model):
         return total
 
 
-class NonPerishablePurchase(models.Model):
+class NonPerishablePurchase(TimeStampedModel):
     """
     Table to record purchase orders placed with vendors for non-perishable inventory items.
     """
@@ -87,7 +88,7 @@ class NonPerishablePurchase(models.Model):
         return total
 
 
-class PerishablePurchaseSKU(models.Model):
+class PerishablePurchaseSKU(TimeStampedModel):
     """
     Association table between PerishablePurchase and PerishableSKU to capture quantity and unit price of each SKU in a purchase
     """
@@ -104,7 +105,7 @@ class PerishablePurchaseSKU(models.Model):
         return f"{self.purchase.vendor.name} - {self.sku.name} - {self.quantity} {self.sku.unit}"
     
 
-class NonPerishablePurchaseItem(models.Model):
+class NonPerishablePurchaseItem(TimeStampedModel):
     """
     Association table for non-perishable items in a purchase since we don't have a SKU table for non-perishables
     """
@@ -121,7 +122,7 @@ class NonPerishablePurchaseItem(models.Model):
         return f"{self.purchase.vendor.name} - {self.sku.name} - {self.quantity}"
     
 
-class PerishableVendorInvoice(models.Model):
+class PerishableVendorInvoice(TimeStampedModel):
     """
     Association table to capture invoice details for a perishable purchase
     """
@@ -137,7 +138,7 @@ class PerishableVendorInvoice(models.Model):
         return f"Invoice for {self.purchase.vendor.name} - {self.purchase.purchase_date}"
     
 
-class NonPerishableVendorInvoice(models.Model):
+class NonPerishableVendorInvoice(TimeStampedModel):
     """
     Association table to capture invoice details for a non-perishable purchase
     """

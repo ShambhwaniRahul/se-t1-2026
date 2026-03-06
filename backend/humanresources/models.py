@@ -1,9 +1,9 @@
 from django.db import models
 from django.core.validators import RegexValidator, MaxValueValidator,MinValueValidator
-
+from core.models import TimeStampedModel
 
 # Create your models here.
-class Employee(models.Model):
+class Employee(TimeStampedModel):
     """
     Table for the details of employees.
     """
@@ -40,7 +40,7 @@ class Employee(models.Model):
         return f'{self.name} - {self.role}'
     
 
-class SalarySlip(models.Model):
+class SalarySlip(TimeStampedModel):
     """
     Table to record salary slip details for an employee, including the transaction reference and total amount paid.
     """
@@ -66,7 +66,7 @@ class SalarySlip(models.Model):
         return f"{self.employee.name} received {self.total_amount} on {self.date_paid}"
     
 
-class SalarySlipBreakdown(models.Model):
+class SalarySlipBreakdown(TimeStampedModel):
     """
     Salary Slip Breakdown Table
     """

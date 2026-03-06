@@ -1,8 +1,9 @@
 from django.db import models
 from datetime import date, timedelta
+from core.models import TimeStampedModel
 
 # Create your models here.
-class PerishableSKU(models.Model):
+class PerishableSKU(TimeStampedModel):
     """
     Lookup table for a perishable inventory
     """
@@ -22,7 +23,7 @@ class PerishableSKU(models.Model):
         return self.name
     
 
-class PerishableInventory(models.Model):
+class PerishableInventory(TimeStampedModel):
     """
     Table to track individual batches of perishable inventory, including quantity and purchase date.
     """
@@ -43,7 +44,7 @@ class PerishableInventory(models.Model):
     def __str__(self):
         return self.sku.name
 
-class NonPerishableInventory(models.Model):
+class NonPerishableInventory(TimeStampedModel):
     """
     Table to track non-perishable inventory items and their available quantities.
     """

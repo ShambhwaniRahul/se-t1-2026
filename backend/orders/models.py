@@ -2,10 +2,11 @@ from django.db import models
 from inventory.models import PerishableInventory 
 from customers.models import Customer
 from django.core.validators import MaxValueValidator, MinValueValidator
+from core.models import TimeStampedModel
 
 # Create your models here.
 
-class MenuItem(models.Model):
+class MenuItem(TimeStampedModel):
     """
     Table for Menu Items 
     """
@@ -27,7 +28,7 @@ class MenuItem(models.Model):
         return f'{self.name} - {self.price}'
     
 
-class MenuItemIngredient(models.Model):
+class MenuItemIngredient(TimeStampedModel):
     """
     Lookup table for Menu Items and ingredients.
     """    
@@ -45,7 +46,7 @@ class MenuItemIngredient(models.Model):
         return f"{self.menu_item.name} - {self.ingredient_name.sku.name}"
     
 
-class MenuItemOrderStatus(models.Model):
+class MenuItemOrderStatus(TimeStampedModel):
     """
     A lookup table for the order status of a particular order
     """
@@ -68,7 +69,7 @@ class MenuItemOrderStatus(models.Model):
 
 
 
-class DiningTable(models.Model):
+class DiningTable(TimeStampedModel):
     """
     For the availability of tables
     """
@@ -85,7 +86,7 @@ class DiningTable(models.Model):
 
    
 
-class Order(models.Model):
+class Order(TimeStampedModel):
     """
     Table for Orders
     """
@@ -120,7 +121,7 @@ class Order(models.Model):
     
 
 
-class OrderMenuItem(models.Model):
+class OrderMenuItem(TimeStampedModel):
     """
     An association table for menu items in an order 
     """
