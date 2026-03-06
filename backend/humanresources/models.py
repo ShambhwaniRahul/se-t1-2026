@@ -22,15 +22,15 @@ class Employee(models.Model):
         MALE = 0, "Male"
         FEMALE = 1, "Female"
 
-    name = models.CharField(max_length=100)
-    gender = models.IntegerField(choices=GenderChoices.choices)
-    email = models.EmailField(max_length=100, unique=True)
-    phone_no = models.CharField(max_length=10, unique=True)
-    role = models.IntegerField(choices=RoleChoices.choices)
-    monthly_salary = models.FloatField(help_text="The monthly salary in INR")
-    joining_date = models.DateField(auto_now_add=True)
-    is_working = models.BooleanField(default=True)
-    leaving_date = models.DateField(null=True, blank=True)
+    name = models.CharField(max_length=100, db_column="name")
+    gender = models.IntegerField(choices=GenderChoices.choices, db_column="gender")
+    email = models.EmailField(max_length=100, unique=True, db_column="email")
+    phone_no = models.CharField(max_length=10, unique=True, db_column="phone_no")
+    role = models.IntegerField(choices=RoleChoices.choices, db_column="role")
+    monthly_salary = models.FloatField(help_text="The monthly salary in INR", db_column="monthly_salary")
+    joining_date = models.DateField(auto_now_add=True, db_column="joining_date")
+    is_working = models.BooleanField(default=True, db_column="is_working")
+    leaving_date = models.DateField(null=True, blank=True, db_column="leaving_date")
     
 
     class Meta:
@@ -41,9 +41,9 @@ class Employee(models.Model):
     
 
 class SalarySlip(models.Model):
-    employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
-    date_paid = models.DateField(auto_now_add=True)
-    total_amount = models.FloatField()
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, db_column="employee_id")
+    date_paid = models.DateField(auto_now_add=True, db_column="date_paid")
+    total_amount = models.FloatField(db_column="total_amount")
     transaction_no = models.CharField(
                     max_length=100, 
                     validators=[
@@ -52,7 +52,8 @@ class SalarySlip(models.Model):
                             message='Transaction number must start with "Tr" followed by a number'
                         )
                     ],
-                    unique=True
+                    unique=True,
+                    db_column="transaction_no"
                     )
     
     class Meta:
@@ -70,10 +71,10 @@ class SalarySlipBreakdown(models.Model):
         INCREMENT = 1, "Increment"
         DEDUCTION = -1, "Deduction"
 
-    salary_slip = models.ForeignKey(SalarySlip, on_delete=models.CASCADE)
-    name = models.CharField(max_length=100, help_text="Name of the part of salary it is, like 'Basic Pay'")
-    amount = models.FloatField()
-    type_pay = models.IntegerField(choices=TypeChoices.choices)
+    salary_slip = models.ForeignKey(SalarySlip, on_delete=models.CASCADE, db_column="salary_slip_id")
+    name = models.CharField(max_length=100, help_text="Name of the part of salary it is, like 'Basic Pay'", db_column="name")
+    amount = models.FloatField(db_column="amount")
+    type_pay = models.IntegerField(choices=TypeChoices.choices, db_column="type_pay")
 
 
     class Meta:

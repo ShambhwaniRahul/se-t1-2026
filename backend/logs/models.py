@@ -41,9 +41,9 @@ class MenuItemStatusLog(models.Model):
     """
     Log table for the status update of a menu item
     """
-    order_menu_item  = models.ForeignKey(OrderMenuItem, on_delete=models.CASCADE)
-    status = models.IntegerField(choices=MenuItemOrderStatus.StatusChoices.choices)
-    timestamp = models.DateTimeField(auto_now_add=True)
+    order_menu_item  = models.ForeignKey(OrderMenuItem, on_delete=models.CASCADE, db_column="order_menu_item_id")
+    status = models.IntegerField(choices=MenuItemOrderStatus.StatusChoices.choices, db_column="status")
+    timestamp = models.DateTimeField(auto_now_add=True, db_column="timestamp")
 
     class Meta:
         verbose_name = "Menu Item Status Log"
@@ -64,10 +64,10 @@ class CustomerLoyaltyLog(models.Model):
         EARNED = 1, "Earned"
 
     # customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    order = models.ForeignKey(Order, on_delete=models.CASCADE)
-    loyalty_points = models.IntegerField()
-    usage_type = models.IntegerField(choices=TypeChoices.choices)
-    timestamp = models.DateTimeField(auto_now_add=True)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, db_column="order_id")
+    loyalty_points = models.IntegerField(db_column="loyalty_points")
+    usage_type = models.IntegerField(choices=TypeChoices.choices, db_column="usage_type")
+    timestamp = models.DateTimeField(auto_now_add=True, db_column="timestamp")
     
     
     class Meta:
