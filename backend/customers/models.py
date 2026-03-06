@@ -1,8 +1,9 @@
 from django.db import models
+from core.models import TimeStampedModel
 # from orders.models import Order
 
 # Create your models here.
-class Customer(models.Model):
+class Customer(TimeStampedModel):
     """
       Table to store the details of customers.
     """
