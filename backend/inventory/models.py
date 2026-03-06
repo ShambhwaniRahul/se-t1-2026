@@ -23,6 +23,9 @@ class PerishableSKU(models.Model):
     
 
 class PerishableInventory(models.Model):
+    """
+    Table to track individual batches of perishable inventory, including quantity and purchase date.
+    """
     sku = models.ForeignKey(PerishableSKU, on_delete=models.CASCADE, db_column='sku_id')
     quantity = models.FloatField(db_column='quantity')
     purchase_date = models.DateField(db_column='purchase_date')
@@ -41,6 +44,9 @@ class PerishableInventory(models.Model):
         return self.sku.name
 
 class NonPerishableInventory(models.Model):
+    """
+    Table to track non-perishable inventory items and their available quantities.
+    """
     name = models.CharField(db_column='sku_name', max_length=100, unique=True)
     quantity = models.IntegerField(db_column='quantity')
 
