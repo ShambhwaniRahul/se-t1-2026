@@ -4,7 +4,9 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from .models import Employee
+from .serializers import EmployeeSerializer
 from core.permissions import RequiresRole
+
 
 class EmployeeLoginView(APIView):
     """
@@ -31,6 +33,7 @@ class EmployeeLoginView(APIView):
             return Response({
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
+                'employee': EmployeeSerializer(user).data,
             }, status=status.HTTP_200_OK)
 
         return Response(
@@ -46,43 +49,20 @@ class EmployeeRegisterView(APIView):
     """
     permission_classes = [RequiresRole]
     required_roles = [
-        Employee.RoleChoices.OWNER, 
+        Employee.RoleChoices.OWNER,
         Employee.RoleChoices.MANAGER
     ]
-    authentication_classes = []
 
     def post(self, request):
-        # Extract required fields from request data
+        serializer = EmployeeSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        phone_no = request.data.get('phone_no')
-        password = request.data.get('password')
-        first_name = request.data.get('first_name')
-        last_name = request.data.get('last_name')
-        gender = request.data.get('gender')
-        email = request.data.get('email')
-        monthly_salary = request.data.get('monthly_salary')
-        role = request.data.get('role')
-
-        # Additional fields can be extracted here (e.g., name, email)
-
-        if not phone_no or not password:
-            return Response(
-                {"detail": "phone_no and password fields are strictly required."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Check if user with the same phone_no already exists
-        if Employee.objects.filter(phone_no=phone_no).exists():
-            return Response(
-                {"detail": "An account with this phone number already exists."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Create a new user instance
-        user = Employee.objects.create_user(phone_no=phone_no, password=password)
-        # Additional user fields can be set here
-
+        employee = serializer.save()
         return Response(
-            {"detail": "Employee registered successfully."},
+            {
+                "detail": "Employee registered successfully.",
+                "employee": EmployeeSerializer(employee).data,
+            },
             status=status.HTTP_201_CREATED
         )

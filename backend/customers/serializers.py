@@ -6,7 +6,7 @@ class CustomerSerializer(serializers.ModelSerializer):
     """
     Transforms Customer model instances into JSON payloads and validates incoming structural data.
     """
-    phone_no = serializers.ReadOnlyField()
+    # phone_no = serializers.ReadOnlyField()
 
     class Meta:
         model = Customer

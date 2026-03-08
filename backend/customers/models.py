@@ -8,13 +8,9 @@ class Customer(TimeStampedModel):
       Table to store the details of customers.
     """
 
-
     first_name = models.CharField(max_length=100, db_column="first_name")
     last_name = models.CharField(max_length=100, db_column="last_name")
-    # gender = models.IntegerField(choices=GenderChoices.choices, db_column="gender")
-    # email = models.EmailField(max_length=100, unique=True, db_column="email")
     phone_no = models.CharField(max_length=10, unique=True, db_column="phone_no")
-
 
     @property
     def total_loyalty_points(self):
