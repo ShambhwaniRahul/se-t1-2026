@@ -37,6 +37,6 @@ class OrderAdmin(admin.ModelAdmin):
 
 @admin.register(OrderMenuItem)
 class OrderMenuItemAdmin(admin.ModelAdmin):
-    list_display = ('order', 'menu_item', 'quantity', 'item_total')
+    list_display = ('order', 'menu_item', 'quantity', 'item_total','chef')
     search_fields = ( 'order__table_number','menu_item__name')
     sortable_by = ('item_total',)

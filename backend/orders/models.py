@@ -3,6 +3,7 @@ from inventory.models import PerishableInventory
 from customers.models import Customer
 from django.core.validators import MaxValueValidator, MinValueValidator
 from core.models import TimeStampedModel
+from humanresources.models import Employee
 
 # Create your models here.
 
@@ -93,7 +94,7 @@ class Order(TimeStampedModel):
     class StatusChoices(models.IntegerChoices):
         OPEN = 0, "Open"
         CLOSED = 1, "Closed"
-        CANCELLED = 2, "Cancelled"
+        # CANCELLED = 2, "Cancelled"
 
     class DiningTypeChoices(models.IntegerChoices):
         DINE_IN = 0 , "Dine In"
@@ -104,7 +105,7 @@ class Order(TimeStampedModel):
     table = models.ForeignKey(DiningTable, on_delete=models.CASCADE, db_column="table_id")
     status = models.IntegerField(choices=StatusChoices.choices, default=StatusChoices.OPEN, db_column="status")
     dining_type = models.IntegerField(choices=DiningTypeChoices.choices, db_column="dining_type")
-    packaging_cost = models.IntegerField(default=0, db_column="packaging_cost")
+    packaging_cost = models.IntegerField(default=0, db_column="packaging_cost")    
 
 
     @property
@@ -129,6 +130,7 @@ class OrderMenuItem(TimeStampedModel):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, db_column="order_id")
     menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE, db_column="menu_item_id")
     quantity = models.IntegerField(default=1, db_column="quantity")
+    chef = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, db_column="chef_id")
     
 
     @property
