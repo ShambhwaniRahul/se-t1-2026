@@ -30,13 +30,13 @@ class DiningTableAdmin(admin.ModelAdmin):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ('customer', 'table', 'status','dining_type','packaging_cost','order_total')
-    search_fields = ('customer__name', 'table__table_number')
+    list_display = ('table', 'status','dining_type','packaging_cost','order_total')
+    search_fields = ('table__table_number',)
     list_filter = ('status', 'dining_type')
     sortable_by = ('order_total',)
 
 @admin.register(OrderMenuItem)
 class OrderMenuItemAdmin(admin.ModelAdmin):
     list_display = ('order', 'menu_item', 'quantity', 'item_total')
-    search_fields = ('order__customer__name', 'menu_item__name')
-    sortable_by = ('item_total',)    
+    search_fields = ( 'order__table_number','menu_item__name')
+    sortable_by = ('item_total',)

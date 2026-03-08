@@ -100,7 +100,7 @@ class Order(TimeStampedModel):
         TAKE_AWAY = 1, "Take Away"
         HOME_DELIVERY = 2, "Home Delivery"    
 
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, db_column="customer_id")
+    # customer = models.ForeignKey(Customer, on_delete=models.CASCADE, db_column="customer_id")
     table = models.ForeignKey(DiningTable, on_delete=models.CASCADE, db_column="table_id")
     status = models.IntegerField(choices=StatusChoices.choices, default=StatusChoices.OPEN, db_column="status")
     dining_type = models.IntegerField(choices=DiningTypeChoices.choices, db_column="dining_type")
