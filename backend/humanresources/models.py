@@ -22,7 +22,8 @@ class Employee(TimeStampedModel):
         MALE = 0, "Male"
         FEMALE = 1, "Female"
 
-    name = models.CharField(max_length=100, db_column="name")
+    first_name = models.CharField(max_length=100, db_column="first_name")
+    last_name = models.CharField(max_length=100, db_column="last_name")
     gender = models.IntegerField(choices=GenderChoices.choices, db_column="gender")
     email = models.EmailField(max_length=100, unique=True, db_column="email")
     phone_no = models.CharField(max_length=10, unique=True, db_column="phone_no")
@@ -31,6 +32,11 @@ class Employee(TimeStampedModel):
     joining_date = models.DateField(auto_now_add=True, db_column="joining_date")
     is_working = models.BooleanField(default=True, db_column="is_working")
     leaving_date = models.DateField(null=True, blank=True, db_column="leaving_date")
+
+
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"
     
 
     class Meta:
@@ -85,3 +91,27 @@ class SalarySlipBreakdown(TimeStampedModel):
 
     def __str__(self):
         return f"{self.name} - {self.amount}"
+
+
+class Shifts(TimeStampedModel):
+    """
+    A table to store the details of shifts for employees.
+    """
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, db_column="employee_id")
+    start_time = models.TimeField(db_column="start_time")
+    end_time = models.TimeField(db_column="end_time")
+
+
+    @property
+    def work_hours(self):
+        """
+        Under the scanner
+        """
+        return self.end_time - self.start_time
+
+    class Meta:
+        verbose_name = "Shift"
+        verbose_name_plural = "Shifts"
+
+    def __str__(self):
+        return f"{self.employee.full_name}"     
