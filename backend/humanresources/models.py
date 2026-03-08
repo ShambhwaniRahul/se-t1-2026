@@ -1,13 +1,32 @@
 from django.db import models
-from django.core.validators import RegexValidator, MaxValueValidator,MinValueValidator
+from django.core.validators import RegexValidator
 from core.models import TimeStampedModel
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 
-# Create your models here.
-class Employee(TimeStampedModel):
+class EmployeeManager(BaseUserManager):
     """
-    Table for the details of employees.
+    Handles user creation lifecycle for the custom Employee authentication model.
+    Enforces password hashing and superuser flag assignment.
     """
+    def create_user(self, phone_no, password=None, **extra_fields):
+        if not phone_no:
+            raise ValueError('The phone_no identifier must be set')
+        user = self.model(phone_no=phone_no, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
 
+    def create_superuser(self, phone_no, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        return self.create_user(phone_no, password, **extra_fields)
+
+
+class Employee(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
+    """
+    Core identity model for system access and human resource tracking.
+    Replaces the default Django authentication user to support ID-based logins and dynamic role mapping.
+    """
     class RoleChoices(models.IntegerChoices):
         OWNER = 0, "Owner"
         MANAGER = 1, "Manager"
@@ -22,28 +41,35 @@ class Employee(TimeStampedModel):
         MALE = 0, "Male"
         FEMALE = 1, "Female"
 
-    first_name = models.CharField(max_length=100, db_column="first_name")
-    last_name = models.CharField(max_length=100, db_column="last_name")
-    gender = models.IntegerField(choices=GenderChoices.choices, db_column="gender")
-    email = models.EmailField(max_length=100, unique=True, db_column="email")
-    phone_no = models.CharField(max_length=10, unique=True, db_column="phone_no")
-    role = models.IntegerField(choices=RoleChoices.choices, db_column="role")
-    monthly_salary = models.FloatField(help_text="The monthly salary in INR", db_column="monthly_salary")
-    joining_date = models.DateField(auto_now_add=True, db_column="joining_date")
-    is_working = models.BooleanField(default=True, db_column="is_working")
-    leaving_date = models.DateField(null=True, blank=True, db_column="leaving_date")
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100, null=True, blank=True)
+    gender = models.IntegerField(choices=GenderChoices.choices, default=GenderChoices.MALE)
+    email = models.EmailField(max_length=100, unique=True, null=True, blank=True)
+    phone_no = models.CharField(max_length=15, unique=True, db_index=True)
+    role = models.IntegerField(choices=RoleChoices.choices)
+    monthly_salary = models.FloatField(help_text="The monthly salary in INR", db_column="monthly_salary", null=True, blank=True)
+    joining_date = models.DateField(auto_now_add=True)
+    leaving_date = models.DateField(null=True, blank=True)
 
-
-    @property
-    def full_name(self):
-        return f"{self.first_name} {self.last_name}"
+    # Required fields for Django Authentication compatibility
+    is_working = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
     
+    objects = EmployeeManager()
+
+    USERNAME_FIELD = 'phone_no'
+    REQUIRED_FIELDS = ['first_name', 'role', 'monthly_salary']
 
     class Meta:
-        unique_together = ("email", "phone_no")
+        verbose_name = "Employee"
+        verbose_name_plural = "Employees"
 
-    def __str__(self):
-        return f'{self.name} - {self.role}'
+    @property
+    def full_name(self) -> str:
+        return f"{self.first_name} {self.last_name}".strip()
+
+    def __str__(self) -> str:
+        return f"{self.full_name} - {self.get_role_display()}"
     
 
 class SalarySlip(TimeStampedModel):
@@ -69,7 +95,7 @@ class SalarySlip(TimeStampedModel):
         unique_together = ("employee", "transaction_no")
 
     def __str__(self):
-        return f"{self.employee.name} received {self.total_amount} on {self.date_paid}"
+        return f"{self.employee.full_name} received {self.total_amount} on {self.date_paid}"
     
 
 class SalarySlipBreakdown(TimeStampedModel):
