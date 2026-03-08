@@ -24,6 +24,13 @@ class MenuItemStatusLogAdmin(admin.ModelAdmin):
 
 @admin.register(CustomerLoyaltyLog)
 class CustomerLoyaltyLogAdmin(admin.ModelAdmin):
-    list_display = ('order__customer','order','loyalty_points','usage_type','created_at')
-    search_fields = ('order__customer__name',)
+    list_display = ('payment__customer','payment','loyalty_points','usage_type','created_at')
+    search_fields = ('payment__customer__full_name',)
     sortable_by = ('created_at',)
+
+@admin.register(AttendanceLog)
+class AttendanceLogAdmin(admin.ModelAdmin):
+    list_display = ('shift__employee__first_name','shift__employee__last_name','entry_time','exit_time')
+    search_fields = ('shift__employee__first_name','shift__employee__last_name')
+    sortable_by = ('entry_time','exit_time')
+    

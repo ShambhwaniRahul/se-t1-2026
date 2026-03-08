@@ -8,7 +8,8 @@ class Vendor(TimeStampedModel):
     """
     Lookup table for vendors
     """
-    name = models.CharField(db_column='vendor_name', max_length=200)
+    first_name = models.CharField(db_column='first_name', max_length=100)
+    last_name = models.CharField(db_column='last_name', max_length=200)
     address = models.TextField(db_column='vendor_address')
     contact_no = models.CharField(db_column='vendor_contact_no', max_length=10, unique=True)
     email = models.EmailField(db_column='vendor_email', max_length=100, unique=True)
@@ -23,6 +24,10 @@ class Vendor(TimeStampedModel):
             ],
             unique=True
         )
+    
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"
     
     class Meta:
         verbose_name = 'Vendor'
