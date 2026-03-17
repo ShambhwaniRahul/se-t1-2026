@@ -16,7 +16,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
     """
     queryset = Customer.objects.all().order_by('-created_at')
     serializer_class = CustomerSerializer
-    permission_classes = [RequiresRole]  # Uncomment to restrict access to authenticated users only
+    permission_classes = [RequiresRole]  # If we pass in nothing in the required_roles list, everyone will have the authentication to view this.
     required_roles = [
         Employee.RoleChoices.OWNER, 
         Employee.RoleChoices.MANAGER
@@ -42,6 +42,7 @@ class CustomerLoginView(APIView):
             )
         
         if not phone_no in Customer.objects.values_list('phone_no', flat=True):
+        # if not Customer.objects.filter(phone_no=phone_no).exists():  # This one's more efficient.    
             return Response(
                 {"detail": "No customer found with the provided phone_no."},
                 status=status.HTTP_404_NOT_FOUND
