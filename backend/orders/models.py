@@ -1,6 +1,6 @@
 from django.db import models
 from inventory.models import PerishableInventory 
-from customers.models import Customer
+# from customers.models import Customer
 from django.core.validators import MaxValueValidator, MinValueValidator
 from core.models import TimeStampedModel
 from humanresources.models import Employee
@@ -99,7 +99,7 @@ class Order(TimeStampedModel):
     class DiningTypeChoices(models.IntegerChoices):
         DINE_IN = 0 , "Dine In"
         TAKE_AWAY = 1, "Take Away"
-        HOME_DELIVERY = 2, "Home Delivery"    
+        # HOME_DELIVERY = 2, "Home Delivery"    
 
     # customer = models.ForeignKey(Customer, on_delete=models.CASCADE, db_column="customer_id")
     table = models.ForeignKey(DiningTable, on_delete=models.CASCADE, db_column="table_id")
@@ -131,7 +131,7 @@ class OrderMenuItem(TimeStampedModel):
     menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE, db_column="menu_item_id")
     quantity = models.IntegerField(default=1, db_column="quantity")
     chef = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, db_column="chef_id")
-    
+    special_instructions = models.TextField(blank=True, null=True,db_column="special_instructions", help_text="Any special instructions for the chef regarding the preparation of this menu item.")
 
     @property
     def item_total(self):

@@ -1,6 +1,6 @@
 from django.db import models
 from core.models import TimeStampedModel
-# from orders.models import Order
+from orders.models import Order
 
 # Create your models here.
 class Customer(TimeStampedModel):
@@ -26,3 +26,24 @@ class Customer(TimeStampedModel):
     
     def __str__(self):
         return self.full_name
+    
+
+class CustomerPayment(TimeStampedModel):
+    """
+     A table for customer payments
+    """
+    class ModeChoices(models.IntegerChoices):
+        CASH = 0, "Cash"
+        UPI = 1, "Upi"
+        CARD = 2, "Card"
+
+    payment_mode = models.IntegerField(choices=ModeChoices.choices, db_column="payment_mode")
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, db_column="order_id")
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, db_column="customer_id")
+
+    class Meta:
+        verbose_name = 'Customer Payment'
+        verbose_name_plural = 'Customer Payments'
+    
+    def __str__(self):
+        return f"Payment for order {self.order.id} by {self.customer.full_name}"        

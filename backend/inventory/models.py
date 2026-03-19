@@ -38,6 +38,7 @@ class PerishableInventory(TimeStampedModel):
     def expiration_date(self):
         return self.purchase_date + timedelta(days=self.sku.typical_shelf_life)
     
+    @property
     def is_expired(self):
         return self.expiration_date < date.today()
     

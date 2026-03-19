@@ -34,70 +34,87 @@ class Vendor(TimeStampedModel):
         verbose_name_plural = 'Vendors'
     
     def __str__(self):
-        return self.name
+        return self.full_name
+    
 
+class VendorPurchase(TimeStampedModel):
+    """
+    A table to store Vendor purchases.
+    """
 
-class PerishablePurchase(TimeStampedModel):
-    """
-    Table to record purchase orders placed with vendors for perishable inventory items.
-    """
     class StatusChoices(models.TextChoices):
         PENDING = 'Pending', 'Pending'
         RECEIVED = 'Received', 'Received'
         CANCELLED = 'Cancelled', 'Cancelled'
-    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, db_column='vendor_id')
+
+    class TypeChoices(models.TextChoices):
+        PERISHABLE = 'Perishable', 'Perishable'
+        NON_PERISHABLE = 'Non-Perishable', 'Non-Perishable'
+
+    vendor = models.ForeignKey(
+        Vendor,
+        on_delete=models.CASCADE,
+        db_column='vendor_id'
+    )
+
+    purchase_type = models.CharField(
+        max_length=50,
+        choices=TypeChoices.choices,
+        db_column='purchase_type'
+    )
+
     purchase_date = models.DateField(db_column='purchase_date')
-    status = models.CharField(db_column='status', max_length=50, choices=StatusChoices.choices, default=StatusChoices.PENDING)
-    delivery_cost = models.FloatField(db_column='delivery_cost', default=0.0)
-    file_location = models.FileField(db_column='file_location', upload_to='static/procurement_files/', null=True, blank=True)
+
+    status = models.CharField(
+        db_column='status',
+        max_length=50,
+        choices=StatusChoices.choices,
+        default=StatusChoices.PENDING
+    )
+
+    delivery_cost = models.FloatField(
+        db_column='delivery_cost',
+        default=0.0
+    )
+
+    file_location = models.FileField(
+        db_column='file_location',
+        upload_to='static/procurement_files/',
+        null=True,
+        blank=True
+    )
 
     class Meta:
-        verbose_name = 'Perishable Purchase'
-        verbose_name_plural = 'Perishable Purchases'
-    
+        verbose_name = 'Vendor Purchase'
+        verbose_name_plural = 'Vendor Purchases'
+
     def __str__(self):
-        return f"{self.vendor.name} - {self.purchase_date}"
-    
+        return f"{self.vendor.full_name} - {self.purchase_date}"
+
     def total_cost(self):
-        total = self.delivery_cost
-        for item in self.perishablepurchasesku_set.all():
-            total += item.quantity * item.unit_price
-        return total
+        """
+        Calculate total cost of the purchase by summing up the cost of each item
+        """
+
+        purchase_set = (
+            self.perishablepurchasesku_set.all()
+            if self.purchase_type == self.TypeChoices.PERISHABLE
+            else self.nonperishablepurchaseitem_set.all()
+        )
+
+        return self.delivery_cost + sum(
+            item.quantity * item.unit_price
+            for item in purchase_set
+        )
 
 
-class NonPerishablePurchase(TimeStampedModel):
-    """
-    Table to record purchase orders placed with vendors for non-perishable inventory items.
-    """
-    class StatusChoices(models.TextChoices):
-        PENDING = 'Pending', 'Pending'
-        RECEIVED = 'Received', 'Received'
-        CANCELLED = 'Cancelled', 'Cancelled'
-    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, db_column='vendor_id')
-    purchase_date = models.DateField(db_column='purchase_date')
-    status = models.CharField(db_column='status', max_length=50, choices=StatusChoices.choices, default=StatusChoices.PENDING)
-    delivery_cost = models.FloatField(db_column='delivery_cost', default=0.0)
-    file_location = models.FileField(db_column='file_location', upload_to='static/procurement_files/', null=True, blank=True)
-
-    class Meta:
-        verbose_name = 'Non-Perishable Purchase'
-        verbose_name_plural = 'Non-Perishable Purchases'
-    
-    def __str__(self):
-        return f"{self.vendor.name} - {self.purchase_date}"
-    
-    def total_cost(self):
-        total = self.delivery_cost
-        for item in self.nonperishablepurchaseitem_set.all():
-            total += item.quantity * item.unit_price
-        return total
 
 
 class PerishablePurchaseSKU(TimeStampedModel):
     """
     Association table between PerishablePurchase and PerishableSKU to capture quantity and unit price of each SKU in a purchase
     """
-    purchase = models.ForeignKey(PerishablePurchase, on_delete=models.CASCADE, db_column='purchase_id')
+    purchase = models.ForeignKey(VendorPurchase, on_delete=models.CASCADE, db_column='purchase_id')
     sku = models.ForeignKey(PerishableSKU, on_delete=models.CASCADE, db_column='sku_id')
     quantity = models.FloatField(db_column='quantity')
     unit_price = models.FloatField(db_column='unit_price')
@@ -114,7 +131,7 @@ class NonPerishablePurchaseItem(TimeStampedModel):
     """
     Association table for non-perishable items in a purchase since we don't have a SKU table for non-perishables
     """
-    purchase = models.ForeignKey(NonPerishablePurchase, on_delete=models.CASCADE, db_column='purchase_id')
+    purchase = models.ForeignKey(VendorPurchase, on_delete=models.CASCADE, db_column='purchase_id')
     sku = models.ForeignKey(NonPerishableInventory, on_delete=models.CASCADE, db_column='sku_id')
     quantity = models.IntegerField(db_column='quantity')
     unit_price = models.FloatField(db_column='unit_price')
@@ -127,34 +144,33 @@ class NonPerishablePurchaseItem(TimeStampedModel):
         return f"{self.purchase.vendor.name} - {self.sku.name} - {self.quantity}"
     
 
-class PerishableVendorInvoice(TimeStampedModel):
+class VendorInvoice(TimeStampedModel):
     """
-    Association table to capture invoice details for a perishable purchase
+    Association table to capture invoice details for vendor purchases.
     """
-    purchase = models.OneToOneField(PerishablePurchase, on_delete=models.CASCADE, db_column='purchase_id')
+    purchase = models.OneToOneField(VendorPurchase, on_delete=models.CASCADE, db_column='purchase_id')
     delivery_date = models.DateField(db_column='delivery_date')
     file_location = models.FileField(db_column='file_location', upload_to='static/procurement_invoices/', null=True, blank=True)
 
     class Meta:
-        verbose_name = 'Perishable Vendor Invoice'
-        verbose_name_plural = 'Perishable Vendor Invoices'
+        verbose_name = 'Vendor Invoice'
+        verbose_name_plural = 'Vendor Invoices'
     
     def __str__(self):
         return f"Invoice for {self.purchase.vendor.name} - {self.purchase.purchase_date}"
-    
 
-class NonPerishableVendorInvoice(TimeStampedModel):
+
+class VendorPurchaseLog(TimeStampedModel):
     """
-    Association table to capture invoice details for a non-perishable purchase
+    Log table to capture vendor purchase details
     """
-    purchase = models.OneToOneField(NonPerishablePurchase, on_delete=models.CASCADE, db_column='purchase_id')
-    delivery_date = models.DateField(db_column='delivery_date')
-    file_location = models.FileField(db_column='file_location', upload_to='static/procurement_invoices/', null=True, blank=True)
+    purchase = models.OneToOneField(VendorPurchase, on_delete=models.CASCADE, db_column='purchase_id')
+    transaction_id = models.CharField(db_column='transaction_id', max_length=100, unique=True)
+    # timestamp = models.DateTimeField(db_column='timestamp', auto_now_add=True)
 
     class Meta:
-        verbose_name = 'Non-Perishable Vendor Invoice'
-        verbose_name_plural = 'Non-Perishable Vendor Invoices'
+        verbose_name = 'Vendor Purchase Log'
+        verbose_name_plural = 'Vendor Purchases Logs'
     
     def __str__(self):
-        return f"Invoice for {self.purchase.vendor.name} - {self.purchase.purchase_date}"   
-
+        return f"Payment for {self.purchase.vendor.name} - {self.purchase.purchase_date}"

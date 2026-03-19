@@ -1,46 +1,11 @@
 from django.db import models
 from orders.models import OrderMenuItem, MenuItemOrderStatus #, Order
 # from customers.models import Customer
-from procurement.models import PerishablePurchase, NonPerishablePurchase
 from core.models import TimeStampedModel
-from payments.models import CustomerPayment
+from customers.models import CustomerPayment
 from humanresources.models import Employee, Shifts
 
 # Create your models here.
-
-class PerishablePaymentLog(TimeStampedModel):
-    """
-    Log table to capture payment details for a perishable purchase
-    """
-    purchase = models.OneToOneField(PerishablePurchase, on_delete=models.CASCADE, db_column='purchase_id')
-    transaction_id = models.CharField(db_column='transaction_id', max_length=100, unique=True)
-    # timestamp = models.DateTimeField(db_column='timestamp', auto_now_add=True)
-
-    class Meta:
-        verbose_name = 'Perishable Payment Log'
-        verbose_name_plural = 'Perishable Payment Logs'
-    
-    def __str__(self):
-        return f"Payment for {self.purchase.vendor.name} - {self.purchase.purchase_date}"
-    
-
-class NonPerishablePaymentLog(TimeStampedModel):
-    """
-    Log table to capture payment details for a non-perishable purchase
-    """
-    purchase = models.OneToOneField(NonPerishablePurchase, on_delete=models.CASCADE, db_column='purchase_id')
-    transaction_id = models.CharField(db_column='transaction_id', max_length=100, unique=True)
-    # timestamp = models.DateTimeField(db_column='timestamp', auto_now_add=True)
-
-    class Meta:
-        verbose_name = 'Non-Perishable Payment Log'
-        verbose_name_plural = 'Non-Perishable Payment Logs'
-    
-    def __str__(self):
-        return f"Payment for {self.purchase.vendor.name} - {self.purchase.purchase_date}"
-
-
-
 class MenuItemStatusLog(TimeStampedModel):
     """
     Log table for the status update of a menu item
