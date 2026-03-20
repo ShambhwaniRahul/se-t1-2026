@@ -4,8 +4,11 @@ import {
   Package,
   Users,
   BarChart3,
-  Settings,
   LayoutDashboard,
+  UserCog,
+  CalendarCheck,
+  CalendarClock,
+  Wallet,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
@@ -48,9 +51,13 @@ const managementItems: NavItem[] = [
   { title: "Analytics", url: "/analytics", icon: BarChart3, roles: ["admin", "manager"] },
 ];
 
-const systemItems: NavItem[] = [
-  { title: "Settings", url: "/settings", icon: Settings, roles: ["admin"] },
+const erpItems: NavItem[] = [
+  { title: "Employees", url: "/erp/employees", icon: UserCog, roles: ["admin", "manager"] },
+  { title: "Attendance", url: "/erp/attendance", icon: CalendarCheck, roles: ["admin", "manager"] },
+  { title: "Shifts", url: "/erp/shifts", icon: CalendarClock, roles: ["admin", "manager"] },
+  { title: "Payroll", url: "/erp/payroll", icon: Wallet, roles: ["admin", "manager"] },
 ];
+
 
 function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
   const { role } = useAuth();
@@ -119,7 +126,7 @@ export function AppSidebar() {
         <NavGroup label="Overview" items={dashboardItems} />
         <NavGroup label="Operations" items={operationItems} />
         <NavGroup label="Management" items={managementItems} />
-        <NavGroup label="System" items={systemItems} />
+        <NavGroup label="ERP" items={erpItems} />
       </SidebarContent>
 
       <SidebarFooter>
