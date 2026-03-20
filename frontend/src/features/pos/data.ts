@@ -1,3 +1,4 @@
+// each product has a category, name, price, and optional keyboard shortcut for quick selection
 export interface PosProduct {
   id: string;
   name: string;
@@ -6,17 +7,20 @@ export interface PosProduct {
   shortcut?: string; // keyboard shortcut key
 }
 
+// cart item includes the product and the quantity ordered
 export interface CartItem {
   product: PosProduct;
   quantity: number;
 }
 
+// categories for filtering products in the POS interface, each with a name and an emoji for visual identification
 export interface PosCategory {
   id: string;
   name: string;
   emoji: string;
 }
 
+// a sample list of predefined product categories for the POS system
 export const POS_CATEGORIES: PosCategory[] = [
   { id: "all", name: "All", emoji: "🍽️" },
   { id: "burgers", name: "Burgers", emoji: "🍔" },
@@ -26,6 +30,7 @@ export const POS_CATEGORIES: PosCategory[] = [
   { id: "desserts", name: "Desserts", emoji: "🍰" },
 ];
 
+// a sample list of products available in the POS system, categorized and priced accordingly
 export const POS_PRODUCTS: PosProduct[] = [
   // Burgers
   { id: "b1", name: "Classic Burger", price: 9.99, category: "burgers", shortcut: "1" },

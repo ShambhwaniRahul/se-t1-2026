@@ -1,6 +1,6 @@
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import type { CartItem } from "./data";
 import { cn } from "@/lib/utils";
@@ -30,7 +30,6 @@ export function CartPanel({
 }: CartPanelProps) {
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
       <div className="flex items-center justify-between px-4 py-3">
         <h2 className="text-base font-bold">Current Order</h2>
         <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
@@ -40,13 +39,15 @@ export function CartPanel({
 
       <Separator />
 
-      {/* Items */}
       <ScrollArea className="flex-1">
-        {items.length === 0 ? (
+        {items.length === 0 ? 
+        (
           <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
             Tap a product to start
           </div>
-        ) : (
+        )
+        :
+        (
           <div className="space-y-1 p-2">
             {items.map((item) => (
               <div
@@ -96,6 +97,7 @@ export function CartPanel({
             ))}
           </div>
         )}
+          <ScrollBar orientation="vertical" />
       </ScrollArea>
 
       <Separator />
