@@ -16,9 +16,13 @@ import KitchenPage from "@/features/kitchen/KitchenPage";
 import InventoryPage from "@/features/inventory/InventoryPage";
 import CrmPage from "@/features/crm/CrmPage";
 import AnalyticsPage from "@/features/analytics/AnalyticsPage";
-import SettingsPage from "@/features/settings/SettingsPage";
+import { EmployeesPage, AttendancePage, ShiftsPage, PayrollPage } from "@/features/erp";
 
 const queryClient = new QueryClient();
+
+const ErpRoute = ({ children }: { children: React.ReactNode }) => (
+  <ProtectedRoute allowedRoles={["admin", "manager"]}>{children}</ProtectedRoute>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -75,14 +79,10 @@ const App = () => (
                     </ProtectedRoute>
                   }
                 />
-                <Route
-                  path="settings"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin"]}>
-                      <SettingsPage />
-                    </ProtectedRoute>
-                  }
-                />
+                <Route path="erp/employees" element={<ErpRoute><EmployeesPage /></ErpRoute>} />
+                <Route path="erp/attendance" element={<ErpRoute><AttendancePage /></ErpRoute>} />
+                <Route path="erp/shifts" element={<ErpRoute><ShiftsPage /></ErpRoute>} />
+                <Route path="erp/payroll" element={<ErpRoute><PayrollPage /></ErpRoute>} />
                 <Route path="unauthorized" element={<UnauthorizedPage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
