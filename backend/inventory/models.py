@@ -5,7 +5,9 @@ from core.models import TimeStampedModel
 # Create your models here.
 class PerishableSKU(TimeStampedModel):
     """
-    Lookup table for a perishable inventory
+    Lookup table for a perishable inventory.
+    It has the name of the SKU, unit of measurement, and typical shelf life in days.
+    The Shelf life is used to calculate if a particular batch of inventory is expired based on its purchase date. 
     """
     class UnitChoices(models.TextChoices):
         KG = 'KG', 'KG'
@@ -26,6 +28,7 @@ class PerishableSKU(TimeStampedModel):
 class PerishableInventory(TimeStampedModel):
     """
     Table to track individual batches of perishable inventory, including quantity and purchase date.
+    Each batch is linked to a PerishableSKU, which provides information about the unit of measurement and typical shelf life.
     """
     sku = models.ForeignKey(PerishableSKU, on_delete=models.CASCADE, db_column='sku_id')
     quantity = models.FloatField(db_column='quantity')
@@ -36,9 +39,16 @@ class PerishableInventory(TimeStampedModel):
 
     @property
     def expiration_date(self):
+        """
+        Calculate the expiration date based on the purchase date and the typical shelf life of the SKU.
+        """
         return self.purchase_date + timedelta(days=self.sku.typical_shelf_life)
     
+    @property
     def is_expired(self):
+        """
+        Determine if the inventory batch is expired based on the current date and the calculated expiration date.
+        """
         return self.expiration_date < date.today()
     
     def __str__(self):

@@ -1,47 +1,57 @@
 from django.contrib import admin
-from .models import *
+from .models import (
+    Vendor,
+    PurchaseOrder,
+    PerishablePurchaseSKU,
+    NonPerishablePurchaseSKU,
+    VendorInvoice,
+    VendorPurchaseLog
+)
 
-
-# Register your models here.
+# ✅ Vendor
 @admin.register(Vendor)
 class VendorAdmin(admin.ModelAdmin):
-    list_display = ('first_name','last_name', 'contact_no', 'email')
-    search_fields = ('contact_no',)
+    list_display = ('full_name', 'contact_no', 'email', 'gst_no')
+    search_fields = ('first_name', 'last_name', 'contact_no', 'email', 'gst_no')
 
 
-@admin.register(PerishablePurchase)
-class PerishablePurchaseAdmin(admin.ModelAdmin):
-    list_display = ('vendor', 'purchase_date', 'status', 'delivery_cost')
-    list_filter = ('status',)
-    search_fields = ('vendor__first_name','vendor__contact_no')
+# ✅ Purchase Order (🔥 Missing tha - important)
+@admin.register(PurchaseOrder)
+class PurchaseOrderAdmin(admin.ModelAdmin):
+    list_display = ('vendor', 'purchase_type', 'purchase_date', 'status', 'delivery_cost')
+    list_filter = ('purchase_type', 'status', 'purchase_date')
+    search_fields = ('vendor__first_name', 'vendor__last_name', 'vendor__contact_no')
+    date_hierarchy = 'purchase_date'
 
 
+# ✅ Perishable Items
 @admin.register(PerishablePurchaseSKU)
 class PerishablePurchaseSKUAdmin(admin.ModelAdmin):
     list_display = ('purchase', 'sku', 'quantity', 'unit_price')
     search_fields = ('purchase__vendor__contact_no', 'sku__name')
+    list_filter = ('purchase__purchase_type',)
 
 
-@admin.register(NonPerishablePurchase)
-class NonPerishablePurchaseAdmin(admin.ModelAdmin):
-    list_display = ('vendor', 'purchase_date', 'status', 'delivery_cost')
-    list_filter = ('status',)
-    search_fields = ('vendor__first_name','vendor__contact_no')
-
-
-@admin.register(NonPerishablePurchaseItem)
-class NonPerishablePurchaseItemAdmin(admin.ModelAdmin):
+# ✅ Non-Perishable Items
+@admin.register(NonPerishablePurchaseSKU)
+class NonPerishablePurchaseSKUAdmin(admin.ModelAdmin):
     list_display = ('purchase', 'sku', 'quantity', 'unit_price')
-    search_fields = ('purchase__vendor__first_name','purchase__vendor__contact_no', 'sku__name')
+    search_fields = ('purchase__vendor__first_name', 'purchase__vendor__contact_no', 'sku__name')
+    list_filter = ('purchase__purchase_type',)
 
 
-@admin.register(PerishableVendorInvoice)
-class PerishableVendorInvoiceAdmin(admin.ModelAdmin):
-    list_display = ('purchase', 'delivery_date')
-    search_fields = ('purchase__vendor__first_name','purchase__vendor__contact_no')
+# ✅ Vendor Invoice
+@admin.register(VendorInvoice)
+class VendorInvoiceAdmin(admin.ModelAdmin):
+    list_display = ('purchase', 'invoice_number', 'delivery_date')
+    search_fields = ('invoice_number', 'purchase__vendor__first_name', 'purchase__vendor__contact_no')
+    list_filter = ('delivery_date',)
 
 
-@admin.register(NonPerishableVendorInvoice)
-class NonPerishableVendorInvoiceAdmin(admin.ModelAdmin):
-    list_display = ('purchase', 'delivery_date')
-    search_fields = ('purchase__vendor__first_name','purchase__vendor__contact_no')
+# ✅ Vendor Purchase Log
+@admin.register(VendorPurchaseLog)
+class VendorPurchaseLogAdmin(admin.ModelAdmin):
+    list_display = ('purchase', 'transaction_id', 'created_at')
+    search_fields = ('transaction_id', 'purchase__vendor__first_name', 'purchase__vendor__contact_no')
+    list_filter = ('created_at',)
+    sortable_by = ('created_at',)
