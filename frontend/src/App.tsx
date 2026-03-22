@@ -11,12 +11,14 @@ import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
 import DashboardPage from "@/pages/Dashboard";
 import UnauthorizedPage from "@/pages/Unauthorized";
 import NotFound from "@/pages/NotFound";
-import PosPage from "@/features/pos/PosPage";
+// import PosPage from "@/features/pos/pages/PosPage";
+import TablePage from "@/features/pos/pages/TablePage";
 import KitchenPage from "@/features/kitchen/KitchenPage";
 import InventoryPage from "@/features/inventory/InventoryPage";
 import CrmPage from "@/features/crm/CrmPage";
 import AnalyticsPage from "@/features/analytics/AnalyticsPage";
 import { EmployeesPage, AttendancePage, ShiftsPage, PayrollPage } from "@/features/erp";
+import PosPage from "./features/pos/pages/PosPage";
 
 const queryClient = new QueryClient();
 
@@ -40,12 +42,20 @@ const App = () => (
                   </ProtectedRoute>
                   }/>
                 <Route
-                  path="pos"
+                  path="pos/tables"
+                  element={
+                    <ProtectedRoute allowedRoles={["admin", "manager", "pos"]}>
+                      <TablePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route 
+                  path="/pos/:tableId" 
                   element={
                     <ProtectedRoute allowedRoles={["admin", "manager", "pos"]}>
                       <PosPage />
                     </ProtectedRoute>
-                  }
+                  } 
                 />
                 <Route
                   path="kitchen"

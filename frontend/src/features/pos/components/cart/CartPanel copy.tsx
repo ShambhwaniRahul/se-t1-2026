@@ -2,11 +2,13 @@ import { Minus, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import type { CartItem } from "./data";
+import type { DraftCartItem, GroupedOrderItem, OrderCartItem } from "../../data/posData";
 import { cn } from "@/lib/utils";
+import { useMemo } from "react";
 
 interface CartPanelProps {
-  items: CartItem[];
+  orderedItems: OrderCartItem[];
+  draftItems: DraftCartItem[];
   subtotal: number;
   discountPercent: number;
   discountAmount: number;
@@ -19,7 +21,8 @@ interface CartPanelProps {
 const QUICK_DISCOUNTS = [0, 5, 10, 15, 20];
 
 export function CartPanel({
-  items,
+  orderedItems,
+  draftItems,
   subtotal,
   discountPercent,
   discountAmount,
@@ -28,19 +31,97 @@ export function CartPanel({
   onRemove,
   onApplyDiscount,
 }: CartPanelProps) {
+
+
+  const groupedOrderedItems = useMemo(() => {
+    const map = new Map<string, GroupedOrderItem>();
+
+    for (const item of orderedItems) {
+
+      if (!map.has(item.item_id)) {
+        map.set(item.item_id, {
+          item_id: item.item_id,
+          name: item.name,
+          price: item.price,
+          items: []
+        });
+      }
+
+      map.get(item.item_id)!.items.push(item);
+    }
+
+    return Array.from(map.values());
+
+  }, [orderedItems]);
+
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between px-4 py-3">
-        <h2 className="text-base font-bold">Current Order</h2>
+        <h2 className="text-base font-bold">Ordered Cart</h2>
         <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
-          {items.reduce((s, i) => s + i.quantity, 0)}
+          {orderedItems.length}
         </span>
       </div>
 
       <Separator />
+      {
+        orderedItems.length > 0
+        &&
+        <>
+          <ScrollArea className="flex-1">
+            <div className="space-y-2 p-2">
+              {groupedOrderedItems.map((group) => (
+                <div
+                  key={group.item_id}
+                  className="rounded-md px-2 py-2 hover:bg-accent/50"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold">
+                      {group.name} x{group.items.length}
+                    </p>
+
+                    <span className="text-sm font-medium">
+                      ${(group.price * group.items.length).toFixed(2)}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {group.items.map((item) => (
+                      <span
+                        key={item.menu_item_id}
+                        className={cn(
+                          "px-2 py-0.5 rounded text-xs font-medium",
+                          item.status === "ready" && "bg-green-100 text-green-700",
+                          item.status === "pending" && "bg-yellow-100 text-yellow-700",
+                          item.status === "in-progress" && "bg-blue-100 text-blue-700"
+                        )}
+                      >
+                        {item.status}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <ScrollBar orientation="vertical" />
+          </ScrollArea>
+          <Separator />
+        </>
+      }
+
+      <div className="flex items-center justify-between px-4 py-3">
+        <h2 className="text-base font-bold">Draft Cart</h2>
+        <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
+          {draftItems.reduce((s, i) => s + i.quantity, 0)}
+        </span>
+      </div>
+      
+      <Separator />
 
       <ScrollArea className="flex-1">
-        {items.length === 0 ? 
+        {draftItems.length === 0 ? 
         (
           <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
             Tap a product to start
@@ -49,7 +130,7 @@ export function CartPanel({
         :
         (
           <div className="space-y-1 p-2">
-            {items.map((item) => (
+            {draftItems.map((item) => (
               <div
                 key={item.product.id}
                 className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent/50"
@@ -102,7 +183,6 @@ export function CartPanel({
 
       <Separator />
 
-      {/* Discount */}
       <div className="px-4 py-2">
         <p className="mb-1.5 text-xs font-medium text-muted-foreground">Quick Discount</p>
         <div className="flex gap-1">
@@ -125,7 +205,6 @@ export function CartPanel({
 
       <Separator />
 
-      {/* Totals */}
       <div className="space-y-1 px-4 py-3 text-sm">
         <div className="flex justify-between text-muted-foreground">
           <span>Subtotal</span>
