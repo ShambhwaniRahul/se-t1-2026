@@ -10,8 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Modal } from "@/components/shared/Modal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UserCheck, UserX, Clock, CalendarOff } from "lucide-react";
-import { MOCK_ATTENDANCE, ATTENDANCE_SUMMARY } from "./erpData";
-import type { AttendanceEntry, AttendanceStatus } from "./erpData";
+import { MOCK_ATTENDANCE, ATTENDANCE_SUMMARY } from "../data/erpData";
+import type { AttendanceEntry, AttendanceStatus } from "../data/erpData";
 
 const STATUS_MAP: Record<AttendanceStatus, { label: string; variant: StatusBadgeVariant }> = {
   present: { label: "Present", variant: "success" },

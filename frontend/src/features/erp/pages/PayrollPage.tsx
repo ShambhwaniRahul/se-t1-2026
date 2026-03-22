@@ -7,8 +7,8 @@ import { Modal } from "@/components/shared/Modal";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { DollarSign, Clock, TrendingUp, Download } from "lucide-react";
-import { MOCK_PAYROLL, PAYROLL_SUMMARY } from "./erpData";
-import type { PayrollEntry } from "./erpData";
+import { MOCK_PAYROLL, PAYROLL_SUMMARY } from "../data/erpData";
+import type { PayrollEntry } from "../data/erpData";
 
 const fmt = (n: number) => `$${n.toLocaleString()}`;
 

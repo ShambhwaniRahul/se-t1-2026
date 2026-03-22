@@ -11,7 +11,7 @@ export default function TableCard({ id, status }: TableCardProps) {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    navigate(`/pos/${id}`);
+    navigate(`/pos/tables/${id}`);
   };
 
   const imageSrc = status ? tableOccupied : tableEmpty;

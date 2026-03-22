@@ -7,10 +7,10 @@ import { DataTable, type Column } from "@/components/shared/DataTable";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus } from "lucide-react";
-import { MOCK_EMPLOYEES } from "./erpData";
-import type { Employee, EmployeeRole } from "./erpData";
-import { EmployeeProfileDrawer } from "./EmployeeProfileDrawer";
-import { EmployeeFormModal } from "./EmployeeFormModal";
+import { MOCK_EMPLOYEES } from "../data/erpData";
+import type { Employee, EmployeeRole } from "../data/erpData";
+import { EmployeeProfileDrawer } from "../components/EmployeeProfileDrawer";
+import { EmployeeFormModal } from "../components/EmployeeFormModal";
 
 const ROLES: EmployeeRole[] = ["Chef", "Sous Chef", "Waiter", "Host", "Manager", "Cashier", "Bartender", "Dishwasher"];
 

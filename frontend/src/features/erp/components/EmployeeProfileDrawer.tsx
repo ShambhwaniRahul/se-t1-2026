@@ -2,7 +2,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import type { Employee } from "./erpData";
+import type { Employee } from "../data/erpData";
 import { Calendar, Mail, Phone, DollarSign, Clock, Briefcase } from "lucide-react";
 
 interface Props {

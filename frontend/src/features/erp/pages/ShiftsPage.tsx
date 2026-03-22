@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { MOCK_SHIFTS, WEEK_DAYS, SHIFT_COLORS } from "./erpData";
-import type { ShiftType } from "./erpData";
+import { MOCK_SHIFTS, WEEK_DAYS, SHIFT_COLORS } from "../data/erpData";
+import type { ShiftType } from "../data/erpData";
 import { cn } from "@/lib/utils";
 
 export default function ShiftsPage() {

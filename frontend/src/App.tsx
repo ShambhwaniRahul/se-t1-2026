@@ -8,10 +8,12 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
 
+
+import LoginPage from "@/features/auth/pages/LoginPage";
+import EmployeeManagementPage from "@/features/employees/pages/EmployeesPage";
 import DashboardPage from "@/pages/Dashboard";
 import UnauthorizedPage from "@/pages/Unauthorized";
 import NotFound from "@/pages/NotFound";
-// import PosPage from "@/features/pos/pages/PosPage";
 import TablePage from "@/features/pos/pages/TablePage";
 import KitchenPage from "@/features/kitchen/KitchenPage";
 import InventoryPage from "@/features/inventory/InventoryPage";
@@ -23,10 +25,11 @@ import PurchaseOrdersPage from "./features/purchase-orders/pages/PurchaseOrdersP
 import CreatePurchaseOrderPage from "./features/purchase-orders/pages/CreatePurchaseOrderPage";
 import PurchaseOrderDetailsPage from "./features/purchase-orders/pages/PurcahseOrderDetailsPage";
 
+
 const queryClient = new QueryClient();
 
 const ErpRoute = ({ children }: { children: React.ReactNode }) => (
-  <ProtectedRoute allowedRoles={["admin", "manager"]}>{children}</ProtectedRoute>
+  <ProtectedRoute allowedRoles={["owner", "manager"]}>{children}</ProtectedRoute>
 );
 
 const App = () => (
@@ -38,32 +41,36 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
+              {/* Public auth routes */}
+              <Route path="login" element={<LoginPage />} />
+
+              {/* Protected app shell */}
               <Route element={<AppLayout />}>
                 <Route index element={
-                  <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                  <ProtectedRoute allowedRoles={["owner", "manager"]}>
                     <DashboardPage />
                   </ProtectedRoute>
-                  }/>
+                } />
                 <Route
                   path="pos/tables"
                   element={
-                    <ProtectedRoute allowedRoles={["admin", "manager", "pos"]}>
+                    <ProtectedRoute allowedRoles={["owner", "manager", "pos"]}>
                       <TablePage />
                     </ProtectedRoute>
                   }
                 />
-                <Route 
-                  path="/pos/:tableId" 
+                <Route
+                  path="/pos/tables/:tableId"
                   element={
-                    <ProtectedRoute allowedRoles={["admin", "manager", "pos"]}>
+                    <ProtectedRoute allowedRoles={["owner", "manager", "pos"]}>
                       <PosPage />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
                 <Route
                   path="kitchen"
                   element={
-                    <ProtectedRoute allowedRoles={["admin", "manager", "kitchen"]}>
+                    <ProtectedRoute allowedRoles={["owner", "manager", "kitchen"]}>
                       <KitchenPage />
                     </ProtectedRoute>
                   }
@@ -71,7 +78,7 @@ const App = () => (
                 <Route
                   path="inventory"
                   element={
-                    <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                    <ProtectedRoute allowedRoles={["owner", "manager"]}>
                       <InventoryPage />
                     </ProtectedRoute>
                   }
@@ -79,7 +86,7 @@ const App = () => (
                 <Route
                   path="crm"
                   element={
-                    <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                    <ProtectedRoute allowedRoles={["owner", "manager"]}>
                       <CrmPage />
                     </ProtectedRoute>
                   }
@@ -87,8 +94,16 @@ const App = () => (
                 <Route
                   path="analytics"
                   element={
-                    <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                    <ProtectedRoute allowedRoles={["owner", "manager"]}>
                       <AnalyticsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="settings/employees"
+                  element={
+                    <ProtectedRoute allowedRoles={["owner"]}>
+                      <EmployeeManagementPage />
                     </ProtectedRoute>
                   }
                 />
@@ -98,11 +113,11 @@ const App = () => (
                 <Route path="erp/payroll" element={<ErpRoute><PayrollPage /></ErpRoute>} />
                 <Route path="unauthorized" element={<UnauthorizedPage />} />
 
-                <Route path="purchase-orders" element={<ProtectedRoute allowedRoles={["admin", "manager", "procurement"]}><PurchaseOrdersPage /></ProtectedRoute>} />
-                <Route path="purchase-orders/new" element={<ProtectedRoute allowedRoles={["admin", "manager", "procurement"]}><CreatePurchaseOrderPage /></ProtectedRoute>} />
-                <Route path="purchase-orders/:id" element={<ProtectedRoute allowedRoles={["admin", "manager", "procurement"]}><PurchaseOrderDetailsPage /></ProtectedRoute>} />
+                <Route path="purchase-orders" element={<ProtectedRoute allowedRoles={["owner", "manager", "procurement"]}><PurchaseOrdersPage /></ProtectedRoute>} />
+                <Route path="purchase-orders/new" element={<ProtectedRoute allowedRoles={["owner", "manager", "procurement"]}><CreatePurchaseOrderPage /></ProtectedRoute>} />
+                <Route path="purchase-orders/:id" element={<ProtectedRoute allowedRoles={["owner", "manager", "procurement"]}><PurchaseOrderDetailsPage /></ProtectedRoute>} />
                 <Route path="unauthorized" element={<UnauthorizedPage />} />
-                
+
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
