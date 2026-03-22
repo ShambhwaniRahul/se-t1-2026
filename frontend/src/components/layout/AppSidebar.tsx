@@ -46,7 +46,8 @@ const operationItems: NavItem[] = [
 ];
 
 const managementItems: NavItem[] = [
-  { title: "Inventory", url: "/inventory", icon: Package, roles: ["admin", "manager"] },
+  { title: "Inventory", url: "/inventory", icon: Package, roles: ["admin", "manager", "procurement"] },
+  { title: "Purchase Orders", url: "/purchase-orders", icon: ShoppingCart, roles: ["admin", "manager", "procurement"] },
   { title: "CRM", url: "/crm", icon: Users, roles: ["admin", "manager"] },
   { title: "Analytics", url: "/analytics", icon: BarChart3, roles: ["admin", "manager"] },
 ];

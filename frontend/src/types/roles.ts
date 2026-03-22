@@ -1,4 +1,4 @@
-export type AppRole = "admin" | "manager" | "kitchen" | "pos";
+export type AppRole = "admin" | "manager" | "kitchen" | "pos" | "procurement";
 
 export interface AppUser {
   id: string;
@@ -12,4 +12,5 @@ export const ROLE_LABELS: Record<AppRole, string> = {
   manager: "Manager",
   kitchen: "Kitchen",
   pos: "POS Operator",
+  procurement: "Procurement",
 };

@@ -19,6 +19,9 @@ import CrmPage from "@/features/crm/CrmPage";
 import AnalyticsPage from "@/features/analytics/AnalyticsPage";
 import { EmployeesPage, AttendancePage, ShiftsPage, PayrollPage } from "@/features/erp";
 import PosPage from "./features/pos/pages/PosPage";
+import PurchaseOrdersPage from "./features/purchase-orders/pages/PurchaseOrdersPage";
+import CreatePurchaseOrderPage from "./features/purchase-orders/pages/CreatePurchaseOrderPage";
+import PurchaseOrderDetailsPage from "./features/purchase-orders/pages/PurcahseOrderDetailsPage";
 
 const queryClient = new QueryClient();
 
@@ -94,6 +97,12 @@ const App = () => (
                 <Route path="erp/shifts" element={<ErpRoute><ShiftsPage /></ErpRoute>} />
                 <Route path="erp/payroll" element={<ErpRoute><PayrollPage /></ErpRoute>} />
                 <Route path="unauthorized" element={<UnauthorizedPage />} />
+
+                <Route path="purchase-orders" element={<ProtectedRoute allowedRoles={["admin", "manager", "procurement"]}><PurchaseOrdersPage /></ProtectedRoute>} />
+                <Route path="purchase-orders/new" element={<ProtectedRoute allowedRoles={["admin", "manager", "procurement"]}><CreatePurchaseOrderPage /></ProtectedRoute>} />
+                <Route path="purchase-orders/:id" element={<ProtectedRoute allowedRoles={["admin", "manager", "procurement"]}><PurchaseOrderDetailsPage /></ProtectedRoute>} />
+                <Route path="unauthorized" element={<UnauthorizedPage />} />
+                
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
