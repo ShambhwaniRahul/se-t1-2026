@@ -37,7 +37,7 @@ class Vendor(TimeStampedModel):
         return self.full_name
     
 
-class VendorPurchase(TimeStampedModel):
+class PurchaseOrder(TimeStampedModel):
     """
     A table to store Vendor purchases.
     """
@@ -112,9 +112,9 @@ class VendorPurchase(TimeStampedModel):
 
 class PerishablePurchaseSKU(TimeStampedModel):
     """
-    Association table between PerishablePurchase and PerishableSKU to capture quantity and unit price of each SKU in a purchase
+    Association table between PurchaseOrder and PerishableSKU to capture quantity and unit price of each SKU in a purchase
     """
-    purchase = models.ForeignKey(VendorPurchase, on_delete=models.CASCADE, db_column='purchase_id')
+    purchase = models.ForeignKey(PurchaseOrder, on_delete=models.CASCADE, db_column='purchase_id')
     sku = models.ForeignKey(PerishableSKU, on_delete=models.CASCADE, db_column='sku_id')
     quantity = models.FloatField(db_column='quantity')
     unit_price = models.FloatField(db_column='unit_price')
@@ -127,11 +127,11 @@ class PerishablePurchaseSKU(TimeStampedModel):
         return f"{self.purchase.vendor.name} - {self.sku.name} - {self.quantity} {self.sku.unit}"
     
 
-class NonPerishablePurchaseItem(TimeStampedModel):
+class NonPerishablePurchaseSKU(TimeStampedModel):
     """
     Association table for non-perishable items in a purchase since we don't have a SKU table for non-perishables
     """
-    purchase = models.ForeignKey(VendorPurchase, on_delete=models.CASCADE, db_column='purchase_id')
+    purchase = models.ForeignKey(PurchaseOrder, on_delete=models.CASCADE, db_column='purchase_id')
     sku = models.ForeignKey(NonPerishableInventory, on_delete=models.CASCADE, db_column='sku_id')
     quantity = models.IntegerField(db_column='quantity')
     unit_price = models.FloatField(db_column='unit_price')
@@ -148,7 +148,8 @@ class VendorInvoice(TimeStampedModel):
     """
     Association table to capture invoice details for vendor purchases.
     """
-    purchase = models.OneToOneField(VendorPurchase, on_delete=models.CASCADE, db_column='purchase_id')
+    purchase = models.OneToOneField(PurchaseOrder, on_delete=models.CASCADE, db_column='purchase_id')
+    invoice_number = models.CharField(db_column='invoice_number', max_length=100, unique=True)
     delivery_date = models.DateField(db_column='delivery_date')
     file_location = models.FileField(db_column='file_location', upload_to='static/procurement_invoices/', null=True, blank=True)
 
@@ -162,11 +163,11 @@ class VendorInvoice(TimeStampedModel):
 
 class VendorPurchaseLog(TimeStampedModel):
     """
-    Log table to capture vendor purchase details
+    Log table to capture vendor purchase details.
+    As of now, we are just capturing the transaction ID and the purchase details, but this needs to be looked into for any other details that we might want to capture for the log.
     """
-    purchase = models.OneToOneField(VendorPurchase, on_delete=models.CASCADE, db_column='purchase_id')
+    purchase = models.OneToOneField(PurchaseOrder, on_delete=models.CASCADE, db_column='purchase_id')
     transaction_id = models.CharField(db_column='transaction_id', max_length=100, unique=True)
-    # timestamp = models.DateTimeField(db_column='timestamp', auto_now_add=True)
 
     class Meta:
         verbose_name = 'Vendor Purchase Log'

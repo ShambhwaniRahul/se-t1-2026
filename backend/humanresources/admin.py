@@ -4,10 +4,16 @@ from .models import *
 # Register your models here.
 @admin.register(Employee)
 class EmployeeAdmin(admin.ModelAdmin):
-    list_display = ['first_name','last_name','gender', 'email', 'phone_no', 'role', 'monthly_salary', 'joining_date', 'is_working', 'leaving_date']
+    list_display = ['first_name','last_name','gender', 'email', 'phone_no', 'monthly_salary', 'joining_date', 'is_working', 'leaving_date']
     search_fields = ['first_name', 'email', 'phone_no']
-    list_filter = ['gender', 'role', 'is_working']
+    list_filter = ['gender', 'is_working']
     # sortable_by = ['monthly_salary', 'joining_date', 'leaving_date']
+
+@admin.register(EmployeeRole)
+class EmployeeRoleAdmin(admin.ModelAdmin):
+    list_display = ['employee', 'role']
+    search_fields = ['employee__first_name', 'employee__email', 'employee__phone_no', 'role']
+    list_filter = ['role']
 
 @admin.register(SalarySlip)
 class SalarySlipAdmin(admin.ModelAdmin):

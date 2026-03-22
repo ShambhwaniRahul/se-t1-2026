@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from humanresources.models import Employee
+from humanresources.models import Employee, EmployeeRole
 from core.permissions import RequiresRole
 from .models import Customer
 from .serializers import CustomerSerializer
@@ -18,8 +18,8 @@ class CustomerViewSet(viewsets.ModelViewSet):
     serializer_class = CustomerSerializer
     permission_classes = [RequiresRole]  # If we pass in nothing in the required_roles list, everyone will have the authentication to view this.
     required_roles = [
-        Employee.RoleChoices.OWNER, 
-        Employee.RoleChoices.MANAGER
+        EmployeeRole.RoleChoices.OWNER, 
+        EmployeeRole.RoleChoices.MANAGER
     ]
 
 

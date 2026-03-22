@@ -5,15 +5,15 @@ from rest_framework import status
 from core.permissions import RequiresRole
 from .models import PerishableSKU 
 from .serializers import PerishableSKUSerializer
-from humanresources.models import Employee
+from humanresources.models import Employee, EmployeeRole
 
 # Create your views here.
 class PerishableSKUListCreateAPIView(APIView):
     
     required_roles = [
-        Employee.RoleChoices.MANAGER,
-        Employee.RoleChoices.OWNER,
-        Employee.RoleChoices.INVENTORY_MANAGER,
+        EmployeeRole.RoleChoices.MANAGER,
+        EmployeeRole.RoleChoices.OWNER,
+        EmployeeRole.RoleChoices.INVENTORY_MANAGER,
         # Employee.RoleChoices.CHEF  # Chef allowed but restricted in POST
     ]
 
@@ -23,7 +23,7 @@ class PerishableSKUListCreateAPIView(APIView):
         skus = PerishableSKU.objects.all()
         serializer = PerishableSKUSerializer(skus, many=True)
         # Besides those in our required roles, chef is given the permission to Read it. 
-        if request.user.role in self.required_roles or request.user.role == Employee.RoleChoices.CHEF:
+        if request.user.role in self.required_roles or request.user.role == EmployeeRole.RoleChoices.CHEF:
            return Response(serializer.data)
         return Response(
             {"error": "You do not have permission to perform this action"},

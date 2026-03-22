@@ -1,7 +1,6 @@
 from django.contrib import admin
 from .models import (
     MenuItemStatusLog,
-    CustomerLoyaltyLog,
     AttendanceLog
 )
 
@@ -15,15 +14,6 @@ class MenuItemStatusLogAdmin(admin.ModelAdmin):
         'order_menu_item__order__customer__full_name',
         'order_menu_item__menu_item__name'
     )
-    sortable_by = ('created_at',)
-
-
-# ✅ Customer Loyalty Log
-@admin.register(CustomerLoyaltyLog)
-class CustomerLoyaltyLogAdmin(admin.ModelAdmin):
-    list_display = ('payment', 'loyalty_points', 'usage_type', 'created_at')
-    search_fields = ('payment__customer__full_name',)
-    list_filter = ('usage_type',)
     sortable_by = ('created_at',)
 
 

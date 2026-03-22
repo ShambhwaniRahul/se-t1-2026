@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-from .models import Employee
+from .models import Employee, EmployeeRole
 from .serializers import EmployeeSerializer
 from core.permissions import RequiresRole
 
@@ -49,8 +49,8 @@ class EmployeeRegisterView(APIView):
     """
     permission_classes = [RequiresRole]
     required_roles = [
-        Employee.RoleChoices.OWNER,
-        Employee.RoleChoices.MANAGER
+        EmployeeRole.RoleChoices.OWNER,
+        EmployeeRole.RoleChoices.MANAGER
     ]
 
     def post(self, request):
