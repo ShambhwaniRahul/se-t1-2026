@@ -19,7 +19,7 @@ export function SignupForm() {
     e.preventDefault();
     setLoading(true);
     await new Promise((r) => setTimeout(r, 800));
-    login(email);
+    login(email, password);
     toast.success("Account created!");
     navigate("/");
     setLoading(false);

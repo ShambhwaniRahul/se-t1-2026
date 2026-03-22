@@ -24,6 +24,7 @@ import PosPage from "./features/pos/pages/PosPage";
 import PurchaseOrdersPage from "./features/purchase-orders/pages/PurchaseOrdersPage";
 import CreatePurchaseOrderPage from "./features/purchase-orders/pages/CreatePurchaseOrderPage";
 import PurchaseOrderDetailsPage from "./features/purchase-orders/pages/PurcahseOrderDetailsPage";
+import SignupPage from "./features/auth/pages/SignupPage";
 
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               {/* Public auth routes */}
+              <Route path="signup" element={<SignupPage />} />
               <Route path="login" element={<LoginPage />} />
 
               {/* Protected app shell */}

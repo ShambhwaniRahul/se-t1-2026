@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 // import { ROLE_HOME } from "@/config/roles";
 import { Button } from "@/components/ui/button";
@@ -89,10 +89,16 @@ export function LoginForm() {
             <p>Kitchen: marco@coherence.app / kitchen123</p>
           </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex flex-col gap-3">
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Signing in…" : "Sign in"}
           </Button>
+            <p className="text-center text-sm text-muted-foreground">
+              Need an account?{" "}
+              <Link to="/signup" className="font-medium text-primary hover:underline">
+                Sign up
+              </Link>
+            </p>
         </CardFooter>
       </form>
     </Card>
