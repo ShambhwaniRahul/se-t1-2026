@@ -5,7 +5,7 @@ on:
   pull_request:
     types: [opened, closed, reopened]
   issues:
-    types: [opened, closed, deleted]
+    types: [opened, closed]
 
 jobs:
   notify:
@@ -16,13 +16,11 @@ jobs:
           WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
           EVENT="${{ github.event_name }}"
+          MESSAGE=""
 
           if [ "$EVENT" = "push" ]; then
-            MESSAGE="🚀 **New push detected**
-👤 Author: ${{ github.actor }}
-🌿 Branch: ${{ github.ref_name }}
-📝 Commit: ${{ github.event.head_commit.message }}"
-          
+            MESSAGE="🚀 New Push\n👤 Author: ${{ github.actor }}\n🌿 Branch: ${{ github.ref_name }}\n📝 Commit: ${{ github.event.head_commit.message }}"
+
           elif [ "$EVENT" = "pull_request" ]; then
             ACTION="${{ github.event.action }}"
             MERGED="${{ github.event.pull_request.merged }}"
@@ -31,14 +29,13 @@ jobs:
               STATUS="🔀 PR Merged"
             elif [ "$ACTION" = "closed" ]; then
               STATUS="❌ PR Closed"
+            elif [ "$ACTION" = "reopened" ]; then
+              STATUS="♻️ PR Reopened"
             else
-              STATUS="📥 PR Opened/Reopened"
+              STATUS="📥 PR Opened"
             fi
 
-            MESSAGE="$STATUS
-👤 Author: ${{ github.actor }}
-📌 Title: ${{ github.event.pull_request.title }}
-🌿 Branch: ${{ github.event.pull_request.head.ref }} → ${{ github.event.pull_request.base.ref }}"
+            MESSAGE="$STATUS\n👤 PR Author: ${{ github.actor }}\n📌 PR Title: ${{ github.event.pull_request.title }}\n🌿 Branch: ${{ github.event.pull_request.head.ref }} → ${{ github.event.pull_request.base.ref }}\n🔗 URL: ${{ github.event.pull_request.html_url }}"
 
           elif [ "$EVENT" = "issues" ]; then
             ACTION="${{ github.event.action }}"
@@ -47,18 +44,15 @@ jobs:
               STATUS="🆕 Issue Opened"
             elif [ "$ACTION" = "closed" ]; then
               STATUS="✅ Issue Closed"
-            elif [ "$ACTION" = "deleted" ]; then
-              STATUS="🗑️ Issue Deleted"
             else
               STATUS="ℹ️ Issue Updated"
             fi
 
-            MESSAGE="$STATUS
-👤 Author: ${{ github.actor }}
-📌 Title: ${{ github.event.issue.title }}"
+            MESSAGE="$STATUS\n👤 Issue Creator: ${{ github.actor }}\n📌 Issue Title: ${{ github.event.issue.title }}\n🔗 URL: ${{ github.event.issue.html_url }}"
           fi
 
+          # Proper JSON encoding using jq
           curl -H "Content-Type: application/json" \
           -X POST \
-          -d "{\"content\": \"$MESSAGE\"}" \
+          -d "$(jq -n --arg content "$MESSAGE" '{content: $content}')" \
           $WEBHOOK
