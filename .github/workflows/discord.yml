@@ -28,6 +28,12 @@ jobs:
           ISSUE_TITLE="${{ github.event.issue.title }}"
           ISSUE_URL="${{ github.event.issue.html_url }}"
 
+          # Extract issue labels (comma-separated)
+          ISSUE_LABELS=$(jq -r '[.labels[].name] | join(", ")' <<< "${{ toJSON(github.event.issue.labels) }}")
+          if [ -z "$ISSUE_LABELS" ]; then
+            ISSUE_LABELS="None"
+          fi
+
           if [ "$EVENT" = "push" ]; then
             MESSAGE=$(printf "🚀 **New Push detected**\n👤 Author: %s\n🌿 Branch: %s\n📝 Commit: %s" \
               "$ACTOR" "$BRANCH" "$COMMIT_MSG")
@@ -60,8 +66,8 @@ jobs:
               STATUS="ℹ️ Issue Updated"
             fi
 
-            MESSAGE=$(printf "%s\n👤 Issue Creator: %s\n📌 Issue Title: %s\n🔗 URL: %s" \
-              "$STATUS" "$ACTOR" "$ISSUE_TITLE" "$ISSUE_URL")
+            MESSAGE=$(printf "%s\n👤 Issue Creator: %s\n📌 Issue Title: %s\n🏷️ Labels: %s\n🔗 URL: %s" \
+              "$STATUS" "$ACTOR" "$ISSUE_TITLE" "$ISSUE_LABELS" "$ISSUE_URL")
           fi
 
           curl -H "Content-Type: application/json" \
