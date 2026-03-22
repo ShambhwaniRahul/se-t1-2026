@@ -16,10 +16,21 @@ jobs:
           WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
           EVENT="${{ github.event_name }}"
-          MESSAGE=""
+
+          # Pre-assign variables (safe)
+          ACTOR="${{ github.actor }}"
+          BRANCH="${{ github.ref_name }}"
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          PR_URL="${{ github.event.pull_request.html_url }}"
+          PR_HEAD="${{ github.event.pull_request.head.ref }}"
+          PR_BASE="${{ github.event.pull_request.base.ref }}"
+          ISSUE_TITLE="${{ github.event.issue.title }}"
+          ISSUE_URL="${{ github.event.issue.html_url }}"
 
           if [ "$EVENT" = "push" ]; then
-            MESSAGE="🚀 New Push\n👤 Author: ${{ github.actor }}\n🌿 Branch: ${{ github.ref_name }}\n📝 Commit: ${{ github.event.head_commit.message }}"
+            MESSAGE=$(printf "🚀 **New Push detected**\n👤 Author: %s\n🌿 Branch: %s\n📝 Commit: %s" \
+              "$ACTOR" "$BRANCH" "$COMMIT_MSG")
 
           elif [ "$EVENT" = "pull_request" ]; then
             ACTION="${{ github.event.action }}"
@@ -35,7 +46,8 @@ jobs:
               STATUS="📥 PR Opened"
             fi
 
-            MESSAGE="$STATUS\n👤 PR Author: ${{ github.actor }}\n📌 PR Title: ${{ github.event.pull_request.title }}\n🌿 Branch: ${{ github.event.pull_request.head.ref }} → ${{ github.event.pull_request.base.ref }}\n🔗 URL: ${{ github.event.pull_request.html_url }}"
+            MESSAGE=$(printf "%s\n👤 PR Author: %s\n📌 PR Title: %s\n🌿 Branch: %s → %s\n🔗 URL: %s" \
+              "$STATUS" "$ACTOR" "$PR_TITLE" "$PR_HEAD" "$PR_BASE" "$PR_URL")
 
           elif [ "$EVENT" = "issues" ]; then
             ACTION="${{ github.event.action }}"
@@ -48,10 +60,10 @@ jobs:
               STATUS="ℹ️ Issue Updated"
             fi
 
-            MESSAGE="$STATUS\n👤 Issue Creator: ${{ github.actor }}\n📌 Issue Title: ${{ github.event.issue.title }}\n🔗 URL: ${{ github.event.issue.html_url }}"
+            MESSAGE=$(printf "%s\n👤 Issue Creator: %s\n📌 Issue Title: %s\n🔗 URL: %s" \
+              "$STATUS" "$ACTOR" "$ISSUE_TITLE" "$ISSUE_URL")
           fi
 
-          # Proper JSON encoding using jq
           curl -H "Content-Type: application/json" \
           -X POST \
           -d "$(jq -n --arg content "$MESSAGE" '{content: $content}')" \
