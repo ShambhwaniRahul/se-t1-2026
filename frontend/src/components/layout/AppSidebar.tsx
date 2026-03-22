@@ -41,7 +41,7 @@ const dashboardItems: NavItem[] = [
 ];
 
 const operationItems: NavItem[] = [
-  { title: "Point of Sale", url: "/pos", icon: ShoppingCart, roles: ["admin", "manager", "pos"] },
+  { title: "Point of Sale", url: "/pos/tables", icon: ShoppingCart, roles: ["admin", "manager", "pos"] },
   { title: "Kitchen Display", url: "/kitchen", icon: ChefHat, roles: ["admin", "manager", "kitchen"] },
 ];
 

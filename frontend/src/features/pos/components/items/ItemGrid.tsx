@@ -1,12 +1,12 @@
 import { cn } from "@/lib/utils";
-import type { PosProduct } from "./data";
+import type { MenuItem } from "../../data/posData";
 
-interface ProductGridProps {
-  products: PosProduct[];
-  onSelect: (product: PosProduct) => void;
+interface ItemGridProps {
+  products: MenuItem[];
+  onSelect: (product: MenuItem) => void;
 }
 
-export function ProductGrid({ products, onSelect }: ProductGridProps) {
+export function ItemGrid({ products, onSelect }: ItemGridProps) {
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
       {products.map((product) => (

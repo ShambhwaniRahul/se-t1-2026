@@ -1,13 +1,13 @@
 import { cn } from "@/lib/utils";
-import type { PosCategory } from "./data";
+import type { MenuItemCategory } from "../../data/posData";
 
-interface CategoryBarProps {
-  categories: PosCategory[];
+interface ItemCategoryBarProps {
+  categories: MenuItemCategory[];
   activeId: string;
   onSelect: (id: string) => void;
 }
 
-export function CategoryBar({ categories, activeId, onSelect }: CategoryBarProps) {
+export function ItemCategoryBar({ categories, activeId, onSelect }: ItemCategoryBarProps) {
   return (
     <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
       {categories.map((cat) => (
