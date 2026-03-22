@@ -2,6 +2,10 @@ name: Discord Notification
 
 on:
   push:
+  pull_request:
+    types: [opened, closed, reopened]
+  issues:
+    types: [opened, closed, deleted]
 
 jobs:
   notify:
@@ -11,9 +15,50 @@ jobs:
         env:
           WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
+          EVENT="${{ github.event_name }}"
+
+          if [ "$EVENT" = "push" ]; then
+            MESSAGE="🚀 **New push detected**
+👤 Author: ${{ github.actor }}
+🌿 Branch: ${{ github.ref_name }}
+📝 Commit: ${{ github.event.head_commit.message }}"
+          
+          elif [ "$EVENT" = "pull_request" ]; then
+            ACTION="${{ github.event.action }}"
+            MERGED="${{ github.event.pull_request.merged }}"
+
+            if [ "$ACTION" = "closed" ] && [ "$MERGED" = "true" ]; then
+              STATUS="🔀 PR Merged"
+            elif [ "$ACTION" = "closed" ]; then
+              STATUS="❌ PR Closed"
+            else
+              STATUS="📥 PR Opened/Reopened"
+            fi
+
+            MESSAGE="$STATUS
+👤 Author: ${{ github.actor }}
+📌 Title: ${{ github.event.pull_request.title }}
+🌿 Branch: ${{ github.event.pull_request.head.ref }} → ${{ github.event.pull_request.base.ref }}"
+
+          elif [ "$EVENT" = "issues" ]; then
+            ACTION="${{ github.event.action }}"
+
+            if [ "$ACTION" = "opened" ]; then
+              STATUS="🆕 Issue Opened"
+            elif [ "$ACTION" = "closed" ]; then
+              STATUS="✅ Issue Closed"
+            elif [ "$ACTION" = "deleted" ]; then
+              STATUS="🗑️ Issue Deleted"
+            else
+              STATUS="ℹ️ Issue Updated"
+            fi
+
+            MESSAGE="$STATUS
+👤 Author: ${{ github.actor }}
+📌 Title: ${{ github.event.issue.title }}"
+          fi
+
           curl -H "Content-Type: application/json" \
           -X POST \
-          -d '{
-            "content": "🚀 **New push detected**\n👤 Author: ${{ github.actor }}\n🌿 Branch: ${{ github.ref_name }}\n📝 Commit: ${{ github.event.head_commit.message }}"
-          }' \
+          -d "{\"content\": \"$MESSAGE\"}" \
           $WEBHOOK
