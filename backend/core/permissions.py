@@ -18,7 +18,6 @@ class RequiresRole(BasePermission):
             for role_value in request.user.employeerole_set.values_list('role', flat=True)
         ]
         for role in enum_roles:
-            print(role, required_roles)
             if role in required_roles:
                 return True
         return False

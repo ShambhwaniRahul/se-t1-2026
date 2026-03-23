@@ -13,7 +13,7 @@ class EmployeeRoleSerializer(serializers.ModelSerializer):
 class EmployeeSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(read_only=True)
     gender_display = serializers.CharField(source='get_gender_display', read_only=True)
-
+    id = serializers.ReadOnlyField()
     roles = EmployeeRoleSerializer(source='employeerole_set', many=True, read_only=True)
     role_ids = serializers.ListField(
         child=serializers.IntegerField(),
@@ -48,7 +48,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['joining_date', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'joining_date', 'created_at', 'updated_at']
 
     def validate_role_ids(self, value):
         valid_role_values = {choice.value for choice in EmployeeRole.RoleChoices}

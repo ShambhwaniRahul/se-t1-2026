@@ -6,15 +6,15 @@ class CustomerSerializer(serializers.ModelSerializer):
     """
     Transforms Customer model instances into JSON payloads and validates incoming structural data.
     """
-    # phone_no = serializers.ReadOnlyField()
+    id = serializers.ReadOnlyField()
 
     class Meta:
         model = Customer
         fields = [
-            'id', 
+            'id',
+            'phone_no', 
             'first_name',
             'last_name',
-            'phone_no', 
             'created_at',
             'updated_at'
         ]
