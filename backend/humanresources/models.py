@@ -69,7 +69,6 @@ class Employee(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
     email = models.EmailField(max_length=100, unique=True, null=True, blank=True)
     phone_no = models.CharField(max_length=15, unique=True, db_index=True)
 
-    # ❌ role removed
 
     monthly_salary = models.FloatField(
         help_text="The monthly salary in INR",
