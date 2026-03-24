@@ -2,6 +2,7 @@ from django.db import models
 from django.core.validators import RegexValidator
 from inventory.models import PerishableSKU, NonPerishableInventory
 from core.models import TimeStampedModel
+import uuid
 
 # Create your models here.
 class Vendor(TimeStampedModel):
@@ -80,8 +81,7 @@ class PurchaseOrder(TimeStampedModel):
     file_location = models.FileField(
         db_column='file_location',
         upload_to='static/procurement_files/',
-        null=True,
-        blank=True
+        default=f"{'static/procurement_files/' + str(uuid.uuid4()) + '.pdf'}"
     )
 
     class Meta:
@@ -106,8 +106,6 @@ class PurchaseOrder(TimeStampedModel):
             item.quantity * item.unit_price
             for item in purchase_set
         )
-
-
 
 
 class PerishablePurchaseSKU(TimeStampedModel):
