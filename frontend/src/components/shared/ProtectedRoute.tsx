@@ -1,5 +1,5 @@
 import { Navigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import type { AppRole } from "@/types/roles";
 
 interface ProtectedRouteProps {
@@ -11,7 +11,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   const { role, isAuthenticated } = useAuth();
 
   if (!isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   if (!allowedRoles.includes(role)) {

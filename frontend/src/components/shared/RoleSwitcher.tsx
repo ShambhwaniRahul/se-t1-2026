@@ -1,4 +1,4 @@
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import { ROLE_LABELS, type AppRole } from "@/types/roles";
 import {
   Select,

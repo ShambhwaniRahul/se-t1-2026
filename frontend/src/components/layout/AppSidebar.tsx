@@ -1,29 +1,15 @@
 import {
-  ShoppingCart,
-  ChefHat,
-  Package,
-  Users,
-  BarChart3,
-  Settings,
-  LayoutDashboard,
+  ShoppingCart, ChefHat, Package, ClipboardList, Users, BarChart3,
+  LayoutDashboard, UserCog, CalendarCheck, CalendarClock, Wallet,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarFooter,
-  SidebarSeparator,
-  useSidebar,
+  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
+  SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter,
+  SidebarSeparator, useSidebar,
 } from "@/components/ui/sidebar";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import type { AppRole } from "@/types/roles";
 
 interface NavItem {
@@ -34,23 +20,33 @@ interface NavItem {
 }
 
 const dashboardItems: NavItem[] = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard, roles: ["admin", "manager"] },
+  { title: "Dashboard", url: "/", icon: LayoutDashboard, roles: ["owner", "manager"] },
 ];
 
 const operationItems: NavItem[] = [
-  { title: "Point of Sale", url: "/pos", icon: ShoppingCart, roles: ["admin", "manager", "pos"] },
-  { title: "Kitchen Display", url: "/kitchen", icon: ChefHat, roles: ["admin", "manager", "kitchen"] },
+  { title: "Point of Sale", url: "/pos/tables", icon: ShoppingCart, roles: ["owner", "manager", "pos"] },
+  { title: "Kitchen Display", url: "/kitchen", icon: ChefHat, roles: ["owner", "manager", "kitchen"] },
 ];
 
 const managementItems: NavItem[] = [
-  { title: "Inventory", url: "/inventory", icon: Package, roles: ["admin", "manager"] },
-  { title: "CRM", url: "/crm", icon: Users, roles: ["admin", "manager"] },
-  { title: "Analytics", url: "/analytics", icon: BarChart3, roles: ["admin", "manager"] },
+  { title: "Inventory", url: "/inventory", icon: Package, roles: ["owner", "manager", "procurement"] },
+  { title: "Purchase Orders", url: "/purchase-orders", icon: ClipboardList, roles: ["owner", "manager", "procurement"] },
+  { title: "CRM", url: "/crm", icon: Users, roles: ["owner", "manager"] },
+  { title: "Analytics", url: "/analytics", icon: BarChart3, roles: ["owner", "manager"] },
 ];
 
-const systemItems: NavItem[] = [
-  { title: "Settings", url: "/settings", icon: Settings, roles: ["admin"] },
+const erpItems: NavItem[] = [
+  { title: "Employees", url: "/erp/employees", icon: UserCog, roles: ["owner", "manager"] },
+  { title: "Attendance", url: "/erp/attendance", icon: CalendarCheck, roles: ["owner", "manager"] },
+  { title: "Shifts", url: "/erp/shifts", icon: CalendarClock, roles: ["owner", "manager"] },
+  { title: "Payroll", url: "/erp/payroll", icon: Wallet, roles: ["owner", "manager"] },
 ];
+
+// const systemItems: NavItem[] = [
+//   { title: "Settings", url: "/settings", icon: Settings, roles: ["owner"] },
+//   { title: "Roles", url: "/settings/roles", icon: Shield, roles: ["owner"] },
+//   { title: "Employees", url: "/settings/employees", icon: UsersRound, roles: ["owner"] },
+// ];
 
 function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
   const { role } = useAuth();
@@ -112,21 +108,17 @@ export function AppSidebar() {
           )}
         </div>
       </SidebarHeader>
-
       <SidebarSeparator />
-
       <SidebarContent>
         <NavGroup label="Overview" items={dashboardItems} />
         <NavGroup label="Operations" items={operationItems} />
         <NavGroup label="Management" items={managementItems} />
-        <NavGroup label="System" items={systemItems} />
+        <NavGroup label="Workforce" items={erpItems} />
+        {/* <NavGroup label="System" items={systemItems} /> */}
       </SidebarContent>
-
       <SidebarFooter>
         {!collapsed && (
-          <p className="px-2 text-[10px] text-muted-foreground">
-            Coherence v0.1.0
-          </p>
+          <p className="px-2 text-[10px] text-muted-foreground">Coherence v0.1.0</p>
         )}
       </SidebarFooter>
     </Sidebar>

@@ -10,7 +10,7 @@ class PerishableSKUAdmin(admin.ModelAdmin):
 
 @admin.register(PerishableInventory)
 class PerishableInventoryAdmin(admin.ModelAdmin):
-    list_display = ('sku', 'quantity', 'sku__unit', 'purchase_date', 'expiration_date', 'is_expired')
+    list_display = ('sku', 'quantity', 'purchase_date', 'expiration_date', 'is_expired')
     search_fields = ('sku__name',)
 
 
