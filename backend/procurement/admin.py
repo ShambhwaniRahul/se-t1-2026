@@ -1,47 +1,75 @@
 from django.contrib import admin
-from .models import *
+from .models import (
+    Vendor,
+    PurchaseOrder,
+    OrderedPerishablePurchaseSKU,
+    OrderedNonPerishablePurchaseSKU,
+    VendorInvoice,
+    VendorPurchaseLog,
+    DeliveredPerishableInventory,
+    DeliveredNonPerishableInventory
+)
 
-
-# Register your models here.
+# ✅ Vendor
 @admin.register(Vendor)
 class VendorAdmin(admin.ModelAdmin):
-    list_display = ('name', 'contact_no', 'email')
-    search_fields = ('name',)
+    list_display = ('full_name', 'contact_no', 'email', 'gst_no')
+    search_fields = ('first_name', 'last_name', 'contact_no', 'email', 'gst_no')
 
 
-@admin.register(PerishablePurchase)
-class PerishablePurchaseAdmin(admin.ModelAdmin):
-    list_display = ('vendor', 'purchase_date', 'status', 'delivery_cost')
-    list_filter = ('status',)
-    search_fields = ('vendor__name',)
+# ✅ Purchase Order
+@admin.register(PurchaseOrder)
+class PurchaseOrderAdmin(admin.ModelAdmin):
+    list_display = ('vendor', 'purchase_type', 'purchase_date', 'status', 'delivery_cost')
+    list_filter = ('purchase_type', 'status', 'purchase_date', 'vendor')
+    search_fields = ('vendor__first_name', 'vendor__last_name', 'vendor__contact_no')
+    date_hierarchy = 'purchase_date'
 
 
-@admin.register(PerishablePurchaseSKU)
-class PerishablePurchaseSKUAdmin(admin.ModelAdmin):
+# ✅ Perishable Items
+@admin.register(OrderedPerishablePurchaseSKU)
+class OrderedPerishablePurchaseSKUAdmin(admin.ModelAdmin):
     list_display = ('purchase', 'sku', 'quantity', 'unit_price')
-    search_fields = ('purchase__vendor__name', 'sku__name')
+    search_fields = ('purchase__vendor__contact_no', 'sku__name')
+    list_filter = ('purchase__vendor','sku')
 
 
-@admin.register(NonPerishablePurchase)
-class NonPerishablePurchaseAdmin(admin.ModelAdmin):
-    list_display = ('vendor', 'purchase_date', 'status', 'delivery_cost')
-    list_filter = ('status',)
-    search_fields = ('vendor__name',)
-
-
-@admin.register(NonPerishablePurchaseItem)
-class NonPerishablePurchaseItemAdmin(admin.ModelAdmin):
+# ✅ Non-Perishable Items
+@admin.register(OrderedNonPerishablePurchaseSKU)
+class OrderedNonPerishablePurchaseSKUAdmin(admin.ModelAdmin):
     list_display = ('purchase', 'sku', 'quantity', 'unit_price')
-    search_fields = ('purchase__vendor__name', 'sku__name')
+    search_fields = ('purchase__vendor__first_name', 'purchase__vendor__contact_no', 'sku__name')
+    list_filter = ('purchase__purchase_type','sku')
 
 
-@admin.register(PerishableVendorInvoice)
-class PerishableVendorInvoiceAdmin(admin.ModelAdmin):
-    list_display = ('purchase', 'delivery_date')
-    search_fields = ('purchase__vendor__name',)
+# ✅ Vendor Invoice
+@admin.register(VendorInvoice)
+class VendorInvoiceAdmin(admin.ModelAdmin):
+    list_display = ('purchase', 'invoice_number', 'delivery_date')
+    search_fields = ('invoice_number', 'purchase__vendor__first_name', 'purchase__vendor__contact_no')
+    list_filter = ('delivery_date',)
 
 
-@admin.register(NonPerishableVendorInvoice)
-class NonPerishableVendorInvoiceAdmin(admin.ModelAdmin):
-    list_display = ('purchase', 'delivery_date')
-    search_fields = ('purchase__vendor__name',)
+# ✅ Delivered Perishable Inventory
+@admin.register(DeliveredPerishableInventory)
+class DeliveredPerishableInventoryAdmin(admin.ModelAdmin):
+    list_display = ('invoice', 'created_at')
+    search_fields = ('invoice__purchase__vendor__first_name', 'invoice__purchase__vendor__contact_no')
+    list_filter = ('created_at',)
+
+
+# ✅ Delivered Non-Perishable Inventory
+@admin.register(DeliveredNonPerishableInventory)
+class DeliveredNonPerishableInventoryAdmin(admin.ModelAdmin):
+    list_display = ('invoice', 'created_at')
+    search_fields = ('invoice__purchase__vendor__first_name', 'invoice__purchase__vendor__contact_no')
+    list_filter = ('created_at',)
+
+
+# ✅ Vendor Purchase Log
+@admin.register(VendorPurchaseLog)
+class VendorPurchaseLogAdmin(admin.ModelAdmin):
+    list_display = ('purchase', 'transaction_id', 'created_at')
+    search_fields = ('transaction_id', 'purchase__vendor__first_name', 'purchase__vendor__contact_no')
+    list_filter = ('created_at',)
+    sortable_by = ('created_at',)
