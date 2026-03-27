@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Vendor, PurchaseOrder, PerishablePurchaseSKU, NonPerishablePurchaseSKU
+from .models import Vendor, PurchaseOrder, OrderedPerishablePurchaseSKU, OrderedNonPerishablePurchaseSKU, VendorInvoice
 
 
 class VendorSerializer(serializers.ModelSerializer):
@@ -36,13 +36,35 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         ]
 
 
-class PerishablePurchaseSKUSerializer(serializers.ModelSerializer):
+class VendorInvoiceSerializer(serializers.ModelSerializer):
+    vendor_name = serializers.CharField(source='vendor.full_name', read_only=True)
+
+    class Meta:
+        model = VendorInvoice
+        fields = [
+            'id',
+            'vendor',          # write (ID)
+            'vendor_name',     # read (extra info)
+            'invoice_date',
+            'amount',
+            'file_location',
+            'created_at',
+            'updated_at'
+        ]
+        read_only_fields = [
+            'id',
+            'file_location',
+            'created_at',
+            'updated_at'
+        ]
+
+class OrderedPerishablePurchaseSKUSerializer(serializers.ModelSerializer):
     sku_name = serializers.CharField(source='sku.name', read_only=True)
     sku_unit = serializers.CharField(source='sku.unit', read_only=True)
     purchase_id = serializers.IntegerField(source='purchase.id', read_only=True)
 
     class Meta:
-        model = PerishablePurchaseSKU
+        model = OrderedPerishablePurchaseSKU
         fields = [
             'id',
             'purchase',      # write (ID)
@@ -65,13 +87,13 @@ class PerishablePurchaseSKUSerializer(serializers.ModelSerializer):
         ]
 
 
-class NonPerishablePurchaseSKUSerializer(serializers.ModelSerializer):
+class OrderedNonPerishablePurchaseSKUSerializer(serializers.ModelSerializer):
     sku_name = serializers.CharField(source='sku.name', read_only=True)
     purchase_id = serializers.IntegerField(source='purchase.id', read_only=True)
 
 
     class Meta:
-        model = NonPerishablePurchaseSKU
+        model = OrderedNonPerishablePurchaseSKU
         fields = [
             'id',
             'purchase',      # write (ID)

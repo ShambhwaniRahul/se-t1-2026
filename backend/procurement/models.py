@@ -77,7 +77,7 @@ class PurchaseOrder(TimeStampedModel):
         db_column='delivery_cost',
         default=0.0
     )
-
+           
     file_location = models.FileField(
         db_column='file_location',
         upload_to='static/procurement_files/',
@@ -108,7 +108,7 @@ class PurchaseOrder(TimeStampedModel):
         )
 
 
-class PerishablePurchaseSKU(TimeStampedModel):
+class OrderedPerishablePurchaseSKU(TimeStampedModel):
     """
     Association table between PurchaseOrder and PerishableSKU to capture quantity and unit price of each SKU in a purchase
     """
@@ -118,14 +118,14 @@ class PerishablePurchaseSKU(TimeStampedModel):
     unit_price = models.FloatField(db_column='unit_price')
 
     class Meta:
-        verbose_name = 'Perishable Purchase SKU'
-        verbose_name_plural = 'Perishable Purchase SKUs'
+        verbose_name = 'OrderedPerishable Purchase SKU'
+        verbose_name_plural = 'Ordered Perishable Purchase SKUs'
     
     def __str__(self):
-        return f"{self.purchase.vendor.name} - {self.sku.name} - {self.quantity} {self.sku.unit}"
+        return f"{self.purchase.vendor.full_name} - {self.sku.name} - {self.quantity} {self.sku.unit}"
     
 
-class NonPerishablePurchaseSKU(TimeStampedModel):
+class OrderedNonPerishablePurchaseSKU(TimeStampedModel):
     """
     Association table for non-perishable items in a purchase since we don't have a SKU table for non-perishables
     """
@@ -135,28 +135,57 @@ class NonPerishablePurchaseSKU(TimeStampedModel):
     unit_price = models.FloatField(db_column='unit_price')
 
     class Meta:
-        verbose_name = 'Non-Perishable Purchase Item'
-        verbose_name_plural = 'Non-Perishable Purchase Items'
+        verbose_name = 'Ordered Non-Perishable Purchase Item'
+        verbose_name_plural = 'OrderedNon-Perishable Purchase Items'
     
     def __str__(self):
-        return f"{self.purchase.vendor.name} - {self.sku.name} - {self.quantity}"
+        return f"{self.purchase.vendor.full_name} - {self.sku.name} - {self.quantity}"
     
 
 class VendorInvoice(TimeStampedModel):
-    """
-    Association table to capture invoice details for vendor purchases.
-    """
-    purchase = models.OneToOneField(PurchaseOrder, on_delete=models.CASCADE, db_column='purchase_id')
-    invoice_number = models.CharField(db_column='invoice_number', max_length=100, unique=True)
+    purchase = models.ForeignKey(PurchaseOrder,on_delete=models.CASCADE,db_column='purchase_id')
+
+    invoice_number = models.CharField(max_length=100,unique=True,db_column='invoice_number')
+
     delivery_date = models.DateField(db_column='delivery_date')
-    file_location = models.FileField(db_column='file_location', upload_to='static/procurement_invoices/', null=True, blank=True)
+
+    invoice_file = models.FileField(upload_to='procurement/invoices/',null=True,blank=True,db_column='invoice_file')
 
     class Meta:
         verbose_name = 'Vendor Invoice'
         verbose_name_plural = 'Vendor Invoices'
-    
+
     def __str__(self):
-        return f"Invoice for {self.purchase.vendor.name} - {self.purchase.purchase_date}"
+        return f"Invoice for {self.purchase.vendor.full_name} - {self.purchase.purchase_date}"
+    
+
+class DeliveredPerishableInventory(TimeStampedModel):
+    """
+    Table to track delivered perishable inventory items, linked to the original purchase details.
+    This allows us to maintain a record of what was delivered and when, separate from the general inventory tracking.
+    The delivered_json will come from the ocr.
+    """
+    invoice = models.ForeignKey(VendorInvoice, on_delete=models.CASCADE, db_column='invoice_id')
+    delivered_json = models.JSONField(db_column='delivered_json')
+
+
+    class Meta:
+        verbose_name = 'Delivered Perishable Inventory'
+        verbose_name_plural = 'Delivered Perishable Inventories'
+    
+
+
+class DeliveredNonPerishableInventory(TimeStampedModel):
+    """
+    Table to track delivered non-perishable inventory items, linked to the original purchase details.
+    This allows us to maintain a record of what was delivered and when, separate from the general inventory tracking.
+    """
+    invoice = models.ForeignKey(VendorInvoice, on_delete=models.CASCADE, db_column='invoice_id')
+    delivered_json = models.JSONField(db_column='delivered_json')
+
+    class Meta:
+        verbose_name = 'Delivered Non-Perishable Inventory'
+        verbose_name_plural = 'Delivered Non-Perishable Inventories'
 
 
 class VendorPurchaseLog(TimeStampedModel):
