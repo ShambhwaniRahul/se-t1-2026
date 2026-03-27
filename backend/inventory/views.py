@@ -43,9 +43,38 @@ class PerishableSKUListCreateAPIView(APIView):
         return super().get_permissions()
 
     def get(self, request):
-        skus = PerishableSKU.objects.all()
-        serializer = PerishableSKUSerializer(skus, many=True)
+        min_lifespan = request.query_params.get('lifespan')
+        max_lifespan = request.query_params.get('max_lifespan')
+    
+        queryset = PerishableSKU.objects.all()
+    
+        # Min filter (>=)
+        if min_lifespan:
+            if min_lifespan.isdigit():
+                queryset = queryset.filter(
+                    typical_shelf_life__gte=int(min_lifespan)
+                )
+            else:
+                return Response(
+                    {"error": "lifespan must be an integer"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+    
+        # Max filter (<=)
+        if max_lifespan:
+            if max_lifespan.isdigit():
+                queryset = queryset.filter(
+                    typical_shelf_life__lte=int(max_lifespan)
+                )
+            else:
+                return Response(
+                    {"error": "max_lifespan must be an integer"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+    
+        serializer = PerishableSKUSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
 
     def post(self, request):
         serializer = PerishableSKUSerializer(data=request.data)
@@ -194,4 +223,60 @@ class PerishableInventoryDetailAPIView(APIView):
             if perishable_inventory.is_expired:
               perishable_inventory.delete()
               return Response(status=status.HTTP_204_NO_CONTENT)
-            return Response({"details": "Cannot delete an expired perishable inventory item."},status=status.HTTP_403_FORBIDDEN)
+            return Response({"details": "Cannot delete an non-expired perishable inventory item."},status=status.HTTP_403_FORBIDDEN)
+
+
+class NonPerishableInventoryListCreateAPIView(APIView):
+    """
+    Handles listing and creating Non-Perishable Inventory items.
+    """
+    permission_classes = [RequiresRole]
+
+    required_roles = [
+        EmployeeRole.RoleChoices.OWNER,
+        EmployeeRole.RoleChoices.MANAGER,
+        EmployeeRole.RoleChoices.INVENTORY_MANAGER,
+    ]
+
+    def get(self, request):
+        inventory_items = NonPerishableInventory.objects.all()
+        serializer = NonPerishableInventorySerializer(inventory_items, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def post(self, request):
+        serializer = NonPerishableInventorySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class NonPerishableInventoryDetailAPIView(APIView):
+    """
+    Handles retrieve, update, and delete for a single Non-Perishable Inventory item.
+    """
+    permission_classes = [RequiresRole]
+
+    required_roles = [
+        EmployeeRole.RoleChoices.OWNER,
+        EmployeeRole.RoleChoices.MANAGER,
+        EmployeeRole.RoleChoices.INVENTORY_MANAGER,
+    ]
+
+    def get(self, request, pk):
+        inventory_item = get_object_or_404(NonPerishableInventory, pk=pk)
+        serializer = NonPerishableInventorySerializer(inventory_item)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, pk):
+        inventory_item = get_object_or_404(NonPerishableInventory, pk=pk)
+        serializer = NonPerishableInventorySerializer(inventory_item, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, pk):
+        inventory_item = get_object_or_404(NonPerishableInventory, pk=pk)
+        inventory_item.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
