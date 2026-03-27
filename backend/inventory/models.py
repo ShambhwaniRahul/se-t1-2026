@@ -2,6 +2,7 @@ from django.db import models
 from datetime import date, timedelta
 from core.models import TimeStampedModel
 
+
 # Create your models here.
 class PerishableSKU(TimeStampedModel):
     """

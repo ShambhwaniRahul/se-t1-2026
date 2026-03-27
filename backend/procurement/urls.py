@@ -1,13 +1,19 @@
 from django.urls import path
-from .views import VendorListCreateView, PurchaseOrderListCreateView, PerishablePurchaseSKUListCreateView, NonPerishablePurchaseSKUListCreateView
+from .views import (
+    VendorListCreateAPIView, VendorDetailAPIView,
+    PurchaseOrderListCreateAPIView, PurchaseOrderDetailAPIView,
+    OrderedPerishablePurchaseSKUListCreateAPIView, OrderedPerishablePurchaseSKUDetailAPIView,
+    OrderedNonPerishablePurchaseSKUListCreateAPIView, OrderedNonPerishablePurchaseSKUDetailAPIView
+)
+
 
 urlpatterns =[
-    path('vendors/', VendorListCreateView.as_view(), name='vendor-list-create'),
-    path('vendors/<int:pk>/', VendorListCreateView.as_view(), name='vendor-detail'),
-    path('purchase-orders/', PurchaseOrderListCreateView.as_view(), name='purchase-order-list-create'),
-    path('purchase-orders/<int:pk>/', PurchaseOrderListCreateView.as_view(), name='purchase-order-detail'),
-    path('perishable-purchase-skus/', PerishablePurchaseSKUListCreateView.as_view(), name='perishable-purchase-sku-list-create'),
-    path('perishable-purchase-skus/<int:pk>/', PerishablePurchaseSKUListCreateView.as_view(), name='perishable-purchase-sku-detail'),
-    path('non-perishable-purchase-skus/', NonPerishablePurchaseSKUListCreateView.as_view(), name='non-perishable-purchase-sku-list-create'),
-    path('non-perishable-purchase-skus/<int:pk>/', NonPerishablePurchaseSKUListCreateView.as_view(), name='non-perishable-purchase-sku-detail'),
+    path('vendors/', VendorListCreateAPIView.as_view(), name='vendor-list-create'),
+    path('vendors/<int:pk>/', VendorDetailAPIView.as_view(), name='vendor-detail'),
+    path('purchase-orders/', PurchaseOrderListCreateAPIView.as_view(),name='purchaseorder-list-create'),
+    path('purchase-orders/<int:pk>/', PurchaseOrderDetailAPIView.as_view(), name='purchaseorder-detail'),
+    path('ordered-perishable-purchase-skus/', OrderedPerishablePurchaseSKUListCreateAPIView.as_view(), name='ordered-perishable-purchase-sku-list-create'),
+    path('ordered-perishable-purchase-skus/<int:pk>/', OrderedPerishablePurchaseSKUDetailAPIView.as_view(), name='ordered-perishable-purchase-sku-detail'),
+    path('ordered-nonperishable-purchase-skus/', OrderedNonPerishablePurchaseSKUListCreateAPIView.as_view(), name='ordered-nonperishable-purchase-sku-list-create'),
+    path('ordered-nonperishable-purchase-skus/<int:pk>/', OrderedNonPerishablePurchaseSKUDetailAPIView.as_view(), name='ordered-nonperishable-purchase-sku-detail'),
 ]
