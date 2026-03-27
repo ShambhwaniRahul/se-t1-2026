@@ -1,17 +1,17 @@
 import { PageLayout } from "@/components/shared/PageLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatsCard } from "@/components/shared/StatsCard";
-import { RevenueChart } from "@/features/dashboard/RevenueChart";
-import { CategoryChart } from "@/features/dashboard/CategoryChart";
-import { TopItemsList } from "@/features/dashboard/TopItemsList";
-import { ActivityFeed } from "@/features/dashboard/ActivityFeed";
+import { RevenueChart } from "@/features/dashboard/components/RevenueChart";
+import { CategoryChart } from "@/features/dashboard/components/CategoryChart";
+import { TopItemsList } from "@/features/dashboard/components/TopItemsList";
+import { ActivityFeed } from "@/features/dashboard/components/ActivityFeed";
 import {
   DASHBOARD_STATS,
   REVENUE_TREND,
   TOP_ITEMS,
   CATEGORY_BREAKDOWN,
   ACTIVITY_FEED,
-} from "@/features/dashboard/dashboardData";
+} from "@/features/dashboard/data/dashboardData";
 import { DollarSign, ShoppingCart, Receipt, UtensilsCrossed } from "lucide-react";
 
 export default function DashboardPage() {

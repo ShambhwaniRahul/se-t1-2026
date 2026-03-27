@@ -5,7 +5,7 @@ import { Separator } from "@/components/ui/separator";
 // import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 
 export function Header() {

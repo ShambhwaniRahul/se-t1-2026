@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { TopItem } from "./dashboardData";
+import type { TopItem } from "../data/dashboardData";
 
 interface TopItemsListProps {
   items: TopItem[];

@@ -4,22 +4,22 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
-import { AuthProvider } from "@/hooks/useAuth";
+import { AuthProvider } from "@/features/auth/hooks/useAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
 
 
 import LoginPage from "@/features/auth/pages/LoginPage";
 import EmployeeManagementPage from "@/features/employees/pages/EmployeesPage";
-import DashboardPage from "@/pages/Dashboard";
+import DashboardPage from "@/features/dashboard/pages/Dashboard";
 import UnauthorizedPage from "@/pages/Unauthorized";
 import NotFound from "@/pages/NotFound";
 import TablePage from "@/features/pos/pages/TablePage";
-import KitchenPage from "@/features/kitchen/KitchenPage";
-import InventoryPage from "@/features/inventory/InventoryPage";
-import CrmPage from "@/features/crm/CrmPage";
+import KitchenPage from "@/features/kitchen/pages/KitchenPage";
+import InventoryPage from "@/features/inventory/pages/InventoryPage";
+import CrmPage from "@/features/crm/pages/CrmPage";
 import AnalyticsPage from "@/features/analytics/AnalyticsPage";
-import { EmployeesPage, AttendancePage, ShiftsPage, PayrollPage } from "@/features/erp";
+import { EmployeesPage, AttendancePage, ShiftsPage, PayrollPage } from "@/features/erp/pages";
 import PosPage from "./features/pos/pages/PosPage";
 import PurchaseOrdersPage from "./features/purchase-orders/pages/PurchaseOrdersPage";
 import CreatePurchaseOrderPage from "./features/purchase-orders/pages/CreatePurchaseOrderPage";

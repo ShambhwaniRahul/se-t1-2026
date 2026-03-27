@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
-import type { KitchenOrder, KitchenOrderStatus } from "./kitchenData";
-import { generateMockOrders } from "./kitchenData";
+import type { KitchenOrder, KitchenOrderStatus } from "../data/kitchenData";
+import { generateMockOrders } from "../data/kitchenData";
 
 export function useKitchenOrders() {
   const [orders, setOrders] = useState<KitchenOrder[]>(generateMockOrders);

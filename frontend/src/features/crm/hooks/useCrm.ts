@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import { type Customer, type CustomerNote, MOCK_CUSTOMERS } from "./crmData";
+import { type Customer, type CustomerNote, MOCK_CUSTOMERS } from "../data/crmData";
 
 export function useCrm() {
   const [customers, setCustomers] = useState<Customer[]>(MOCK_CUSTOMERS);

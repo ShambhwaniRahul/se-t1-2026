@@ -15,9 +15,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CustomerDrawer } from "./CustomerDrawer";
-import { useCrm } from "./useCrm";
-import type { Customer } from "./crmData";
+import { CustomerDrawer } from "../components/CustomerDrawer";
+import { useCrm } from "../hooks/useCrm";
+import type { Customer } from "../data/crmData";
 
 const loyaltyTier = (points: number) => {
   if (points >= 2000) return { label: "Gold", variant: "warning" as const };

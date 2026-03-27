@@ -10,8 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Ingredient, IngredientCategory } from "./inventoryData";
-import { INGREDIENT_CATEGORIES, SUPPLIERS } from "./inventoryData";
+import type { Ingredient, IngredientCategory } from "../data/inventoryData";
+import { INGREDIENT_CATEGORIES, SUPPLIERS } from "../data/inventoryData";
 
 interface IngredientFormModalProps {
   open: boolean;

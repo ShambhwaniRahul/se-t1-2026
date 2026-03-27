@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Separator } from "@/components/ui/separator";
 import { Star, ShoppingBag, StickyNote, Trash2, Send, Phone, Mail, CalendarDays } from "lucide-react";
-import type { Customer } from "./crmData";
+import type { Customer } from "../data/crmData";
 
 interface CustomerDrawerProps {
   customer: Customer | null;

@@ -14,11 +14,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, History, Pencil, Trash2 } from "lucide-react";
-import { useInventory } from "./useInventory";
-import { IngredientFormModal } from "./IngredientFormModal";
-import { StockHistoryModal } from "./StockHistoryModal";
-import type { Ingredient, IngredientCategory } from "./inventoryData";
-import { INGREDIENT_CATEGORIES, getStockStatus } from "./inventoryData";
+import { useInventory } from "../hooks/useInventory";
+import { IngredientFormModal } from "../components/IngredientFormModal";
+import { StockHistoryModal } from "../components/StockHistoryModal";
+import type { Ingredient, IngredientCategory } from "../data/inventoryData";
+import { INGREDIENT_CATEGORIES, getStockStatus } from "../data/inventoryData";
 
 const STOCK_STATUS_MAP: Record<string, { label: string; variant: StatusBadgeVariant }> = {
   in_stock: { label: "In Stock", variant: "success" },

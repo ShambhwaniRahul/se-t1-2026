@@ -1,7 +1,7 @@
 import { Modal } from "@/components/shared/Modal";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import type { StockMovement } from "./inventoryData";
+import type { StockMovement } from "../data/inventoryData";
 import { format } from "date-fns";
 
 interface StockHistoryModalProps {

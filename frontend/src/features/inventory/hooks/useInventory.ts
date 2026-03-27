@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
-import type { Ingredient, StockMovement } from "./inventoryData";
-import { MOCK_INGREDIENTS, MOCK_MOVEMENTS } from "./inventoryData";
+import type { Ingredient, StockMovement } from "../data/inventoryData";
+import { MOCK_INGREDIENTS, MOCK_MOVEMENTS } from "../data/inventoryData";
 
 export function useInventory() {
   const [ingredients, setIngredients] = useState<Ingredient[]>(MOCK_INGREDIENTS);

@@ -72,7 +72,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Cell, Pie, PieChart } from "recharts";
-import type { CategoryBreakdown } from "./dashboardData";
+import type { CategoryBreakdown } from "../data/dashboardData";
 
 const chartConfig = {
   Mains: { label: "Mains", color: "hsl(var(--chart-1))" },

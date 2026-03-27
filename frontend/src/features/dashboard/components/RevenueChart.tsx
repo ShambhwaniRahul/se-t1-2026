@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import type { DailyRevenue } from "./dashboardData";
+import type { DailyRevenue } from "../data/dashboardData";
 
 const chartConfig = {
   revenue: { label: "Revenue", color: "hsl(var(--primary))" },

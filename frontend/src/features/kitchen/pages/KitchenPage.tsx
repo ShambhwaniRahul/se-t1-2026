@@ -1,8 +1,8 @@
-import { KITCHEN_COLUMNS } from "./kitchenData";
-import { useKitchenOrders } from "./useKitchenOrders";
-import { KitchenColumn } from "./KitchenColumn";
+import { KITCHEN_COLUMNS } from "../data/kitchenData";
+import { useKitchenOrders } from "../hooks/useKitchenOrders";
+import { KitchenColumn } from "../components/KitchenColumn";
 import { useCallback } from "react";
-import type { KitchenOrderStatus } from "./kitchenData";
+import type { KitchenOrderStatus } from "../data/kitchenData";
 
 export default function KitchenPage() {
   const { moveOrder, getOrdersByStatus } = useKitchenOrders();

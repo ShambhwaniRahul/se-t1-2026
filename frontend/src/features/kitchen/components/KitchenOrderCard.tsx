@@ -1,4 +1,4 @@
-import type { KitchenOrder, KitchenOrderStatus } from "./kitchenData";
+import type { KitchenOrder, KitchenOrderStatus } from "../data/kitchenData";
 import { ElapsedTimer } from "./ElapsedTimer";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
