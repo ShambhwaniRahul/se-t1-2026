@@ -29,15 +29,15 @@ class PerishableSKUListCreateAPIView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
             self.required_roles = [
-                EmployeeRole.RoleChoices.MANAGER,
                 EmployeeRole.RoleChoices.OWNER,
+                EmployeeRole.RoleChoices.MANAGER,
                 EmployeeRole.RoleChoices.INVENTORY_MANAGER,
                 EmployeeRole.RoleChoices.CHEF,
             ]
         else:  # POST
             self.required_roles = [
-                EmployeeRole.RoleChoices.MANAGER,
                 EmployeeRole.RoleChoices.OWNER,
+                EmployeeRole.RoleChoices.MANAGER,
                 EmployeeRole.RoleChoices.INVENTORY_MANAGER,
             ]
         return super().get_permissions()
