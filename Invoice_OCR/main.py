@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 import io
 import os
 from dotenv import load_dotenv
@@ -6,8 +6,7 @@ from schemas import InvoiceData
 from prompts import get_invoice_ocr_prompt
 import uvicorn
 
-# Correct PydanticAI imports for 2026
-from pydantic_ai import Agent, BinaryContent
+from pydantic_ai import Agent, BinaryContent, RunContext
 from pydantic_ai.models.google import GoogleModel
 from pydantic_ai.providers.google import GoogleProvider
 
@@ -15,29 +14,34 @@ load_dotenv()
 
 app = FastAPI()
 
-# Authentication Setup
 api_key = os.getenv('GEMINI_API_KEY')
 if not api_key:
     raise ValueError("GEMINI_API_KEY not found in .env file")
 
-# Initialize the Provider and Model correctly
 provider = GoogleProvider(api_key=api_key)
 model = GoogleModel('gemini-2.5-flash', provider=provider)
 
-# Define the Agent using 'output_type' and 'system_prompt'
+# Agent definition utilizes dependency injection for runtime variables
 agent = Agent(
     model,
     output_type=InvoiceData,
-    system_prompt=get_invoice_ocr_prompt()
+    deps_type=list[str]
 )
 
+@agent.system_prompt
+def generate_dynamic_system_prompt(ctx: RunContext[list[str]]) -> str:
+    # Injects the runtime dependencies into the prompt generation function
+    return get_invoice_ocr_prompt(ctx.deps)
+
 @app.post("/scan/", response_model=InvoiceData)
-async def scan_invoice(file: UploadFile = File(...)):
+async def scan_invoice(
+    expected_skus: list[str] = Form(..., description="List of authorized SKUs passed as multiple form fields"),
+    file: UploadFile = File(...)
+):
     """
-    Processes an invoice image using PydanticAI Agent with native multimodal support.
+    Processes an invoice image using PydanticAI Agent with dynamic SKU constraints.
     """
     try:
-        # Read raw bytes directly from the upload
         contents = await file.read()
         if not contents:
             raise ValueError("Empty file uploaded.")
@@ -45,22 +49,27 @@ async def scan_invoice(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail=f"File error: {str(e)}")
 
     try:
-        # Run the agent with a list of content parts (Text + Image)
+        # Execute agent payload with dependencies
         result = await agent.run(
             [
                 "Please extract the data from this invoice image.",
                 BinaryContent(data=contents, media_type=file.content_type)
-            ]
+            ],
+            deps=expected_skus
         )
 
-        # The validated object is available in result.output
-        return result.output
+        # Apply context-aware validation logic defined in the schema
+        validated_output = InvoiceData.model_validate(
+            result.output.model_dump(), 
+            context={'authorized_skus': expected_skus}
+        )
+
+        return validated_output
 
     except Exception as e:
-        print(f"Extraction failed: {e}")
         raise HTTPException(
             status_code=500,
-            detail="The AI failed to parse the invoice according to the required schema."
+            detail=f"Extraction or validation failed: {str(e)}"
         )
 
 if __name__ == "__main__":
