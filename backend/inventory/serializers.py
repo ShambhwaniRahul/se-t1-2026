@@ -20,6 +20,13 @@ class PerishableSKUSerializer(serializers.ModelSerializer):
             )
 
         return value
+    
+    def validate_typical_shelf_life(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Typical shelf life must be a positive integer.")
+        return value
+    
+    
     class Meta:
         model = PerishableSKU
         fields = [
@@ -72,6 +79,12 @@ class NonPerishableInventorySerializer(serializers.ModelSerializer):
             )
 
         return value
+
+    def validate_quantity(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Quantity cannot be negative.")
+        return value
+
 
     class Meta:
         model = NonPerishableInventory
