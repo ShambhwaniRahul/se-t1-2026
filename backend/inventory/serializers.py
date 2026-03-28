@@ -4,6 +4,29 @@ from .models import PerishableSKU, PerishableInventory, NonPerishableInventory
 
 
 class PerishableSKUSerializer(serializers.ModelSerializer):
+
+    def validate_name(self, value):
+        value = value.strip()
+
+        queryset = PerishableSKU.objects.filter(name__iexact=value)
+
+        # PATCH case handle
+        if self.instance:
+            queryset = queryset.exclude(id=self.instance.id)
+
+        if queryset.exists():
+            raise serializers.ValidationError(
+                "A Perishable SKU with this name already exists."
+            )
+
+        return value
+    
+    def validate_typical_shelf_life(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Typical shelf life must be a positive integer.")
+        return value
+    
+    
     class Meta:
         model = PerishableSKU
         fields = [
@@ -41,6 +64,28 @@ class PerishableInventorySerializer(serializers.ModelSerializer):
 
 
 class NonPerishableInventorySerializer(serializers.ModelSerializer):
+    def validate_name(self, value):
+        value = value.strip()
+
+        queryset = NonPerishableInventory.objects.filter(name__iexact=value)
+
+        # PATCH case handle
+        if self.instance:
+            queryset = queryset.exclude(id=self.instance.id)
+
+        if queryset.exists():
+            raise serializers.ValidationError(
+                "A Non-Perishable Inventory item with this name already exists."
+            )
+
+        return value
+
+    def validate_quantity(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Quantity cannot be negative.")
+        return value
+
+
     class Meta:
         model = NonPerishableInventory
         fields = [
