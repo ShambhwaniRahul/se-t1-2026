@@ -16,7 +16,7 @@ class Vendor(TimeStampedModel):
     email = models.EmailField(db_column='vendor_email', max_length=100, unique=True)
     gst_no = models.CharField(
             db_column='vendor_gst_no', 
-            max_length=50,
+            max_length=15,
             validators=[
                 RegexValidator(
                     regex=r'^GSTIN',
