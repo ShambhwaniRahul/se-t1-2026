@@ -1,5 +1,4 @@
 from django.db import models
-from django.core.validators import RegexValidator
 from inventory.models import PerishableSKU, NonPerishableInventory
 from core.models import TimeStampedModel
 import uuid
@@ -14,17 +13,7 @@ class Vendor(TimeStampedModel):
     address = models.TextField(db_column='vendor_address')
     contact_no = models.CharField(db_column='vendor_contact_no', max_length=10, unique=True)
     email = models.EmailField(db_column='vendor_email', max_length=100, unique=True)
-    gst_no = models.CharField(
-            db_column='vendor_gst_no', 
-            max_length=15,
-            validators=[
-                RegexValidator(
-                    regex=r'^GSTIN',
-                    message='GST number must start with "GSTIN"'
-                )
-            ],
-            unique=True
-        )
+    gst_no = models.CharField(db_column='vendor_gst_no',unique=True)
     
     @property
     def full_name(self):

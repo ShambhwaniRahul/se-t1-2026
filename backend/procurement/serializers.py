@@ -3,6 +3,18 @@ from .models import Vendor, PurchaseOrder, OrderedPerishablePurchaseSKU, Ordered
 
 
 class VendorSerializer(serializers.ModelSerializer):
+    def validate_gst_no(self, value):
+        if not value.startswith("GSTIN"):
+            raise serializers.ValidationError('GST number must start with "GSTIN"')
+    
+        if len(value) != 15:
+            raise serializers.ValidationError("GST number must be exactly 15 characters long.")
+        
+        if not value[5:].isdigit():
+            raise serializers.ValidationError("GST number must be alphanumeric.")
+        
+        return value
+        
     class Meta:
         model = Vendor
         fields = ['id', 'first_name', 'last_name','address','contact_no', 'email', 'gst_no']
@@ -12,6 +24,10 @@ class VendorSerializer(serializers.ModelSerializer):
 class PurchaseOrderSerializer(serializers.ModelSerializer):
     vendor_name = serializers.CharField(source='vendor.full_name', read_only=True)
     # total_cost = serializers.SerializerMethodField()
+    def validate_purchase_date(self, value):
+        if value > serializers.DateField().to_representation(serializers.datetime.date.today()):
+            raise serializers.ValidationError("Purchase date cannot be in the future.")
+        return value
 
     class Meta:
         model = PurchaseOrder

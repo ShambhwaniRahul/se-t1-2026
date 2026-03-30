@@ -94,7 +94,7 @@ class Employee(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
 
     @property
     def full_name(self) -> str:
-        return f"{self.first_name} {self.last_name}".strip()
+        return f"{self.first_name} {self.last_name}".strip() if self.last_name else f"{self.first_name}".strip()
 
     @property
     def role_names(self):
