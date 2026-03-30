@@ -61,23 +61,36 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
 
 class VendorInvoiceSerializer(serializers.ModelSerializer):
-    vendor_name = serializers.CharField(source='vendor.full_name', read_only=True)
+    # Readable fields (via purchase)
+    vendor_name = serializers.CharField(
+        source='purchase.vendor.full_name',
+        read_only=True
+    )
+    purchase_date = serializers.DateField(
+        source='purchase.purchase_date',
+        read_only=True
+    )
+
+    def validate_invoice_number(self, value):
+        if len(value.strip()) == 0:
+            raise serializers.ValidationError("Invoice number cannot be empty.")
+        return value
 
     class Meta:
         model = VendorInvoice
         fields = [
             'id',
-            'vendor',          # write (ID)
+            'purchase',        # write (ID)
+            'invoice_number',
+            'delivery_date',
+            'invoice_file',
             'vendor_name',     # read (extra info)
-            'invoice_date',
-            'amount',
-            'file_location',
+            'purchase_date',   # read (extra info)
             'created_at',
             'updated_at'
         ]
         read_only_fields = [
             'id',
-            'file_location',
             'created_at',
             'updated_at'
         ]
