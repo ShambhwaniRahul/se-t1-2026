@@ -7,6 +7,9 @@ from .models import (
     DeliveredPerishableInventory, DeliveredNonPerishableInventory
 )
 
+from datetime import date
+
+
 class VendorSerializer(serializers.ModelSerializer):
     def validate_gst_no(self, value):
         if not value.startswith("GSTIN"):
@@ -30,7 +33,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     vendor_name = serializers.CharField(source='vendor.full_name', read_only=True)
     # total_cost = serializers.SerializerMethodField()
     def validate_purchase_date(self, value):
-        if value > serializers.DateField().to_representation(serializers.datetime.date.today()):
+        if value > date.today():
             raise serializers.ValidationError("Purchase date cannot be in the future.")
         return value
 
@@ -58,23 +61,36 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
 
 class VendorInvoiceSerializer(serializers.ModelSerializer):
-    vendor_name = serializers.CharField(source='vendor.full_name', read_only=True)
+    # Readable fields (via purchase)
+    vendor_name = serializers.CharField(
+        source='purchase.vendor.full_name',
+        read_only=True
+    )
+    purchase_date = serializers.DateField(
+        source='purchase.purchase_date',
+        read_only=True
+    )
+
+    def validate_invoice_number(self, value):
+        if len(value.strip()) == 0:
+            raise serializers.ValidationError("Invoice number cannot be empty.")
+        return value
 
     class Meta:
         model = VendorInvoice
         fields = [
             'id',
-            'vendor',          # write (ID)
+            'purchase',        # write (ID)
+            'invoice_number',
+            'delivery_date',
+            'invoice_file',
             'vendor_name',     # read (extra info)
-            'invoice_date',
-            'amount',
-            'file_location',
+            'purchase_date',   # read (extra info)
             'created_at',
             'updated_at'
         ]
         read_only_fields = [
             'id',
-            'file_location',
             'created_at',
             'updated_at'
         ]
