@@ -10,6 +10,7 @@ from .serializers import (
     VendorSerializer, PurchaseOrderSerializer,
      OrderedPerishablePurchaseSKUSerializer, OrderedNonPerishablePurchaseSKUSerializer,
      DeliveredPerishableInventorySerializer, DeliveredNonPerishableInventorySerializer)
+from inventory.models import PerishableSKU, NonPerishableInventory
 from core.permissions import RequiresRole
 from humanresources.models import EmployeeRole
 from django.shortcuts import get_object_or_404
@@ -122,9 +123,30 @@ class PurchaseOrderListCreateAPIView(APIView):
 
         serializer = PurchaseOrderSerializer(data=request.data)
         if serializer.is_valid():
+            if not request.data.get("skus") or len(request.data.get("skus")) == 0:
+                return Response(
+                    {"error": "At least one SKU must be included in the purchase order."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             serializer.save(status=PurchaseOrder.StatusChoices.PENDING)
+            for sku in request.data.get("skus", []):
+                if serializer.validated_data['purchase_type'] == PurchaseOrder.TypeChoices.PERISHABLE:
+                    sku_obj = get_object_or_404(PerishableSKU, pk=sku['sku'])
+                    OrderedPerishablePurchaseSKU.objects.create(
+                        purchase=serializer.instance,
+                        sku=sku_obj,
+                        quantity=sku['quantity'],
+                        unit_price=sku['unit_price']
+                    )
+                else:
+                    sku_obj = get_object_or_404(NonPerishableInventory, pk=sku['sku'])
+                    OrderedNonPerishablePurchaseSKU.objects.create(
+                        purchase=serializer.instance,
+                        sku=sku_obj,
+                        quantity=sku['quantity'],
+                        unit_price=sku['unit_price']
+                    )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class PurchaseOrderDetailAPIView(APIView):

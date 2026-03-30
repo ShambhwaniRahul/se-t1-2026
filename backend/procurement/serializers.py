@@ -7,6 +7,9 @@ from .models import (
     DeliveredPerishableInventory, DeliveredNonPerishableInventory
 )
 
+from datetime import date
+
+
 class VendorSerializer(serializers.ModelSerializer):
     def validate_gst_no(self, value):
         if not value.startswith("GSTIN"):
@@ -30,7 +33,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     vendor_name = serializers.CharField(source='vendor.full_name', read_only=True)
     # total_cost = serializers.SerializerMethodField()
     def validate_purchase_date(self, value):
-        if value > serializers.DateField().to_representation(serializers.datetime.date.today()):
+        if value > date.today():
             raise serializers.ValidationError("Purchase date cannot be in the future.")
         return value
 
