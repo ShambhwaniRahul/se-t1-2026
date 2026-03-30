@@ -16,11 +16,11 @@ class MenuItem(TimeStampedModel):
     price = models.FloatField(db_column="price")
     # available_in_sizes = models.BooleanField(default=True)
     estimated_prep_time = models.IntegerField(db_column="estimated_prep_time")
-    discount = models.FloatField(default=0.0, validators=[MaxValueValidator(1.0), MinValueValidator(0.0)], db_column="discount")
+    # discount = models.FloatField(default=0.0, validators=[MaxValueValidator(1.0), MinValueValidator(0.0)], db_column="discount")
 
-    @property
-    def discounted_price(self):
-        return self.price*(1 - self.discount)
+    # @property
+    # def discounted_price(self):
+    #     return self.price*(1 - self.discount)
 
     class Meta:
         verbose_name = 'Menu Item'
@@ -28,7 +28,16 @@ class MenuItem(TimeStampedModel):
 
     def __str__(self):
         return f'{self.name} - {self.price}'
-    
+
+
+class Discounts(TimeStampedModel):
+    """
+    Table stores discount rate and a validity for a menu item
+    """
+    menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE, db_column="menu_item_id")
+    rate = models.FloatField(default=0.0, validators=[MaxValueValidator(1.0), MinValueValidator(0.0)], db_column="discount")
+    validity = models.IntegerField(null=False, blank=False, db_column="validity")
+
 
 class MenuItemIngredient(TimeStampedModel):
     """
