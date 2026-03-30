@@ -1,8 +1,25 @@
 from rest_framework import serializers
-from .models import Vendor, PurchaseOrder, OrderedPerishablePurchaseSKU, OrderedNonPerishablePurchaseSKU, VendorInvoice
-
+from .models import (
+    Vendor,
+    PurchaseOrder,
+    OrderedPerishablePurchaseSKU, OrderedNonPerishablePurchaseSKU,
+    VendorInvoice,
+    DeliveredPerishableInventory, DeliveredNonPerishableInventory
+)
 
 class VendorSerializer(serializers.ModelSerializer):
+    def validate_gst_no(self, value):
+        if not value.startswith("GSTIN"):
+            raise serializers.ValidationError('GST number must start with "GSTIN"')
+    
+        if len(value) != 15:
+            raise serializers.ValidationError("GST number must be exactly 15 characters long.")
+        
+        if not value[5:].isdigit():
+            raise serializers.ValidationError("GST number must be alphanumeric.")
+        
+        return value
+        
     class Meta:
         model = Vendor
         fields = ['id', 'first_name', 'last_name','address','contact_no', 'email', 'gst_no']
@@ -12,6 +29,10 @@ class VendorSerializer(serializers.ModelSerializer):
 class PurchaseOrderSerializer(serializers.ModelSerializer):
     vendor_name = serializers.CharField(source='vendor.full_name', read_only=True)
     # total_cost = serializers.SerializerMethodField()
+    def validate_purchase_date(self, value):
+        if value > serializers.DateField().to_representation(serializers.datetime.date.today()):
+            raise serializers.ValidationError("Purchase date cannot be in the future.")
+        return value
 
     class Meta:
         model = PurchaseOrder
@@ -112,3 +133,50 @@ class OrderedNonPerishablePurchaseSKUSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at'
         ]
+
+class DeliveredPerishableInventorySerializer(serializers.ModelSerializer):
+    invoice = serializers.PrimaryKeyRelatedField(
+        queryset=VendorInvoice.objects.all()
+    )
+
+    class Meta:
+        model = DeliveredPerishableInventory
+        fields = [
+            'id',
+            'invoice',
+            'delivered_json',
+            'created_at',
+            'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def validate_delivered_json(self, value):
+        if not isinstance(value, (dict, list)):
+            raise serializers.ValidationError(
+                "Delivered data must be a valid JSON object or list."
+            )
+        return value
+
+
+class DeliveredNonPerishableInventorySerializer(serializers.ModelSerializer):
+    invoice = serializers.PrimaryKeyRelatedField(
+        queryset=VendorInvoice.objects.all()
+    )
+
+    class Meta:
+        model = DeliveredNonPerishableInventory
+        fields = [
+            'id',
+            'invoice',
+            'delivered_json',
+            'created_at',
+            'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def validate_delivered_json(self, value):
+        if not isinstance(value, (dict, list)):
+            raise serializers.ValidationError(
+                "Delivered data must be a valid JSON object or list."
+            )
+        return value
