@@ -125,7 +125,7 @@ class EmployeeDetailView(APIView):
         employee.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-class SalarySlipListCreateView(APIView):
+class SalarySlipListCreateAPIView(APIView):
     """Retrieves a list of all salary slips."""
     permission_classes = [RequiresRole]
     required_roles = [
@@ -163,7 +163,7 @@ class SalarySlipListCreateView(APIView):
             return Response(SalarySlipSerializer(salary_slip).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-class SalarySlipDetailView(APIView):
+class SalarySlipDetailAPIView(APIView):
     """Retrieves details of a specific salary slip by ID."""
     permission_classes = [RequiresRole]
     required_roles = [
@@ -200,12 +200,60 @@ class SalarySlipDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
     
 
-class SalarySlipBreakdownListView(APIView):
+class SalarySlipBreakdownListAPIView(APIView):
     """Retrieves a list of all salary slip breakdowns."""
     permission_classes = [RequiresRole]
     required_roles = [
         EmployeeRole.RoleChoices.OWNER,
         EmployeeRole.RoleChoices.MANAGER
     ]
+    
+    def get(self, request):
+        queryset = SalarySlipBreakdown.objects.all().order_by('-created_at')
+        serializer = SalarySlipBreakdownSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
+    def post(self, request):
+        serializer = SalarySlipBreakdownSerializer(data=request.data)
+        if serializer.is_valid():
+            breakdown = serializer.save()
+            return Response(SalarySlipBreakdownSerializer(breakdown).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class SalarySlipBreakdownDetailAPIView(APIView):
+    """Retrieves details of a specific salary slip breakdown by ID."""
+    permission_classes = [RequiresRole]
+    required_roles = [
+        EmployeeRole.RoleChoices.OWNER,
+        EmployeeRole.RoleChoices.MANAGER
+    ]
+
+    def get(self, request, pk):
+        try:
+            breakdown = SalarySlipBreakdown.objects.get(pk=pk)
+        except SalarySlipBreakdown.DoesNotExist:
+            return Response({"detail": "Salary slip breakdown not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = SalarySlipBreakdownSerializer(breakdown)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, pk):
+        try:
+            breakdown = SalarySlipBreakdown.objects.get(pk=pk)
+        except SalarySlipBreakdown.DoesNotExist:
+            return Response({"detail": "Salary slip breakdown not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = SalarySlipBreakdownSerializer(breakdown, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, pk):
+        breakdown = SalarySlipBreakdown.objects.get(pk=pk)
+        if not breakdown:
+            return Response({"detail": "Salary slip breakdown not found."}, status=status.HTTP_404_NOT_FOUND)
+        breakdown.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
     
