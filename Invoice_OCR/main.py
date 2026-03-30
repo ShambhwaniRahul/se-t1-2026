@@ -20,7 +20,7 @@ if not api_key:
     raise ValueError("GEMINI_API_KEY not found in .env file")
 
 provider = GoogleProvider(api_key=api_key)
-model = GoogleModel('gemini-2.5-flash-lite', provider=provider)
+model = GoogleModel('gemini-2.5-flash', provider=provider)
 
 # Agent definition utilizes dependency injection for dictionary runtime variables
 agent = Agent(
