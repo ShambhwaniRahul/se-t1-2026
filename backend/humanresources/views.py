@@ -3,8 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-from .models import Employee, EmployeeRole, SalarySlip, SalarySlipBreakdown
-from .serializers import EmployeeSerializer, SalarySlipSerializer, SalarySlipBreakdownSerializer
+from .models import Employee, EmployeeRole, SalarySlip, SalarySlipBreakdown, Shift
+from .serializers import EmployeeSerializer, SalarySlipSerializer, SalarySlipBreakdownSerializer, ShiftSerializer
 from core.permissions import RequiresRole
 
 
@@ -257,3 +257,60 @@ class SalarySlipBreakdownDetailAPIView(APIView):
         breakdown.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     
+
+class ShiftListCreateAPIView(APIView):
+    """Retrieves a list of all shifts."""
+    permission_classes = [RequiresRole]
+    required_roles = [
+        EmployeeRole.RoleChoices.OWNER,
+        EmployeeRole.RoleChoices.MANAGER
+    ]
+    
+    def get(self, request):
+        queryset = Shift.objects.all().order_by('-created_at')
+        serializer = ShiftSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = ShiftSerializer(data=request.data)
+        if serializer.is_valid():
+            shift = serializer.save()
+            return Response(ShiftSerializer(shift).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class ShiftDetailAPIView(APIView):
+    """Retrieves details of a specific shift by ID."""
+    permission_classes = [RequiresRole]
+    required_roles = [
+        EmployeeRole.RoleChoices.OWNER,
+        EmployeeRole.RoleChoices.MANAGER
+    ]
+
+    def get(self, request, pk):
+        try:
+            shift = Shift.objects.get(pk=pk)
+        except Shift.DoesNotExist:
+            return Response({"detail": "Shift not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = ShiftSerializer(shift)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, pk):
+        try:
+            shift = Shift.objects.get(pk=pk)
+        except Shift.DoesNotExist:
+            return Response({"detail": "Shift not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = ShiftSerializer(shift, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, pk):
+        shift = Shift.objects.get(pk=pk)
+        if not shift:
+            return Response({"detail": "Shift not found."}, status=status.HTTP_404_NOT_FOUND)
+        shift.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
