@@ -19,14 +19,14 @@ class EmployeeRoleAdmin(admin.ModelAdmin):
 class SalarySlipAdmin(admin.ModelAdmin):
     list_display = ['employee', 'date_paid', 'total_amount', 'transaction_no']
     search_fields = ['employee__name', 'transaction_no']
-    list_filter = ['date_paid',]
+    list_filter = ['date_paid','total_amount',]
     # sortable_by = ['total_amount', 'date_paid']
 
 @admin.register(SalarySlipBreakdown)
 class SalarySlipBreakdownAdmin(admin.ModelAdmin):
     list_display = ['salary_slip','name', 'type_pay', 'amount']
     search_fields = ['salary_slip__employee__name', 'name','type_pay']
-    list_filter = ['type_pay',]
+    list_filter = ['type_pay', 'amount']
 
 @admin.register(Shifts)
 class ShiftsAdmin(admin.ModelAdmin):

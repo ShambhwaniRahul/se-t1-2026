@@ -3,7 +3,8 @@ from .views import (
     VendorListCreateAPIView, VendorDetailAPIView,
     PurchaseOrderListCreateAPIView, PurchaseOrderDetailAPIView,
     OrderedPerishablePurchaseSKUListCreateAPIView, OrderedPerishablePurchaseSKUDetailAPIView,
-    OrderedNonPerishablePurchaseSKUListCreateAPIView, OrderedNonPerishablePurchaseSKUDetailAPIView
+    OrderedNonPerishablePurchaseSKUListCreateAPIView, OrderedNonPerishablePurchaseSKUDetailAPIView,
+    DeliveredPerishablePurchaseInventoryListCreateAPIView, DeliveredPerishablePurchaseInventoryDetailAPIView, 
 )
 
 
@@ -16,4 +17,6 @@ urlpatterns =[
     path('ordered-perishable-purchase-skus/<int:pk>/', OrderedPerishablePurchaseSKUDetailAPIView.as_view(), name='ordered-perishable-purchase-sku-detail'),
     path('ordered-nonperishable-purchase-skus/', OrderedNonPerishablePurchaseSKUListCreateAPIView.as_view(), name='ordered-nonperishable-purchase-sku-list-create'),
     path('ordered-nonperishable-purchase-skus/<int:pk>/', OrderedNonPerishablePurchaseSKUDetailAPIView.as_view(), name='ordered-nonperishable-purchase-sku-detail'),
+    path('delivered-perishable-inventory/', DeliveredPerishablePurchaseInventoryListCreateAPIView.as_view(), name='delivered-perishable-inventory-list-create'),
+    path('delivered-perishable-inventory/<int:pk>/', DeliveredPerishablePurchaseInventoryDetailAPIView.as_view(), name='delivered-perishable-inventory-detail'),
 ]

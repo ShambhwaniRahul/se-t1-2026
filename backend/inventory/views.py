@@ -10,6 +10,7 @@ from .serializers import PerishableSKUSerializer, NonPerishableInventorySerializ
 from humanresources.models import Employee, EmployeeRole
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.db import transaction
 from django.db.models import F, ExpressionWrapper, DateField, DurationField
 from django.utils import timezone
 from datetime import timedelta
@@ -174,14 +175,14 @@ class PerishableInventoryListAPIView(APIView):
             queryset = queryset.filter(expiry_date__gte=today)
     
         serializer = PerishableInventorySerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)  
 
 
 
 ### APIs for the Perishable Inventory:
 class PerishableInventoryDetailAPIView(APIView):
     """
-    Handles retrieve, update, and delete for a single Perishable Inventory batch.
+    Handles retrieve and delete for a single Perishable Inventory batch.
     """
 
     permission_classes = [RequiresRole]
@@ -208,15 +209,7 @@ class PerishableInventoryDetailAPIView(APIView):
     def get(self, request, pk):
             perishable_inventory = get_object_or_404(PerishableInventory, pk=pk)
             serializer = PerishableInventorySerializer(perishable_inventory)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        
-    def patch(self, request, pk):
-            perishable_inventory = get_object_or_404(PerishableInventory, pk=pk)
-            serializer = PerishableInventorySerializer(perishable_inventory, data=request.data, partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.data, status=status.HTTP_200_OK) 
         
     def delete(self, request, pk):
             perishable_inventory = get_object_or_404(PerishableInventory, pk=pk)
@@ -243,13 +236,6 @@ class NonPerishableInventoryListCreateAPIView(APIView):
         serializer = NonPerishableInventorySerializer(inventory_items, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-    def post(self, request):
-        serializer = NonPerishableInventorySerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
 
 class NonPerishableInventoryDetailAPIView(APIView):
     """
@@ -267,14 +253,6 @@ class NonPerishableInventoryDetailAPIView(APIView):
         inventory_item = get_object_or_404(NonPerishableInventory, pk=pk)
         serializer = NonPerishableInventorySerializer(inventory_item)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def patch(self, request, pk):
-        inventory_item = get_object_or_404(NonPerishableInventory, pk=pk)
-        serializer = NonPerishableInventorySerializer(inventory_item, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, pk):
         inventory_item = get_object_or_404(NonPerishableInventory, pk=pk)
