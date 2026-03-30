@@ -1,6 +1,11 @@
 from rest_framework import serializers
-from .models import Vendor, PurchaseOrder, OrderedPerishablePurchaseSKU, OrderedNonPerishablePurchaseSKU, VendorInvoice
-
+from .models import (
+    Vendor,
+    PurchaseOrder,
+    OrderedPerishablePurchaseSKU, OrderedNonPerishablePurchaseSKU,
+    VendorInvoice,
+    DeliveredPerishableInventory, DeliveredNonPerishableInventory
+)
 
 class VendorSerializer(serializers.ModelSerializer):
     def validate_gst_no(self, value):
@@ -128,3 +133,50 @@ class OrderedNonPerishablePurchaseSKUSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at'
         ]
+
+class DeliveredPerishableInventorySerializer(serializers.ModelSerializer):
+    invoice = serializers.PrimaryKeyRelatedField(
+        queryset=VendorInvoice.objects.all()
+    )
+
+    class Meta:
+        model = DeliveredPerishableInventory
+        fields = [
+            'id',
+            'invoice',
+            'delivered_json',
+            'created_at',
+            'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def validate_delivered_json(self, value):
+        if not isinstance(value, (dict, list)):
+            raise serializers.ValidationError(
+                "Delivered data must be a valid JSON object or list."
+            )
+        return value
+
+
+class DeliveredNonPerishableInventorySerializer(serializers.ModelSerializer):
+    invoice = serializers.PrimaryKeyRelatedField(
+        queryset=VendorInvoice.objects.all()
+    )
+
+    class Meta:
+        model = DeliveredNonPerishableInventory
+        fields = [
+            'id',
+            'invoice',
+            'delivered_json',
+            'created_at',
+            'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def validate_delivered_json(self, value):
+        if not isinstance(value, (dict, list)):
+            raise serializers.ValidationError(
+                "Delivered data must be a valid JSON object or list."
+            )
+        return value

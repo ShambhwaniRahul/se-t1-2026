@@ -1,8 +1,15 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Vendor, PurchaseOrder, OrderedNonPerishablePurchaseSKU, OrderedPerishablePurchaseSKU 
-from .serializers import VendorSerializer, PurchaseOrderSerializer, OrderedPerishablePurchaseSKUSerializer, OrderedNonPerishablePurchaseSKUSerializer
+from .models import (
+    Vendor, PurchaseOrder,
+    OrderedNonPerishablePurchaseSKU, OrderedPerishablePurchaseSKU,
+    DeliveredPerishableInventory, DeliveredNonPerishableInventory,
+    )
+from .serializers import (
+    VendorSerializer, PurchaseOrderSerializer,
+     OrderedPerishablePurchaseSKUSerializer, OrderedNonPerishablePurchaseSKUSerializer,
+     DeliveredPerishableInventorySerializer, DeliveredNonPerishableInventorySerializer)
 from core.permissions import RequiresRole
 from humanresources.models import EmployeeRole
 from django.shortcuts import get_object_or_404
@@ -340,3 +347,146 @@ class OrderedNonPerishablePurchaseSKUDetailAPIView(APIView):
             )
         non_perishable_purchase_sku.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+
+class DeliveredPerishablePurchaseInventoryListCreateAPIView(APIView):
+    """APIView for listing and creating perishable purchase SKUs """
+    permission_classes = [RequiresRole]
+    required_roles = [
+        EmployeeRole.RoleChoices.OWNER,
+        EmployeeRole.RoleChoices.MANAGER,
+        EmployeeRole.RoleChoices.INVENTORY_MANAGER
+    ]
+
+    def get(self, request):
+        queryset = DeliveredPerishableInventory.objects.all().order_by('-created_at')
+        serializer = DeliveredPerishableInventorySerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        data_list = request.data
+    
+        # Ensure list input
+        if not isinstance(data_list, list):
+            return Response(
+                {"error": "Expected a list of items"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+        created_items = []
+        errors = []
+    
+        for index, item in enumerate(data_list):
+            serializer = DeliveredPerishableInventorySerializer(data=item)
+    
+            if serializer.is_valid():
+                try:
+                    obj = serializer.save()
+                    created_items.append(
+                        DeliveredPerishableInventorySerializer(obj).data
+                    )
+                except Exception as e:
+                    errors.append({
+                        "index": index,
+                        "item": item,
+                        "errors": str(e)
+                    })
+            else:
+                errors.append({
+                    "index": index,
+                    "item": item,
+                    "errors": serializer.errors
+                })
+    
+        return Response({
+            "created": created_items,
+            "errors": errors
+        }, status=status.HTTP_201_CREATED)
+
+    
+class DeliveredPerishablePurchaseInventoryDetailAPIView(APIView):
+    """APIView for retrieving, updating, and deleting a single perishable purchase SKU"""
+    permission_classes = [RequiresRole]
+    required_roles = [
+        EmployeeRole.RoleChoices.OWNER,
+        EmployeeRole.RoleChoices.MANAGER,
+        EmployeeRole.RoleChoices.INVENTORY_MANAGER
+    ]
+
+    def get(self, request, pk):
+        perishable_purchase_sku = get_object_or_404(DeliveredPerishableInventory, pk=pk)
+        serializer = DeliveredPerishableInventorySerializer(perishable_purchase_sku)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def patch(self, request, pk):
+        perishable_purchase_sku = get_object_or_404(DeliveredPerishableInventory, pk=pk)
+        serializer = DeliveredPerishableInventorySerializer(
+            perishable_purchase_sku,
+            data=request.data,
+            partial=True
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, pk):
+        perishable_purchase_sku = get_object_or_404(DeliveredPerishableInventory, pk=pk)
+        perishable_purchase_sku.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+
+class DeliveredNonPerishableInventoryListCreateAPIView(APIView):
+    """APIView for listing and creating non-perishable purchase SKUs """
+    permission_classes = [RequiresRole]
+    required_roles = [
+        EmployeeRole.RoleChoices.OWNER,
+        EmployeeRole.RoleChoices.MANAGER,
+        EmployeeRole.RoleChoices.INVENTORY_MANAGER
+    ]
+
+    def get(self, request):
+        queryset = DeliveredNonPerishableInventory.objects.all().order_by('-created_at')
+        serializer = DeliveredNonPerishableInventorySerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        data_list = request.data
+    
+        # Ensure list input
+        if not isinstance(data_list, list):
+            return Response(
+                {"error": "Expected a list of items"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+        created_items = []
+        errors = []
+    
+        for index, item in enumerate(data_list):
+            serializer = DeliveredNonPerishableInventorySerializer(data=item)
+    
+            if serializer.is_valid():
+                try:
+                    obj = serializer.save()
+                    created_items.append(
+                        DeliveredNonPerishableInventorySerializer(obj).data
+                    )
+                except Exception as e:
+                    errors.append({
+                        "index": index,
+                        "item": item,
+                        "errors": str(e)
+                    })
+            else:
+                errors.append({
+                    "index": index,
+                    "item": item,
+                    "errors": serializer.errors
+                })
+    
+        return Response({
+            "created": created_items,
+            "errors": errors
+        }, status=status.HTTP_201_CREATED)

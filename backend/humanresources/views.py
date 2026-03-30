@@ -3,8 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-from .models import Employee, EmployeeRole
-from .serializers import EmployeeSerializer
+from .models import Employee, EmployeeRole, SalarySlip, SalarySlipBreakdown
+from .serializers import EmployeeSerializer, SalarySlipSerializer, SalarySlipBreakdownSerializer
 from core.permissions import RequiresRole
 
 
@@ -113,3 +113,99 @@ class EmployeeDetailView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, pk):
+        employee = Employee.objects.get(pk=pk)
+        if not employee:
+            return Response({"detail": "Employee not found."}, status=status.HTTP_404_NOT_FOUND)
+        if employee.is_active:
+            return Response({"detail": "Cannot delete an active employee. Please deactivate the employee first."}, status=status.HTTP_400_BAD_REQUEST)
+        if employee.employeerole_set.filter(role=EmployeeRole.RoleChoices.OWNER).exists():
+            return Response({"detail": "Cannot delete the OWNER!"}, status=status.HTTP_400_BAD_REQUEST)        
+        employee.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class SalarySlipListCreateView(APIView):
+    """Retrieves a list of all salary slips."""
+    permission_classes = [RequiresRole]
+    required_roles = [
+        EmployeeRole.RoleChoices.OWNER,
+        EmployeeRole.RoleChoices.MANAGER
+    ]
+
+    def get(self, request):
+        queryset = SalarySlip.objects.all().order_by('-created_at')
+
+        # Date Filter
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+
+        # Amount Filters
+        min_amount = request.query_params.get('min_amount')
+        max_amount = request.query_params.get('max_amount')
+
+        if start_date:
+            queryset = queryset.filter(date_paid__gte=start_date)
+        if end_date:
+            queryset = queryset.filter(date_paid__lte=end_date)
+        if min_amount:
+            queryset = queryset.filter(total_amount__gte=min_amount)
+        if max_amount:
+            queryset = queryset.filter(total_amount__lte=max_amount)
+
+        serializer = SalarySlipSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def post(self, request):
+        serializer = SalarySlipSerializer(data=request.data)
+        if serializer.is_valid():
+            salary_slip = serializer.save()
+            return Response(SalarySlipSerializer(salary_slip).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class SalarySlipDetailView(APIView):
+    """Retrieves details of a specific salary slip by ID."""
+    permission_classes = [RequiresRole]
+    required_roles = [
+        EmployeeRole.RoleChoices.OWNER,
+        EmployeeRole.RoleChoices.MANAGER
+    ]
+
+    def get(self, request, pk):
+        try:
+            salary_slip = SalarySlip.objects.get(pk=pk)
+        except SalarySlip.DoesNotExist:
+            return Response({"detail": "Salary slip not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = SalarySlipSerializer(salary_slip)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, pk):
+        try:
+            salary_slip = SalarySlip.objects.get(pk=pk)
+        except SalarySlip.DoesNotExist:
+            return Response({"detail": "Salary slip not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = SalarySlipSerializer(salary_slip, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, pk):
+        salary_slip = SalarySlip.objects.get(pk=pk)
+        if not salary_slip:
+            return Response({"detail": "Salary slip not found."}, status=status.HTTP_404_NOT_FOUND)
+        salary_slip.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+
+class SalarySlipBreakdownListView(APIView):
+    """Retrieves a list of all salary slip breakdowns."""
+    permission_classes = [RequiresRole]
+    required_roles = [
+        EmployeeRole.RoleChoices.OWNER,
+        EmployeeRole.RoleChoices.MANAGER
+    ]
+
+    

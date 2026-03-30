@@ -106,15 +106,33 @@ class SalarySlipBreakdownSerializer(serializers.ModelSerializer):
         model = SalarySlipBreakdown
         fields = ['id', 'salary_slip', 'name', 'amount', 'type_pay', 'type_pay_display']
 
+    def validate(self, data):
+        salary_slip = data.get('salary_slip')
+        name = data.get('name')
+
+        # Handle update case (exclude self)
+        qs = SalarySlipBreakdown.objects.filter(
+            salary_slip=salary_slip,
+            name=name
+        )
+        if self.instance:
+            qs = qs.exclude(id=self.instance.id)
+
+        if qs.exists():
+            raise serializers.ValidationError(
+                "This salary component already exists for this salary slip."
+            )
+
+        return data
+
 
 class SalarySlipSerializer(serializers.ModelSerializer):
-    """
-    Serializes a SalarySlip along with its nested breakdown lines.
-    Breakdown items are read-only here; use SalarySlipBreakdownSerializer for writes.
-    """
     employee_name = serializers.CharField(source='employee.full_name', read_only=True)
+
     breakdowns = SalarySlipBreakdownSerializer(
-        source='salaryslipbreakdown_set', many=True, read_only=True
+        source='salaryslipbreakdown_set',
+        many=True,
+        read_only=True
     )
 
     class Meta:
@@ -131,6 +149,17 @@ class SalarySlipSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
         read_only_fields = ['date_paid', 'created_at', 'updated_at']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        total = 0
+        for b in instance.salaryslipbreakdown_set.all():
+            total += b.amount * b.type_pay
+
+        data['total_amount'] = total
+        return data
+
 
 
 class ShiftSerializer(serializers.ModelSerializer):
