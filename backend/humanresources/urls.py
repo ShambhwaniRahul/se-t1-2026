@@ -3,7 +3,8 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
     EmployeeLoginView, EmployeeRegisterView, EmployeeListView, EmployeeDetailView, 
     SalarySlipListCreateAPIView, SalarySlipDetailAPIView, SalarySlipBreakdownListAPIView,   SalarySlipBreakdownDetailAPIView,
-    ShiftListCreateAPIView, ShiftDetailAPIView
+    ShiftListCreateAPIView, ShiftDetailAPIView,
+    AttendanceLogListAPIView, AttendanceLogDetailAPIView
 )
 
 urlpatterns = [
@@ -18,4 +19,6 @@ urlpatterns = [
     path('auth/salary-breakdowns/<int:pk>/', SalarySlipBreakdownDetailAPIView.as_view(), name='salary-breakdown-detail'),
     path('auth/shifts/', ShiftListCreateAPIView.as_view(), name='shift-list-create'),
     path('auth/shifts/<int:pk>/', ShiftDetailAPIView.as_view(), name='shift-detail'),
+    path('auth/attendance-logs/', AttendanceLogListAPIView.as_view(), name='attendance-log-list'),
+    path('auth/attendance-logs/<int:pk>/', AttendanceLogDetailAPIView.as_view(), name='attendance-log-detail'),
 ]
