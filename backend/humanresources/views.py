@@ -3,10 +3,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-from .models import Employee, EmployeeRole, SalarySlip, SalarySlipBreakdown, Shift
-from .serializers import EmployeeSerializer, SalarySlipSerializer, SalarySlipBreakdownSerializer, ShiftSerializer
+from .models import Employee, EmployeeRole, SalarySlip, SalarySlipBreakdown, Shifts
+from logs.models import AttendanceLog
+from .serializers import EmployeeSerializer, SalarySlipSerializer, SalarySlipBreakdownSerializer, ShiftSerializer, AttendanceLogSerializer
 from core.permissions import RequiresRole
-
+from django.shortcuts import get_object_or_404
 
 class EmployeeLoginView(APIView):
     """
@@ -267,7 +268,7 @@ class ShiftListCreateAPIView(APIView):
     ]
     
     def get(self, request):
-        queryset = Shift.objects.all().order_by('-created_at')
+        queryset = Shifts.objects.all().order_by('-created_at')
         serializer = ShiftSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -289,8 +290,8 @@ class ShiftDetailAPIView(APIView):
 
     def get(self, request, pk):
         try:
-            shift = Shift.objects.get(pk=pk)
-        except Shift.DoesNotExist:
+            shift = Shifts.objects.get(pk=pk)
+        except Shifts.DoesNotExist:
             return Response({"detail": "Shift not found."}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = ShiftSerializer(shift)
@@ -298,8 +299,8 @@ class ShiftDetailAPIView(APIView):
 
     def patch(self, request, pk):
         try:
-            shift = Shift.objects.get(pk=pk)
-        except Shift.DoesNotExist:
+            shift = Shifts.objects.get(pk=pk)
+        except Shifts.DoesNotExist:
             return Response({"detail": "Shift not found."}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = ShiftSerializer(shift, data=request.data, partial=True)
@@ -309,8 +310,82 @@ class ShiftDetailAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, pk):
-        shift = Shift.objects.get(pk=pk)
+        shift = Shifts.objects.get(pk=pk)
         if not shift:
             return Response({"detail": "Shift not found."}, status=status.HTTP_404_NOT_FOUND)
         shift.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+
+class AttendanceLogListAPIView(APIView):
+    permission_classes = [RequiresRole]
+    required_roles = [
+        EmployeeRole.RoleChoices.OWNER,
+        EmployeeRole.RoleChoices.MANAGER
+    ]
+    
+    def get(self, request):
+        queryset = AttendanceLog.objects.all().order_by('-created_at')
+
+        # Optional filters 🔥
+        shift_id = request.GET.get('shift')
+        if shift_id:
+            queryset = queryset.filter(shift_id=shift_id)
+
+        serializer = AttendanceLogSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def post(self, request):
+        serializer = AttendanceLogSerializer(data=request.data)
+
+        if serializer.is_valid():
+            log = serializer.save()
+            return Response(
+                AttendanceLogSerializer(log).data,
+                status=status.HTTP_201_CREATED
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class AttendanceLogDetailAPIView(APIView):
+    permission_classes = [RequiresRole]
+    required_roles = [
+        EmployeeRole.RoleChoices.OWNER,
+        EmployeeRole.RoleChoices.MANAGER
+    ]
+
+    def get(self, request, pk):
+        try:
+            log = AttendanceLog.objects.get(pk=pk)
+        except AttendanceLog.DoesNotExist:
+            return Response({"detail": "Attendance log not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = AttendanceLogSerializer(log)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, pk):
+        try:
+            log = AttendanceLog.objects.get(pk=pk)
+        except AttendanceLog.DoesNotExist:
+            return Response({"detail": "Attendance log not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = AttendanceLogSerializer(
+            log,
+            data=request.data,
+            partial=True
+        )
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, pk):
+        try:
+            log = AttendanceLog.objects.get(pk=pk)
+        except AttendanceLog.DoesNotExist:
+            return Response({"detail": "Attendance log not found."}, status=status.HTTP_404_NOT_FOUND)
+        log.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
