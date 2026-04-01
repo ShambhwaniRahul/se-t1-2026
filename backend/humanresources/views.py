@@ -7,7 +7,8 @@ from .models import Employee, EmployeeRole, SalarySlip, SalarySlipBreakdown, Shi
 from logs.models import AttendanceLog
 from .serializers import EmployeeSerializer, SalarySlipSerializer, SalarySlipBreakdownSerializer, ShiftSerializer, AttendanceLogSerializer
 from core.permissions import RequiresRole
-from django.shortcuts import get_object_or_404
+from utils.response import standard_response
+
 
 class EmployeeLoginView(APIView):
     """
@@ -22,24 +23,32 @@ class EmployeeLoginView(APIView):
         password = request.data.get('password')
 
         if not phone_no or not password:
-            return Response(
-                {"detail": "phone_no and password fields are strictly required."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return standard_response(
+                success=False,
+                message="Phone number and password are required.",
+                status_code=status.HTTP_400_BAD_REQUEST
+                )
 
         user = authenticate(request, phone_no=phone_no, password=password)
 
         if user is not None:
             refresh = RefreshToken.for_user(user)
-            return Response({
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-                'employee': EmployeeSerializer(user).data,
-            }, status=status.HTTP_200_OK)
+            return standard_response(
+                success=True,
+                message="Authentication successful.",
+                data={
+                    'refresh': str(refresh),
+                    'access': str(refresh.access_token),
+                    'employee': EmployeeSerializer(user).data,
+                },
+                status_code=status.HTTP_200_OK
+            )
 
-        return Response(
-            {"detail": "Authentication failed. Invalid credentials."},
-            status=status.HTTP_401_UNAUTHORIZED
+
+        return standard_response(
+            success=False,
+            message="Authentication failed. Invalid credentials.",
+            status_code=status.HTTP_401_UNAUTHORIZED
         )
 
 
@@ -56,296 +65,17 @@ class EmployeeRegisterView(APIView):
 
     def post(self, request):
         serializer = EmployeeSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        employee = serializer.save()
-        return Response(
-            {
-                "detail": "Employee registered successfully.",
-                "employee": EmployeeSerializer(employee).data,
-            },
-            status=status.HTTP_201_CREATED
-        )
-
-
-class EmployeeListView(APIView):
-    """
-    Retrieves a list of all registered employees.
-    Accessible only to users with OWNER or MANAGER roles.
-    """
-    permission_classes = [RequiresRole]
-    required_roles = [
-        EmployeeRole.RoleChoices.OWNER,
-        EmployeeRole.RoleChoices.MANAGER
-    ]
-
-    def get(self, request):
-        employees = Employee.objects.all()
-        serializer = EmployeeSerializer(employees, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
-
-class EmployeeDetailView(APIView):
-    """Gets details of a specific employee by ID."""
-    permission_classes = [RequiresRole]
-    required_roles = [
-        EmployeeRole.RoleChoices.OWNER,
-        EmployeeRole.RoleChoices.MANAGER
-    ]
-
-    def get_object(self, pk):
-        return get_object_or_404(Employee, pk=pk)
-
-    def get(self, request, pk):
-        employee = self.get_object(pk)
-        serializer = EmployeeSerializer(employee)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def patch(self, request, pk):
-        employee = self.get_object(pk)
-        serializer = EmployeeSerializer(employee, data=request.data, partial=True)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    def delete(self, request, pk):
-        employee = self.get_object(pk)
-        if employee.is_active:
-            return Response({"detail": "Cannot delete an active employee. Please deactivate the employee first."}, status=status.HTTP_400_BAD_REQUEST)
-        if employee.employeerole_set.filter(role=EmployeeRole.RoleChoices.OWNER).exists():
-            return Response({"detail": "Cannot delete the OWNER!"}, status=status.HTTP_400_BAD_REQUEST)        
-        employee.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-class SalarySlipListCreateAPIView(APIView):
-    """Retrieves a list of all salary slips."""
-    permission_classes = [RequiresRole]
-    required_roles = [
-        EmployeeRole.RoleChoices.OWNER,
-        EmployeeRole.RoleChoices.MANAGER
-    ]
-
-    def get(self, request):
-        queryset = SalarySlip.objects.all().order_by('-created_at')
-
-        # Date Filter
-        start_date = request.query_params.get('start_date')
-        end_date = request.query_params.get('end_date')
-
-        # Amount Filters
-        min_amount = request.query_params.get('min_amount')
-        max_amount = request.query_params.get('max_amount')
-
-        if start_date:
-            queryset = queryset.filter(date_paid__gte=start_date)
-        if end_date:
-            queryset = queryset.filter(date_paid__lte=end_date)
-        if min_amount:
-            queryset = queryset.filter(total_amount__gte=min_amount)
-        if max_amount:
-            queryset = queryset.filter(total_amount__lte=max_amount)
-
-        serializer = SalarySlipSerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
-    def post(self, request):
-        serializer = SalarySlipSerializer(data=request.data)
-        if serializer.is_valid():
-            salary_slip = serializer.save()
-            return Response(SalarySlipSerializer(salary_slip).data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-class SalarySlipDetailAPIView(APIView):
-    """Retrieves details of a specific salary slip by ID."""
-    permission_classes = [RequiresRole]
-    required_roles = [
-        EmployeeRole.RoleChoices.OWNER,
-        EmployeeRole.RoleChoices.MANAGER
-    ]
-
-    def get_object(self, pk):
-        return get_object_or_404(SalarySlip, pk=pk)
-        
-    def get(self, request, pk):
-        salary_slip = self.get_object(pk)
-        serializer = SalarySlipSerializer(salary_slip)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def patch(self, request, pk):
-        salary_slip = self.get_object(pk)
-        serializer = SalarySlipSerializer(salary_slip, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    def delete(self, request, pk):
-        salary_slip = self.get_object(pk)
-        salary_slip.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-    
-
-class SalarySlipBreakdownListAPIView(APIView):
-    """Retrieves a list of all salary slip breakdowns."""
-    permission_classes = [RequiresRole]
-    required_roles = [
-        EmployeeRole.RoleChoices.OWNER,
-        EmployeeRole.RoleChoices.MANAGER
-    ]
-    
-    def get(self, request):
-        queryset = SalarySlipBreakdown.objects.all().order_by('-created_at')
-        serializer = SalarySlipBreakdownSerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def post(self, request):
-        serializer = SalarySlipBreakdownSerializer(data=request.data)
-        if serializer.is_valid():
-            breakdown = serializer.save()
-            return Response(SalarySlipBreakdownSerializer(breakdown).data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-
-class SalarySlipBreakdownDetailAPIView(APIView):
-    """Retrieves details of a specific salary slip breakdown by ID."""
-    permission_classes = [RequiresRole]
-    required_roles = [
-        EmployeeRole.RoleChoices.OWNER,
-        EmployeeRole.RoleChoices.MANAGER
-    ]
-
-    def get_object(self, pk):
-        return get_object_or_404(SalarySlipBreakdown, pk=pk)
-
-    def get(self, request, pk):
-        breakdown = self.get_object(pk)
-        serializer = SalarySlipBreakdownSerializer(breakdown)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def patch(self, request, pk):
-        breakdown = self.get_object(pk)
-        serializer = SalarySlipBreakdownSerializer(breakdown, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    def delete(self, request, pk):
-        breakdown = self.get_object(pk)
-        breakdown.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-    
-
-class ShiftListCreateAPIView(APIView):
-    """Retrieves a list of all shifts."""
-    permission_classes = [RequiresRole]
-    required_roles = [
-        EmployeeRole.RoleChoices.OWNER,
-        EmployeeRole.RoleChoices.MANAGER
-    ]
-    
-    def get(self, request):
-        queryset = Shifts.objects.all().order_by('-created_at')
-        serializer = ShiftSerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def post(self, request):
-        serializer = ShiftSerializer(data=request.data)
-        if serializer.is_valid():
-            shift = serializer.save()
-            return Response(ShiftSerializer(shift).data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-
-class ShiftDetailAPIView(APIView):
-    """Retrieves details of a specific shift by ID."""
-    permission_classes = [RequiresRole]
-    required_roles = [
-        EmployeeRole.RoleChoices.OWNER,
-        EmployeeRole.RoleChoices.MANAGER
-    ]
-
-    def get_object(self, pk):
-        return get_object_or_404(Shifts, pk=pk)
-
-    def get(self, request, pk):
-        shift = self.get_object(pk)
-        serializer = ShiftSerializer(shift)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def patch(self, request, pk):
-        shift = self.get_object(pk)
-        serializer = ShiftSerializer(shift, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    def delete(self, request, pk):
-        shift = self.get_object(pk)
-        shift.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-    
-
-class AttendanceLogListAPIView(APIView):
-    permission_classes = [RequiresRole]
-    required_roles = [
-        EmployeeRole.RoleChoices.OWNER,
-        EmployeeRole.RoleChoices.MANAGER
-    ]
-    
-    def get(self, request):
-        queryset = AttendanceLog.objects.all().order_by('-created_at')
-
-        # Optional filters 🔥
-        shift_id = request.GET.get('shift')
-        if shift_id:
-            queryset = queryset.filter(shift_id=shift_id)
-
-        serializer = AttendanceLogSerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
-    def post(self, request):
-        serializer = AttendanceLogSerializer(data=request.data)
-
-        if serializer.is_valid():
-            log = serializer.save()
-            return Response(
-                AttendanceLogSerializer(log).data,
-                status=status.HTTP_201_CREATED
+            employee = serializer.save()
+            return standard_response(
+                success=True,
+                message="Employee registered successfully!",
+                data=EmployeeSerializer(employee).data,
+                status_code=status.HTTP_201_CREATED
             )
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-
-class AttendanceLogDetailAPIView(APIView):
-    permission_classes = [RequiresRole]
-    required_roles = [
-        EmployeeRole.RoleChoices.OWNER,
-        EmployeeRole.RoleChoices.MANAGER
-    ]
-
-    def get_object(self, pk):
-        return get_object_or_404(AttendanceLog, pk=pk)
-
-    def get(self, request, pk):
-        log = self.get_object(pk)
-        serializer = AttendanceLogSerializer(log)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def patch(self, request, pk):
-        log = self.get_object(pk)
-        serializer = AttendanceLogSerializer(log,data=request.data,partial=True)
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    def delete(self, request, pk):
-        log = self.get_object(pk)  
-        log.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        
+        return standard_response(
+            success=False,
+            message="Failed to register employee.",
+            status_code=status.HTTP_400_BAD_REQUEST
+        )

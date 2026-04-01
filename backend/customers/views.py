@@ -7,6 +7,7 @@ from humanresources.models import EmployeeRole
 from core.permissions import RequiresRole
 from .models import Customer
 from .serializers import CustomerSerializer
+from utils.response import standard_response
 
 
 class CustomerListCreateAPIView(APIView):
@@ -23,7 +24,13 @@ class CustomerListCreateAPIView(APIView):
     def get(self, request):
         queryset = Customer.objects.all().order_by('-created_at')
         serializer = CustomerSerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return standard_response(
+            success=True,
+            message="Customers retrieved successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+        )
+    
     
 
 class CustomerDetailAPIView(APIView):
@@ -43,28 +50,67 @@ class CustomerDetailAPIView(APIView):
     def get(self, request, pk):
         customer = self.get_object(pk)
         serializer = CustomerSerializer(customer)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        if not serializer.data:
+            return standard_response(
+                success=False,
+                message="Customer not found.",
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+        return standard_response(
+            success=True,
+            message="Customer retrieved successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+        )
 
     def put(self, request, pk):
         customer = self.get_object(pk)
         serializer = CustomerSerializer(customer, data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return standard_response(
+                success=True,
+                message="Customer updated successfully.",
+                data=serializer.data,
+                status_code=status.HTTP_200_OK
+            )
+        return standard_response(
+            success=False,
+            message="Invalid data provided.",
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
 
     def patch(self, request, pk):
         customer = self.get_object(pk)
         serializer = CustomerSerializer(customer, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return standard_response(
+                success=True,
+                message="Customer details updated successfully.",
+                data=serializer.data,
+                status_code=status.HTTP_200_OK
+            )
+        return standard_response(
+            success=False,
+            message="Invalid data provided.",
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
 
     def delete(self, request, pk):
-        customer = self.get_object(pk)
+        customer = get_object_or_404(Customer, pk=pk)
+        if not customer:
+            return standard_response(
+                success=False,
+                message="Customer not found.",
+                status_code=status.HTTP_404_NOT_FOUND
+            )
         customer.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return standard_response(
+            success=True,
+            message="Customer deleted successfully.",
+            status_code=status.HTTP_204_NO_CONTENT
+        )
 
 
 class CustomerRegisterView(APIView):
@@ -82,15 +128,17 @@ class CustomerRegisterView(APIView):
         otp = request.data.get('OTP')
         
         if not otp:
-            return Response(
-                {"detail": "OTP field is strictly required."},
-                status=status.HTTP_400_BAD_REQUEST
+            return standard_response(
+                success=False,
+                message="OTP field is strictly required.",
+                status_code=status.HTTP_400_BAD_REQUEST
             )
             
         if otp != "123456":
-            return Response(
-                {"detail": "Invalid OTP provided."},
-                status=status.HTTP_400_BAD_REQUEST
+            return standard_response(
+                success=False,
+                message="Invalid OTP provided.",
+                status_code=status.HTTP_400_BAD_REQUEST
             )
 
         serializer = CustomerSerializer(data=request.data)
@@ -98,10 +146,19 @@ class CustomerRegisterView(APIView):
             customer = serializer.save()
             refresh = RefreshToken.for_user(customer)
             
-            return Response({
-                'access': str(refresh.access_token),
-                'refresh': str(refresh),
-                'customer': serializer.data,
-            }, status=status.HTTP_201_CREATED)
-            
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return standard_response(
+                success=True,
+                message="Customer registered successfully.",
+                data={
+                    'access': str(refresh.access_token),
+                    'refresh': str(refresh),
+                    'customer': serializer.data,
+                },
+                status_code=status.HTTP_201_CREATED
+            )
+          
+        return standard_response(
+            success=False,
+            message="Invalid data provided.",
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
