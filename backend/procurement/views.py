@@ -50,13 +50,16 @@ class VendorDetailAPIView(APIView):
         EmployeeRole.RoleChoices.MANAGER
     ]
 
+    def get_object(self, pk):
+        return get_object_or_404(Vendor, pk=pk)
+
     def get(self, request, pk):
-        vendor = get_object_or_404(Vendor, pk=pk)
+        vendor = self.get_object(pk)
         serializer = VendorSerializer(vendor)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, pk):
-        vendor = get_object_or_404(Vendor, pk=pk)
+        vendor = self.get_object(pk)
         serializer = VendorSerializer(vendor, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -64,7 +67,7 @@ class VendorDetailAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        vendor = get_object_or_404(Vendor, pk=pk)
+        vendor = self.get_object(pk)
         vendor.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     
@@ -166,13 +169,16 @@ class PurchaseOrderDetailAPIView(APIView):
         EmployeeRole.RoleChoices.INVENTORY_MANAGER
     ]
 
+    def get_object(self, pk):
+        return get_object_or_404(PurchaseOrder, pk=pk)
+
     def get(self, request, pk):
-        purchase_order = get_object_or_404(PurchaseOrder, pk=pk)
+        purchase_order = self.get_object(pk)
         serializer = PurchaseOrderSerializer(purchase_order)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, pk):
-        purchase_order = get_object_or_404(PurchaseOrder, pk=pk)
+        purchase_order = self.get_object(pk)
 
         if "status" in request.data:
             if (
@@ -202,7 +208,7 @@ class PurchaseOrderDetailAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        purchase_order = get_object_or_404(PurchaseOrder, pk=pk)
+        purchase_order = self.get_object(pk)
         purchase_order.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     
@@ -258,13 +264,16 @@ class OrderedPerishablePurchaseSKUDetailAPIView(APIView):
         EmployeeRole.RoleChoices.INVENTORY_MANAGER
     ]
 
+    def get_object(self, pk):
+        return get_object_or_404(OrderedPerishablePurchaseSKU, pk=pk)
+
     def get(self, request, pk):
-        perishable_purchase_sku = get_object_or_404(OrderedPerishablePurchaseSKU, pk=pk)
+        perishable_purchase_sku = self.get_object(pk)
         serializer = OrderedPerishablePurchaseSKUSerializer(perishable_purchase_sku)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, pk):
-        perishable_purchase_sku = get_object_or_404(OrderedPerishablePurchaseSKU, pk=pk)
+        perishable_purchase_sku = self.get_object(pk)
 
         # ✅ Prevent changing purchase reference
         if "purchase" in request.data:
@@ -287,10 +296,10 @@ class OrderedPerishablePurchaseSKUDetailAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        perishable_purchase_sku = get_object_or_404(OrderedPerishablePurchaseSKU, pk=pk)
+        perishable_purchase_sku = self.get_object(pk)
         if perishable_purchase_sku.purchase.status == PurchaseOrder.StatusChoices.RECEIVED:
             return Response(
-                {"error": "Cannot delete a purchase SKU that belongs to a received purchase order."},
+                {"error": "Cannot delete a purchase SKU that has already been received!"},
                 status=status.HTTP_403_FORBIDDEN
             )
         perishable_purchase_sku.delete()
@@ -342,13 +351,16 @@ class OrderedNonPerishablePurchaseSKUDetailAPIView(APIView):
         EmployeeRole.RoleChoices.INVENTORY_MANAGER
     ]
 
+    def get_object(self, pk):
+        return get_object_or_404(OrderedNonPerishablePurchaseSKU, pk=pk)
+
     def get(self, request, pk):
-        non_perishable_purchase_sku = get_object_or_404(OrderedNonPerishablePurchaseSKU, pk=pk)
+        non_perishable_purchase_sku = self.get_object(pk)
         serializer = OrderedNonPerishablePurchaseSKUSerializer(non_perishable_purchase_sku)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, pk):
-        non_perishable_purchase_sku = get_object_or_404(OrderedNonPerishablePurchaseSKU, pk=pk)
+        non_perishable_purchase_sku = self.get_object(pk)
 
         # Prevent changing purchase reference
         if "purchase" in request.data:
@@ -371,10 +383,10 @@ class OrderedNonPerishablePurchaseSKUDetailAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        non_perishable_purchase_sku = get_object_or_404(OrderedNonPerishablePurchaseSKU, pk=pk)
+        non_perishable_purchase_sku = self.get_object(pk)
         if non_perishable_purchase_sku.purchase.status == PurchaseOrder.StatusChoices.RECEIVED:
             return Response(
-                {"details": "Cannot delete a purchase SKU that belongs to a received purchase order."},
+                {"details": "Cannot delete a purchase SKU that has already been received!"},
                 status=status.HTTP_403_FORBIDDEN
             )
         non_perishable_purchase_sku.delete()
