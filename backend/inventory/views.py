@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.db.models import F, ExpressionWrapper, DateField, DurationField
 from django.utils import timezone
 from datetime import timedelta
+from utils.response import standard_response
 
 
 today = timezone.now().date()
@@ -52,9 +53,10 @@ class PerishableSKUListCreateAPIView(APIView):
                     typical_shelf_life__gte=int(min_lifespan)
                 )
             else:
-                return Response(
-                    {"error": "lifespan must be an integer"},
-                    status=status.HTTP_400_BAD_REQUEST
+                return standard_response(
+                    success=False,
+                    message="min_lifespan must be an integer",
+                    status_code=status.HTTP_400_BAD_REQUEST
                 )
     
         # Max filter (<=)
@@ -64,21 +66,36 @@ class PerishableSKUListCreateAPIView(APIView):
                     typical_shelf_life__lte=int(max_lifespan)
                 )
             else:
-                return Response(
-                    {"error": "max_lifespan must be an integer"},
-                    status=status.HTTP_400_BAD_REQUEST
+                return standard_response(
+                    success=False,
+                    message="max_lifespan must be an integer",
+                    status_code=status.HTTP_400_BAD_REQUEST
                 )
     
         serializer = PerishableSKUSerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return standard_response(
+            success=True,
+            message="Perishable SKUs with given query parameters retrieved successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+            )
 
 
     def post(self, request):
         serializer = PerishableSKUSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return standard_response(
+                success=True,
+                message="Perishable SKU Created Successfully!",
+                data=serializer.data,
+                status_code=status.HTTP_201_CREATED
+            )
+        return standard_response(
+            success=False,
+            message="Failed to create Perishable SKU.",
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
 
 
 class PerishableSKUDetailAPIView(APIView):
@@ -110,7 +127,18 @@ class PerishableSKUDetailAPIView(APIView):
     def get(self, request, pk):
         perishable_sku = self.get_object(pk)
         serializer = PerishableSKUSerializer(perishable_sku)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        if not perishable_sku:
+            return standard_response(
+                success=False,
+                message="Perishable SKU not found.",
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+        return standard_response(
+            success=True,
+            message="Perishable SKU retrieved successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+        )
 
     def patch(self, request, pk):
         perishable_sku = self.get_object(pk)
