@@ -94,21 +94,16 @@ class EmployeeDetailView(APIView):
         EmployeeRole.RoleChoices.MANAGER
     ]
 
-    def get(self, request, pk):
-        try:
-            employee = Employee.objects.get(pk=pk)
-        except Employee.DoesNotExist:
-            return Response({"detail": "Employee not found."}, status=status.HTTP_404_NOT_FOUND)
+    def get_object(self, pk):
+        return get_object_or_404(Employee, pk=pk)
 
+    def get(self, request, pk):
+        employee = self.get_object(pk)
         serializer = EmployeeSerializer(employee)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, pk):
-        try:
-            employee = Employee.objects.get(pk=pk)
-        except Employee.DoesNotExist:
-            return Response({"detail": "Employee not found."}, status=status.HTTP_404_NOT_FOUND)
-
+        employee = self.get_object(pk)
         serializer = EmployeeSerializer(employee, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -116,9 +111,7 @@ class EmployeeDetailView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, pk):
-        employee = Employee.objects.get(pk=pk)
-        if not employee:
-            return Response({"detail": "Employee not found."}, status=status.HTTP_404_NOT_FOUND)
+        employee = self.get_object(pk)
         if employee.is_active:
             return Response({"detail": "Cannot delete an active employee. Please deactivate the employee first."}, status=status.HTTP_400_BAD_REQUEST)
         if employee.employeerole_set.filter(role=EmployeeRole.RoleChoices.OWNER).exists():
@@ -172,21 +165,16 @@ class SalarySlipDetailAPIView(APIView):
         EmployeeRole.RoleChoices.MANAGER
     ]
 
+    def get_object(self, pk):
+        return get_object_or_404(SalarySlip, pk=pk)
+        
     def get(self, request, pk):
-        try:
-            salary_slip = SalarySlip.objects.get(pk=pk)
-        except SalarySlip.DoesNotExist:
-            return Response({"detail": "Salary slip not found."}, status=status.HTTP_404_NOT_FOUND)
-
+        salary_slip = self.get_object(pk)
         serializer = SalarySlipSerializer(salary_slip)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, pk):
-        try:
-            salary_slip = SalarySlip.objects.get(pk=pk)
-        except SalarySlip.DoesNotExist:
-            return Response({"detail": "Salary slip not found."}, status=status.HTTP_404_NOT_FOUND)
-
+        salary_slip = self.get_object(pk)
         serializer = SalarySlipSerializer(salary_slip, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -194,9 +182,7 @@ class SalarySlipDetailAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, pk):
-        salary_slip = SalarySlip.objects.get(pk=pk)
-        if not salary_slip:
-            return Response({"detail": "Salary slip not found."}, status=status.HTTP_404_NOT_FOUND)
+        salary_slip = self.get_object(pk)
         salary_slip.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     
@@ -230,21 +216,16 @@ class SalarySlipBreakdownDetailAPIView(APIView):
         EmployeeRole.RoleChoices.MANAGER
     ]
 
-    def get(self, request, pk):
-        try:
-            breakdown = SalarySlipBreakdown.objects.get(pk=pk)
-        except SalarySlipBreakdown.DoesNotExist:
-            return Response({"detail": "Salary slip breakdown not found."}, status=status.HTTP_404_NOT_FOUND)
+    def get_object(self, pk):
+        return get_object_or_404(SalarySlipBreakdown, pk=pk)
 
+    def get(self, request, pk):
+        breakdown = self.get_object(pk)
         serializer = SalarySlipBreakdownSerializer(breakdown)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, pk):
-        try:
-            breakdown = SalarySlipBreakdown.objects.get(pk=pk)
-        except SalarySlipBreakdown.DoesNotExist:
-            return Response({"detail": "Salary slip breakdown not found."}, status=status.HTTP_404_NOT_FOUND)
-
+        breakdown = self.get_object(pk)
         serializer = SalarySlipBreakdownSerializer(breakdown, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -252,9 +233,7 @@ class SalarySlipBreakdownDetailAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, pk):
-        breakdown = SalarySlipBreakdown.objects.get(pk=pk)
-        if not breakdown:
-            return Response({"detail": "Salary slip breakdown not found."}, status=status.HTTP_404_NOT_FOUND)
+        breakdown = self.get_object(pk)
         breakdown.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     
@@ -288,21 +267,16 @@ class ShiftDetailAPIView(APIView):
         EmployeeRole.RoleChoices.MANAGER
     ]
 
-    def get(self, request, pk):
-        try:
-            shift = Shifts.objects.get(pk=pk)
-        except Shifts.DoesNotExist:
-            return Response({"detail": "Shift not found."}, status=status.HTTP_404_NOT_FOUND)
+    def get_object(self, pk):
+        return get_object_or_404(Shifts, pk=pk)
 
+    def get(self, request, pk):
+        shift = self.get_object(pk)
         serializer = ShiftSerializer(shift)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, pk):
-        try:
-            shift = Shifts.objects.get(pk=pk)
-        except Shifts.DoesNotExist:
-            return Response({"detail": "Shift not found."}, status=status.HTTP_404_NOT_FOUND)
-
+        shift = self.get_object(pk)
         serializer = ShiftSerializer(shift, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -310,9 +284,7 @@ class ShiftDetailAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, pk):
-        shift = Shifts.objects.get(pk=pk)
-        if not shift:
-            return Response({"detail": "Shift not found."}, status=status.HTTP_404_NOT_FOUND)
+        shift = self.get_object(pk)
         shift.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     
@@ -355,26 +327,17 @@ class AttendanceLogDetailAPIView(APIView):
         EmployeeRole.RoleChoices.MANAGER
     ]
 
-    def get(self, request, pk):
-        try:
-            log = AttendanceLog.objects.get(pk=pk)
-        except AttendanceLog.DoesNotExist:
-            return Response({"detail": "Attendance log not found."}, status=status.HTTP_404_NOT_FOUND)
+    def get_object(self, pk):
+        return get_object_or_404(AttendanceLog, pk=pk)
 
+    def get(self, request, pk):
+        log = self.get_object(pk)
         serializer = AttendanceLogSerializer(log)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, pk):
-        try:
-            log = AttendanceLog.objects.get(pk=pk)
-        except AttendanceLog.DoesNotExist:
-            return Response({"detail": "Attendance log not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        serializer = AttendanceLogSerializer(
-            log,
-            data=request.data,
-            partial=True
-        )
+        log = self.get_object(pk)
+        serializer = AttendanceLogSerializer(log,data=request.data,partial=True)
 
         if serializer.is_valid():
             serializer.save()
@@ -383,9 +346,6 @@ class AttendanceLogDetailAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, pk):
-        try:
-            log = AttendanceLog.objects.get(pk=pk)
-        except AttendanceLog.DoesNotExist:
-            return Response({"detail": "Attendance log not found."}, status=status.HTTP_404_NOT_FOUND)
+        log = self.get_object(pk)  
         log.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
