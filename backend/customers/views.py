@@ -37,13 +37,16 @@ class CustomerDetailAPIView(APIView):
         EmployeeRole.RoleChoices.MANAGER
     ]
 
+    def get_object(self,pk):
+        return get_object_or_404(Customer, pk=pk)
+
     def get(self, request, pk):
-        customer = get_object_or_404(Customer, pk=pk)
+        customer = self.get_object(pk)
         serializer = CustomerSerializer(customer)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, pk):
-        customer = get_object_or_404(Customer, pk=pk)
+        customer = self.get_object(pk)
         serializer = CustomerSerializer(customer, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -51,7 +54,7 @@ class CustomerDetailAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def patch(self, request, pk):
-        customer = get_object_or_404(Customer, pk=pk)
+        customer = self.get_object(pk)
         serializer = CustomerSerializer(customer, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -59,7 +62,7 @@ class CustomerDetailAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        customer = get_object_or_404(Customer, pk=pk)
+        customer = self.get_object(pk)
         customer.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
