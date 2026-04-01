@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Employee, EmployeeRole, SalarySlip, SalarySlipBreakdown, Shifts
+from logs.models import AttendanceLog
 
 
 class EmployeeRoleSerializer(serializers.ModelSerializer):
@@ -180,3 +181,36 @@ class ShiftSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['created_at', 'updated_at']
 
+
+class AttendanceLogSerializer(serializers.ModelSerializer):
+    employee_name = serializers.CharField(source='shift.employee.full_name', read_only=True)
+
+    entry_delay = serializers.DurationField(read_only=True)
+    early_exit = serializers.DurationField(read_only=True)
+    completed_work_hours = serializers.DurationField(read_only=True)
+
+    def validate(self, data):
+         entry = data.get('entry_time')
+         exit = data.get('exit_time')
+     
+         if entry and exit and exit < entry:
+             raise serializers.ValidationError("Exit time cannot be before entry time.")
+     
+         return data
+
+
+    class Meta:
+        model = AttendanceLog
+        fields = [
+            'id',
+            'shift',
+            'employee_name',
+            'entry_time',
+            'exit_time',
+            'entry_delay',
+            'early_exit',
+            'completed_work_hours',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['created_at', 'updated_at']

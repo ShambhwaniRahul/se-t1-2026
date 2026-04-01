@@ -62,7 +62,6 @@ class AttendanceLog(TimeStampedModel):
         """Actual worked duration"""
         return self.exit_time - self.entry_time
 
-    """ We'll be adding more props"""
 
     class Meta:
         verbose_name = "Attendance Log"
