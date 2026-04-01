@@ -1,16 +1,12 @@
-from urllib import request
-
-from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from core.permissions import RequiresRole
 from .models import PerishableSKU, PerishableInventory, NonPerishableInventory 
 from .serializers import PerishableSKUSerializer, NonPerishableInventorySerializer, PerishableInventorySerializer
-from humanresources.models import Employee, EmployeeRole
+from humanresources.models import EmployeeRole
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.db import transaction
 from django.db.models import F, ExpressionWrapper, DateField, DurationField
 from django.utils import timezone
 from datetime import timedelta
@@ -105,15 +101,19 @@ class PerishableSKUDetailAPIView(APIView):
                 EmployeeRole.RoleChoices.OWNER,
                 EmployeeRole.RoleChoices.INVENTORY_MANAGER,
             ]
-        return super().get_permissions()
+        return super().get_permissions() 
+    
+    def get_object(self,pk):
+        return get_object_or_404(PerishableSKU, pk=pk)
+
 
     def get(self, request, pk):
-        perishable_sku = get_object_or_404(PerishableSKU, pk=pk)
+        perishable_sku = self.get_object(pk)
         serializer = PerishableSKUSerializer(perishable_sku)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, pk):
-        perishable_sku = get_object_or_404(PerishableSKU, pk=pk)
+        perishable_sku = self.get_object(pk)
         serializer = PerishableSKUSerializer(perishable_sku, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -121,7 +121,7 @@ class PerishableSKUDetailAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        perishable_sku = get_object_or_404(PerishableSKU, pk=pk)
+        perishable_sku = self.get_object(pk)
         perishable_sku.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -204,15 +204,19 @@ class PerishableInventoryDetailAPIView(APIView):
             ]
 
         return super().get_permissions()    
+    
+
+    def get_object(self,pk):
+        return get_object_or_404(PerishableInventory, pk=pk)
 
 
     def get(self, request, pk):
-            perishable_inventory = get_object_or_404(PerishableInventory, pk=pk)
+            perishable_inventory = self.get_object(pk)
             serializer = PerishableInventorySerializer(perishable_inventory)
             return Response(serializer.data, status=status.HTTP_200_OK) 
         
     def delete(self, request, pk):
-            perishable_inventory = get_object_or_404(PerishableInventory, pk=pk)
+            perishable_inventory = self.get_object(pk)
             if perishable_inventory.is_expired:
               perishable_inventory.delete()
               return Response(status=status.HTTP_204_NO_CONTENT)
@@ -249,12 +253,15 @@ class NonPerishableInventoryDetailAPIView(APIView):
         EmployeeRole.RoleChoices.INVENTORY_MANAGER,
     ]
 
+    def get_object(self,pk):
+        return get_object_or_404(NonPerishableInventory, pk=pk)
+
     def get(self, request, pk):
-        inventory_item = get_object_or_404(NonPerishableInventory, pk=pk)
+        inventory_item = self.get_object(pk)
         serializer = NonPerishableInventorySerializer(inventory_item)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def delete(self, request, pk):
-        inventory_item = get_object_or_404(NonPerishableInventory, pk=pk)
+        inventory_item = self.get_object(pk)
         inventory_item.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
