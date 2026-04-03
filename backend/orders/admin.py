@@ -4,7 +4,7 @@ from .models import *
 # Register your models here.
 @admin.register(MenuItem)
 class MenuItemAdmin(admin.ModelAdmin):
-    list_display = ('name', 'price', 'estimated_prep_time')
+    list_display = ('name', 'price', 'estimated_prep_time', 'is_veg', 'category')
     search_fields = ('name',)
     sortable_by = ('price', 'estimated_prep_time')
 

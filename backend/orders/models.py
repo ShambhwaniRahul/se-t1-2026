@@ -12,10 +12,18 @@ class MenuItem(TimeStampedModel):
     Table for Menu Items.
     Has the details of the menu item like name, price, estimated preparation time, discount, etc.. 
     """
+    class CategoryChoices(models.IntegerChoices):
+        STARTER = 0, "Starter"
+        MAIN_COURSE = 1, "Main Course"
+        DESSERT = 2, "Dessert"
+        BEVERAGE = 3, "Beverage"
+
     name = models.CharField(max_length=250, db_column="name")
     price = models.FloatField(db_column="price")
     # available_in_sizes = models.BooleanField(default=True)
     estimated_prep_time = models.IntegerField(db_column="estimated_prep_time")
+    is_veg = models.BooleanField(default=True, db_column="is_veg")
+    category = models.IntegerField(choices=CategoryChoices.choices, db_column="category", null=True)
     # discount = models.FloatField(default=0.0, validators=[MaxValueValidator(1.0), MinValueValidator(0.0)], db_column="discount")
 
         # 🔥 ADDED: discounted_price property using Discounts table
