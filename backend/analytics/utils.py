@@ -3,6 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.ticker as ticker
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+import warnings
 
 
 def generate_dynamic_restaurant_data(
@@ -163,3 +166,78 @@ def render_ewma_visualization(df):
     
     plt.tight_layout()
     plt.show()
+
+
+
+def generate_holt_winters_forecast(df, forecast_days=14, seasonal_periods=7):
+    """
+    Fits a Holt-Winters Triple Exponential Smoothing model to historical daily revenue
+    and generates a forward-looking forecast.
+    
+    Args:
+        df (pd.DataFrame): Daily dataset requiring a 'Date' index and 'Revenue' column.
+        forecast_days (int): Number of future days to predict.
+        seasonal_periods (int): The frequency of the recurring cycle.
+        
+    Returns:
+        pd.Series: Forecasted revenue values indexed by future dates.
+    """
+    validation_df = df.copy()
+    
+    if 'Date' in validation_df.columns:
+        validation_df['Date'] = pd.to_datetime(validation_df['Date'])
+        validation_df.set_index('Date', inplace=True)
+        
+    validation_df = validation_df.asfreq('D')
+    
+    hw_model = ExponentialSmoothing(
+        validation_df['Revenue'],
+        trend='add',
+        seasonal='add',
+        seasonal_periods=seasonal_periods,
+        initialization_method="estimated"
+    )
+    
+    fitted_hw = hw_model.fit(optimized=True)
+    forecast = fitted_hw.forecast(forecast_days)
+    
+    return forecast.round(2)
+
+
+def generate_sarima_forecast(df, forecast_days=14, seasonal_periods=7):
+    """
+    Fits a Seasonal Autoregressive Integrated Moving Average (SARIMA) model 
+    to historical daily revenue to generate a forward-looking forecast.
+    
+    Args:
+        df (pd.DataFrame): Daily dataset requiring a 'Date' index and 'Revenue' column.
+        forecast_days (int): Number of future days to predict.
+        seasonal_periods (int): The frequency of the recurring cycle.
+        
+    Returns:
+        pd.Series: Forecasted revenue values indexed by future dates.
+    """
+    validation_df = df.copy()
+    
+    if 'Date' in validation_df.columns:
+        validation_df['Date'] = pd.to_datetime(validation_df['Date'])
+        validation_df.set_index('Date', inplace=True)
+        
+    validation_df = validation_df.asfreq('D')
+    
+    warnings.filterwarnings("ignore")
+    
+    sarima_model = SARIMAX(
+        validation_df['Revenue'],
+        order=(1, 1, 1),
+        seasonal_order=(1, 1, 1, seasonal_periods),
+        enforce_stationarity=False,
+        enforce_invertibility=False
+    )
+    
+    fitted_sarima = sarima_model.fit(disp=False)
+    forecast = fitted_sarima.forecast(steps=forecast_days)
+    
+    warnings.filterwarnings("default")
+    
+    return forecast.round(2)
