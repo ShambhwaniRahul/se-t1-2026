@@ -16,6 +16,8 @@ class MenuItemSerializer(serializers.ModelSerializer):
             'price',
             'estimated_prep_time',
             'discount',
+            'is_veg',
+            'category',
             'created_at',
             'updated_at'
         ]
