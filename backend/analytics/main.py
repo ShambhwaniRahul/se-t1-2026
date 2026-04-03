@@ -11,13 +11,13 @@ def main():
     # Apply EWMA with 7-day span
     yearly_data = apply_dynamic_ewma(
         df, 
-        start_date="2024-01-01", 
-        end_date="2024-12-31", 
+        # start_date="2024-01-01", 
+        # end_date="2024-12-31", 
         span=7,
         alpha=0.3
     )
     print("Applied EWMA:")
-    print(yearly_data.head())
+    print(yearly_data.tail())
     print()
     
     # Render the visualization

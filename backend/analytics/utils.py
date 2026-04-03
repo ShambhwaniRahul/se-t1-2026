@@ -72,7 +72,6 @@ def apply_dynamic_ewma(df, start_date=None, end_date=None, span=1, alpha=0.3):
     """
     filtered_df = df.copy()
     
-    # Restrict dataset boundaries prior to aggregation
     if start_date:
         start_date_obj = pd.to_datetime(start_date).date()
         filtered_df = filtered_df[filtered_df['Date'] >= start_date_obj]
@@ -84,23 +83,27 @@ def apply_dynamic_ewma(df, start_date=None, end_date=None, span=1, alpha=0.3):
     if filtered_df.empty:
         return filtered_df
         
-    # Enforce DatetimeIndex for temporal resampling operations
     filtered_df['Date'] = pd.to_datetime(filtered_df['Date'])
     filtered_df.set_index('Date', inplace=True)
     
-    # Aggregate raw revenue into isolated 'span'-day buckets
     resample_rule = f'{span}D'
-    aggregated_df = filtered_df.resample(resample_rule).agg({
-        'Revenue': 'sum'
-    })
     
-    # Drop empty bins generated if the timeframe does not divide cleanly
+    # Apply named aggregation to calculate sum and day frequency simultaneously
+    aggregated_df = filtered_df.resample(resample_rule).agg(
+        Revenue=('Revenue', 'sum'),
+        Day_Count=('Revenue', 'count')
+    )
+    
+    # Enforce strict span parity to prevent partial period degradation
+    aggregated_df = aggregated_df[aggregated_df['Day_Count'] == span]
+    
+    # Purge the temporary frequency column to maintain expected schema
+    aggregated_df.drop(columns=['Day_Count'], inplace=True)
+
     aggregated_df.dropna(subset=['Revenue'], inplace=True)
     
-    # Compute EWMA on the aggregated volume
     aggregated_df['EWMA'] = aggregated_df['Revenue'].ewm(alpha=alpha, adjust=False).mean()
     
-    # Restore standard table structure and formatting for downstream ingestion
     aggregated_df = aggregated_df.round(2)
     aggregated_df.reset_index(inplace=True)
     aggregated_df['Date'] = aggregated_df['Date'].dt.date
