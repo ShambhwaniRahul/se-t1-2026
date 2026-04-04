@@ -5,7 +5,7 @@ from .views import (
     MenuItemListCreateAPIView, MenuItemDetailAPIView,
     MenuItemIngredientListCreateAPIView, MenuItemIngredientDetailAPIView,
     DiningTableListCreateAPIView, DiningTableDetailAPIView, ToggleDiningTableAvailabilityAPIView,
-    OrderListCreateAPIView, OrderDetailAPIView, AddItemsToOrderAPIView,CloseOrderAPIView
+    OrderListCreateAPIView, OrderDetailAPIView, AddItemsToOrderAPIView,
 )
 
 
@@ -23,5 +23,7 @@ urlpatterns = [
     path("orders/", OrderListCreateAPIView.as_view(), name='order-list-create'),
     path("orders/<int:pk>/", OrderDetailAPIView.as_view(), name='order-detail'),
     path("orders/<int:pk>/add-items/", AddItemsToOrderAPIView.as_view(), name='order-add-items'),
-    path("orders/close/<int:pk>/", CloseOrderAPIView.as_view(), name='order-close'),
+
+    # redundant
+    # path("orders/close/<int:pk>/", CloseOrderAPIView.as_view(), name='order-close'),
 ]
