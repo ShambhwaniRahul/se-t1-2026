@@ -108,15 +108,15 @@ class DiscountsSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
-    # 🔥 ADDED: validate discount rate (max 0.45)
+    # ADDED: validate discount rate (max 0.45)
     def validate_rate(self, value):
-        if value > 0.45:
-            raise serializers.ValidationError("Discount cannot exceed 45% (0.45).")
+        if value > 0.9:
+            raise serializers.ValidationError("Discount cannot exceed 90% (0.90).")
         if value < 0:
             raise serializers.ValidationError("Discount cannot be negative.")
         return value
 
-    # 🔥 ADDED: validate validity (>= 1 day)
+    # ADDED: validate validity (>= 1 day)
     def validate_validity(self, value):
         if value < 1:
             raise serializers.ValidationError("Validity must be at least 1 day.")
@@ -125,9 +125,13 @@ class DiscountsSerializer(serializers.ModelSerializer):
 
 class OrderMenuItemSerializer(serializers.ModelSerializer):
 
-    # 🔥 ADDED: readable fields
+    # 🔥 Readable fields
     menu_item_name = serializers.CharField(source='menu_item.name', read_only=True)
     chef_name = serializers.CharField(source='chef.full_name', read_only=True)
+    menu_item_status_display = serializers.CharField(
+        source='get_menu_item_status_display',
+        read_only=True
+    )
 
     class Meta:
         model = OrderMenuItem
@@ -135,19 +139,47 @@ class OrderMenuItemSerializer(serializers.ModelSerializer):
             'id',
             'order',
             'menu_item',
-            'menu_item_name',   # 🔥 ADDED
+            'menu_item_name',
             'chef',
-            'chef_name',        # 🔥 ADDED
-            'menu_item_status', # 🔥 IMPORTANT (tracking flow)
+            'chef_name',
+            'menu_item_status',
+            'menu_item_status_display',  #  ADDED
             'price_at_time',
             'special_instructions',
             'created_at',
             'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = fields  # PURE READ ONLY
 
-    # A validator for the price_at_time to ensure it's not negative:
-    def validate_price_at_time(self, value):
-        if value < 0:
-            raise serializers.ValidationError("Price at time cannot be negative.")
-        return value
+class OrderMenuItemCreateSerializer(serializers.Serializer):
+    menu_item = serializers.IntegerField()
+    special_instructions = serializers.CharField(required=False, allow_blank=True)
+
+
+class OrderSerializer(serializers.Serializer):
+    table = serializers.IntegerField()
+    dining_type = serializers.IntegerField()
+    items = OrderMenuItemCreateSerializer(many=True)
+
+    def validate(self, data):
+        item_ids = [item['menu_item'] for item in data['items']]
+
+        # 🔥 1. Duplicate check
+        if len(item_ids) != len(set(item_ids)):
+            raise serializers.ValidationError(
+                "Duplicate menu items are not allowed in a single order."
+            )
+
+        # 🔥 2. Check all menu items exist
+        existing_items = set(
+            MenuItem.objects.filter(id__in=item_ids).values_list('id', flat=True)
+        )
+
+        invalid_items = [i for i in item_ids if i not in existing_items]
+
+        if invalid_items:
+            raise serializers.ValidationError(
+                f"Invalid menu_item IDs: {invalid_items}"
+            )
+
+        return data

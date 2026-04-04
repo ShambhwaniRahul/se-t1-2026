@@ -4,7 +4,8 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     MenuItemListCreateAPIView, MenuItemDetailAPIView,
     MenuItemIngredientListCreateAPIView, MenuItemIngredientDetailAPIView,
-    DiningTableListCreateAPIView, DiningTableDetailAPIView, ToggleDiningTableAvailabilityAPIView
+    DiningTableListCreateAPIView, DiningTableDetailAPIView, ToggleDiningTableAvailabilityAPIView,
+    OrderListCreateAPIView, OrderDetailAPIView, AddItemsToOrderAPIView,CloseOrderAPIView
 )
 
 
@@ -19,4 +20,8 @@ urlpatterns = [
     path("diningtables/", DiningTableListCreateAPIView.as_view(), name='diningtable-list-create'),
     path("diningtables/<int:pk>/", DiningTableDetailAPIView.as_view(), name='diningtable-detail'),
     path("diningtables/toggle-table-availability/<int:pk>/", ToggleDiningTableAvailabilityAPIView.as_view(), name='diningtable-toggle-availability'),
+    path("orders/", OrderListCreateAPIView.as_view(), name='order-list-create'),
+    path("orders/<int:pk>/", OrderDetailAPIView.as_view(), name='order-detail'),
+    path("orders/<int:pk>/add-items/", AddItemsToOrderAPIView.as_view(), name='order-add-items'),
+    path("orders/close/<int:pk>/", CloseOrderAPIView.as_view(), name='order-close'),
 ]

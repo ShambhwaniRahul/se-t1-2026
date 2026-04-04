@@ -4,10 +4,19 @@ from rest_framework.response import Response
 from rest_framework import status
 from core.permissions import RequiresRole
 from .models import MenuItem, MenuItemIngredient, DiningTable, Order, OrderMenuItem, Discounts
-from .serializers import MenuItemSerializer, MenuItemIngredientSerializer, DiningTableSerializer,DiscountsSerializer
+from .serializers import (
+    MenuItemSerializer, MenuItemIngredientSerializer,
+    DiningTableSerializer,
+    DiscountsSerializer,
+    OrderSerializer,
+    OrderMenuItemSerializer,
+    OrderMenuItemCreateSerializer)
+from logs.models import MenuItemStatusLog
+
 from humanresources.models import EmployeeRole
 from django.shortcuts import get_object_or_404
 from utils.response import standard_response
+from utils.Pricing import get_current_price
 
 # Create your views here.
 class MenuItemListCreateAPIView(APIView):
@@ -38,6 +47,8 @@ class MenuItemListCreateAPIView(APIView):
         """
     
         max_prep_time = request.query_params.get('max_prep_time')
+        category = request.query_params.get('category')
+        is_veg = request.query_params.get('is_veg')
     
         queryset = MenuItem.objects.all().order_by('-created_at')
     
@@ -45,6 +56,12 @@ class MenuItemListCreateAPIView(APIView):
             queryset = queryset.filter(
                 estimated_prep_time__lte=int(max_prep_time)
             )
+
+        if category and category.strip().isnumeric():
+            queryset = queryset.filter(category=int(category))
+
+        if is_veg and is_veg.lower() in ['true', 'false']:
+            queryset = queryset.filter(is_veg=is_veg.lower() == 'true')
     
         if not queryset.exists():
             return standard_response(
@@ -546,7 +563,7 @@ class DiscountsListCreateAPIView(APIView):
         validity = request.data.get('validity')
         menu_items = request.data.get('menu_items', [])
     
-        # 🔥 Basic validation
+        #  Basic validation
         if rate is None or validity is None or not menu_items:
             return standard_response(
                 success=False,
@@ -554,7 +571,7 @@ class DiscountsListCreateAPIView(APIView):
                 status_code=status.HTTP_400_BAD_REQUEST
             )
     
-        # 🔥 Validate using serializer (for rate & validity rules)
+        #  Validate using serializer (for rate & validity rules)
         temp_serializer = DiscountsSerializer(data={
             "rate": rate,
             "validity": validity,
@@ -672,4 +689,496 @@ class DiscountsDetailAPIView(APIView):
             success=True,
             message="Discount deleted successfully.",
             status_code=status.HTTP_204_NO_CONTENT
-        )        
+        )
+    
+
+class OrderListCreateAPIView(APIView):
+    """To create and list orders."""
+    permission_classes = [RequiresRole]
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            required_roles = [
+                EmployeeRole.RoleChoices.OWNER,
+                EmployeeRole.RoleChoices.MANAGER,
+                EmployeeRole.RoleChoices.WAITER,
+                EmployeeRole.RoleChoices.CHEF
+            ]
+        else:
+            required_roles = [
+                        EmployeeRole.RoleChoices.OWNER,
+                        EmployeeRole.RoleChoices.MANAGER,
+                        EmployeeRole.RoleChoices.WAITER
+                    ]
+
+        return super().get_permissions()
+
+
+    def get(self, request):
+        """List all orders."""
+        order_status = request.query_params.get('status')
+        queryset = Order.objects.all().order_by('-created_at')
+        
+        if order_status and order_status.strip().isnumeric():
+            queryset = queryset.filter(status=int(order_status))
+        
+        serializer = OrderSerializer(queryset, many=True)
+        if not queryset.exists():
+            return standard_response(
+                success=False,
+                message="No orders found.",
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+        
+        return standard_response(
+            success=True,
+            message="Orders retrieved successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+        )    
+ 
+
+    def post(self, request):
+        """Create a new order, and, it must have menu items in it.
+        Input data format:
+        {
+            "table": 1,
+            "dining_type": 0,
+            "packaging_cost": 0
+            "items": [
+                {
+                    "menu_item": 1,
+                    "special_instructions": "Less spicy",
+                    "price_at_time": 250
+                },
+                {
+                    "menu_item": 2,
+                    "special_instructions": "",
+                    "price_at_time": 150
+                }
+            ]
+
+        Output data format:
+        In the Order Table:
+        {
+            "id": 1,
+            "table": 1,
+            "status": 0,
+            "dining_type": 0,
+            "packaging_cost": 0,
+            "order_total": "computed total"
+        }    
+
+        In the OrderMenuItem Table:
+        [
+            {
+                "id": 1,
+                "order": 1,
+                "menu_item": 1,
+                "chef": null,
+                "menu_item_status": 0,
+                "special_instructions": "Less spicy",
+                "price_at_time": "price of the menu item at the time of order"
+            },
+            {
+                "id": 2,
+                "order": 1,
+                "menu_item": 2,
+                "item_total": "computed total for this menu item",
+                "chef": null,
+                "menu_item_status": 0,
+                "special_instructions": "",
+                "price_at_time": "price of the menu item at the time of order"
+            }
+        ]
+        """
+
+        serializer = OrderSerializer(data=request.data)
+    
+        if not serializer.is_valid():
+            return standard_response(
+                success=False,
+                message="Invalid data.",
+                data=serializer.errors,
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+    
+        validated_data = serializer.validated_data
+        items_data = validated_data.pop('items')
+    
+        # Create Order
+        order = Order.objects.create(**validated_data)
+    
+        total = 0
+    
+        # Create OrderMenuItems
+        for item in items_data:
+            menu_item_obj = MenuItem.objects.get(id=item['menu_item'])
+    
+            # Compute price dynamically
+            price = get_current_price(menu_item_obj)
+    
+            order_item = OrderMenuItem.objects.create(
+                order=order,
+                menu_item=menu_item_obj,
+                special_instructions=item.get('special_instructions', ''),
+                price_at_time=price
+            )
+    
+            total += price
+    
+        # Add packaging cost
+        total += order.packaging_cost
+    
+        # Freeze total
+        order.final_total = total
+        order.save()
+    
+        # Response
+        response_serializer = OrderSerializer(order)
+    
+        return standard_response(
+            success=True,
+            message="Order created successfully.",
+            data=response_serializer.data,
+            status_code=status.HTTP_201_CREATED
+        )
+
+
+class OrderDetailAPIView(APIView):
+    """To retrieve, update or delete an order."""
+    permission_classes = [RequiresRole]
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            required_roles = [
+                EmployeeRole.RoleChoices.OWNER,
+                EmployeeRole.RoleChoices.MANAGER,
+                EmployeeRole.RoleChoices.WAITER,
+                EmployeeRole.RoleChoices.CHEF
+            ]
+        else:
+            required_roles = [
+                        EmployeeRole.RoleChoices.OWNER,
+                        EmployeeRole.RoleChoices.MANAGER,
+                        EmployeeRole.RoleChoices.WAITER
+                    ]
+
+        return super().get_permissions()
+
+
+    def get_object(self, pk):
+        return get_object_or_404(Order, pk=pk)
+    
+    def get(self, request, pk):
+        """Retrieve an order by ID."""
+        order = self.get_object(pk)
+        serializer = OrderSerializer(order)
+
+        if not serializer.data:
+            return standard_response(
+                success=False,
+                message="No such order exists.",
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+        
+        return standard_response(
+            success=True,
+            message="Order retrieved successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+        )
+    
+    def patch(self, request, pk):
+        """Update an order by ID."""
+        order = self.get_object(pk)
+        serializer = OrderSerializer(order, data=request.data, partial=True)
+        
+        if request.data.get('status') and int(request.data.get('status')) is not 1:
+            return standard_response(
+                success=False,
+                message="Invalid status value.",
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if serializer.is_valid():
+            serializer.save()
+            return standard_response(
+                success=True,
+                message="Order updated successfully.",
+                data=serializer.data,
+                status_code=status.HTTP_200_OK
+            )
+        return standard_response(
+            success=False,
+            message="Error updating order.",
+            data=serializer.errors,
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
+
+
+class AddItemsToOrderAPIView(APIView):
+    """
+    Add more items to an existing OPEN order.
+    """
+
+    def post(self, request, pk):
+        """
+        pk = order_id
+        """
+
+        order = get_object_or_404(Order, pk=pk)
+
+        # 1. Check order status
+        if order.status != Order.StatusChoices.OPEN:
+            return standard_response(
+                success=False,
+                message="Cannot add items to a closed order.",
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+
+        items = request.data.get('items', [])
+
+        # 2. Basic validation
+        if not items:
+            return standard_response(
+                success=False,
+                message="Items list cannot be empty.",
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+
+        item_ids = [item.get('menu_item') for item in items]
+
+        # 3. Duplicate check (within request)
+        if len(item_ids) != len(set(item_ids)):
+            return standard_response(
+                success=False,
+                message="Duplicate menu items not allowed in same request.",
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 4. Check all menu items exist
+        existing_items = set(
+            MenuItem.objects.filter(id__in=item_ids).values_list('id', flat=True)
+        )
+
+        invalid_items = [i for i in item_ids if i not in existing_items]
+
+        if invalid_items:
+            return standard_response(
+                success=False,
+                message=f"Invalid menu_item IDs: {invalid_items}",
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 5. Create items
+        added_total = 0
+
+        for item in items:
+            menu_item_obj = MenuItem.objects.get(id=item['menu_item'])
+
+            price = get_current_price(menu_item_obj)
+
+            OrderMenuItem.objects.create(
+                order=order,
+                menu_item=menu_item_obj,
+                special_instructions=item.get('special_instructions', ''),
+                price_at_time=price
+            )
+
+            added_total += price
+
+        # 6. Update order total
+        order.final_total = (order.final_total or 0) + added_total
+        order.save()
+
+        return standard_response(
+            success=True,
+            message="Items added to order successfully.",
+            data={
+                "order_id": order.id,
+                "added_amount": added_total,
+                "new_total": order.final_total
+            },
+            status_code=status.HTTP_200_OK
+        )
+
+
+class OrderMenuItemListAPIView(APIView):
+    """To list all items in a particular order."""
+    permission_classes = [RequiresRole]
+
+    required_roles = [
+            EmployeeRole.RoleChoices.OWNER,
+            EmployeeRole.RoleChoices.MANAGER,
+            EmployeeRole.RoleChoices.WAITER,
+            EmployeeRole.RoleChoices.CHEF
+    ]
+
+    def get(self, request,order_id):
+        """List all items in a particular order."""
+        order = get_object_or_404(Order, pk=order_id)
+        if not order:
+            return standard_response(
+                success=False,
+                message="No such order exists.",
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+        serializer = OrderMenuItemSerializer(order.ordermenuitem_set.all(), many=True)
+
+        return standard_response(
+            success=True,
+            message="Order items retrieved successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+            )
+
+
+class OrderMenuItemDetailAPIView(APIView):
+    """To retrieve, update or delete an order item."""
+    permission_classes = [RequiresRole]
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            required_roles = [
+                EmployeeRole.RoleChoices.OWNER,
+                EmployeeRole.RoleChoices.MANAGER,
+                EmployeeRole.RoleChoices.WAITER,
+                EmployeeRole.RoleChoices.CHEF
+            ]
+        else:
+            required_roles = [
+                        EmployeeRole.RoleChoices.OWNER,
+                        EmployeeRole.RoleChoices.MANAGER
+                    ]
+
+        return super().get_permissions()           
+        
+    def get_object(self, pk):
+        return get_object_or_404(OrderMenuItem, pk=pk)
+    
+    def get(self, request, pk):
+        order_item = self.get_object(pk)
+        serializer = OrderMenuItemSerializer(order_item)
+        return standard_response(
+            success=True,
+            message="Order item retrieved successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+        )
+    
+
+    def delete(self, request, pk):
+        order_item = self.get_object(pk)
+        
+        if order_item.menu_item_status != OrderMenuItem.StatusChoices.PENDING:
+            return standard_response(
+                success=False,
+                message="Only items that are pending can be deleted.",
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+        
+        order_item.delete()
+
+        return standard_response(
+            success=True,
+            message="Order item deleted successfully.",
+            status_code=status.HTTP_204_NO_CONTENT
+        )
+
+
+class UpdateOrderMenuItemStatusAPIView(APIView):
+    """To update the status of an order item."""
+    permission_classes = [RequiresRole]
+
+    required_roles = [
+        EmployeeRole.RoleChoices.OWNER,
+        EmployeeRole.RoleChoices.MANAGER,
+        EmployeeRole.RoleChoices.CHEF,
+        EmployeeRole.RoleChoices.WAITER
+    ]
+
+    def patch(self, request, pk):
+        order_item = get_object_or_404(OrderMenuItem, pk=pk)
+        old_status = order_item.menu_item_status
+        new_status = request.data.get('menu_item_status')
+    
+        if new_status is None:
+            return standard_response(
+                success=False,
+                message="menu_item_status is required.",
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+    
+        if int(new_status) not in [status.value for status in OrderMenuItem.StatusChoices]:
+            return standard_response(
+                success=False,
+                message="Invalid menu_item_status value.",
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+    
+        new_status = int(new_status)  # normalizing the value once
+    
+        # Role checks (optimize - avoid repeating queries)
+        is_chef = EmployeeRole.objects.filter(
+            employee=request.user.employee,
+            role=EmployeeRole.RoleChoices.CHEF
+        ).exists()
+    
+        is_waiter = EmployeeRole.objects.filter(
+            employee=request.user.employee,
+            role=EmployeeRole.RoleChoices.WAITER
+        ).exists()
+    
+        # Transition Rules
+        valid_transition = False
+    
+        if (
+            order_item.menu_item_status == OrderMenuItem.StatusChoices.PENDING and
+            new_status == OrderMenuItem.StatusChoices.IN_PROGRESS and
+            is_chef
+        ):
+            valid_transition = True
+    
+        elif (
+            order_item.menu_item_status == OrderMenuItem.StatusChoices.IN_PROGRESS and
+            new_status == OrderMenuItem.StatusChoices.READY_TO_SERVE and
+            is_chef
+        ):
+            valid_transition = True
+    
+        elif (
+            order_item.menu_item_status == OrderMenuItem.StatusChoices.READY_TO_SERVE and
+            new_status == OrderMenuItem.StatusChoices.SERVED and
+            is_waiter
+        ):
+            valid_transition = True
+    
+        if not valid_transition:
+            return standard_response(
+                success=False,
+                message="Invalid status transition.",
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+    
+        # UPDATE STATUS
+        order_item.menu_item_status = new_status
+        order_item.save()
+    
+        # LOG CREATION
+        MenuItemStatusLog.objects.create(
+            order_menu_item=order_item,
+            status=new_status
+        )
+    
+        return standard_response(
+            success=True,
+            message=f"Order item status updated successfully from {old_status} to {order_item.menu_item_status}.",
+            data={
+                "order_item_id": order_item.id,
+                "old_status": old_status,
+                "new_status": order_item.menu_item_status
+            },
+            status_code=status.HTTP_200_OK
+        )
+    
