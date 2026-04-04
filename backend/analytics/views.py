@@ -1,3 +1,132 @@
 from django.shortcuts import render
+from rest_framework.views import APIView
+from utils.response import standard_response
+from orders.models import Order
+from datetime import datetime, time, timedelta
 
 # Create your views here.
+
+# PART 1 - DASHBOARD VIEW
+class RevenueKPIsView(APIView):
+    def get(self, request):
+        start_date = request.query_params.get('start_date', None)
+        end_date = request.query_params.get('end_date', None)
+
+        orders = Order.objects.all()
+
+        if start_date:
+            orders = orders.filter(created_at__date__gte=start_date)
+
+        if end_date:
+            orders = orders.filter(created_at__date__lte=end_date)
+
+        total_revenue = sum(order.total_amount for order in orders)
+        total_orders = orders.count()
+        average_revenue_per_order = round(total_revenue / total_orders, 2) if total_orders > 0 else 0
+
+        return standard_response(data={
+            "total_revenue": total_revenue,
+            "total_orders": total_orders,
+            "average_revenue_per_order": average_revenue_per_order,
+        })
+
+
+class RevenueByDateView(APIView):
+    def get(self, request):
+        start_date = request.query_params.get('start_date', None)
+        end_date = request.query_params.get('end_date', None)
+
+        orders = Order.objects.all()
+
+        if start_date:
+            orders = orders.filter(created_at__date__gte=start_date)
+
+        if end_date:
+            orders = orders.filter(created_at__date__lte=end_date)
+
+        revenue_by_date = {}
+
+        for order in orders:
+            date_str = order.created_at.date().isoformat()
+            if date_str not in revenue_by_date:
+                revenue_by_date[date_str] = {"total_revenue": 0, "total_orders": 0, "average_revenue": 0}
+            revenue_by_date[date_str]["total_revenue"] += order.total_amount
+            revenue_by_date[date_str]["total_orders"] += 1
+
+        for date_str, data in revenue_by_date.items():
+            data["average_revenue"] = round(data["total_revenue"] / data["total_orders"], 2)
+
+        return standard_response(data=revenue_by_date)
+
+
+class SalesByCategoryView(APIView):
+    def get(self, request):
+        start_date = request.query_params.get('start_date', None)
+        end_date = request.query_params.get('end_date', None)
+
+        orders = Order.objects.all()
+
+        if start_date:
+            orders = orders.filter(created_at__date__gte=start_date)
+
+        if end_date:
+            orders = orders.filter(created_at__date__lte=end_date)
+
+        sales_by_category = {}
+
+        for order in orders:
+            for item in order.ordermenuitem_set.all():
+                category_name = item.menu_item.get_category_display()
+                sales_by_category[category_name] = sales_by_category.get(category_name, 0) + item.item_total
+
+        return standard_response(data=sales_by_category)
+
+
+class TopSellingItemsView(APIView):
+    def get(self, request):
+        start_date = request.query_params.get('start_date', None)
+        end_date = request.query_params.get('end_date', None)
+        top_n = int(request.query_params.get('top_n', 5))
+
+        orders = Order.objects.all()
+
+        if start_date:
+            orders = orders.filter(created_at__date__gte=start_date)
+
+        if end_date:
+            orders = orders.filter(created_at__date__lte=end_date)
+
+        item_sales = {}
+
+        for order in orders:
+            for item in order.ordermenuitem_set.all():
+                item_name = item.menu_item.name
+                item_sales[item_name] = item_sales.get(item_name, 0) + item.quantity
+
+        sorted_items = sorted(item_sales.items(), key=lambda x: x[1], reverse=True)
+
+        return standard_response(data=dict(sorted_items[:top_n]))
+
+
+class RecentOrdersView(APIView):
+    def get(self, request):
+        limit = int(request.query_params.get('limit', 5))
+
+        recent_orders = Order.objects.order_by('-created_at')[:limit]
+
+        return standard_response(data=[
+            {
+                "order_id": order.id,
+                "table_number": order.table.table_number,
+                "status": order.get_status_display(),
+                "dining_type": order.get_dining_type_display(),
+                "total_items": len(order.ordermenuitem_set.all()),
+                "total_amount": order.total_amount,
+                "created_at": order.created_at.isoformat(),
+                "timedelta_since_order": timedelta(minutes=(datetime.now() - order.created_at).total_seconds() / 60)
+            }
+            for order in recent_orders
+        ])
+
+
+# PART 2 - ANALYTICS VIEW
