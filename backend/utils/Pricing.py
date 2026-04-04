@@ -1,5 +1,6 @@
 from django.utils import timezone
-from backend.orders.models import MenuItem, Discounts
+# from backend.orders.models import MenuItem, Discounts
+from orders.models import MenuItem, Discounts
 
 def get_current_price(menu_item_obj):
         """
