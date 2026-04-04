@@ -129,34 +129,34 @@ class CustomerRegisterView(APIView):
     required_roles = [EmployeeRole.RoleChoices.OWNER, EmployeeRole.RoleChoices.MANAGER]
 
     def post(self, request):
-        otp = request.data.get("OTP")
-
-        if not otp:
-            return Response(
-                {"detail": "OTP field is strictly required."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if otp != "123456":
-            return Response(
-                {"detail": "Invalid OTP provided."}, status=status.HTTP_400_BAD_REQUEST
-            )
+        # otp = request.data.get("OTP")
+        # if not otp:
+        #     return Response(
+        #         {"detail": "OTP field is strictly required."},
+        #         status=status.HTTP_400_BAD_REQUEST,
+        #     )
+        # if otp != "123456":
+        #     return Response(
+        #         {"detail": "Invalid OTP provided."}, status=status.HTTP_400_BAD_REQUEST
+        #     )
 
         serializer = CustomerSerializer(data=request.data)
         if serializer.is_valid():
-            customer = serializer.save()
-            refresh = RefreshToken.for_user(customer)
+            serializer.save()
 
-            return Response(
-                {
-                    "access": str(refresh.access_token),
-                    "refresh": str(refresh),
-                    "customer": serializer.data,
-                },
-                status=status.HTTP_201_CREATED,
+            return standard_response(
+                status_code=status.HTTP_201_CREATED,
+                success=True,
+                message="Customer created successfully.",
+                data=serializer.data,
             )
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return standard_response(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            success=False,
+            message="Invalid data provided.",
+            data=serializer.errors,
+        )
 
 
 class CustomerPaymentListAPIView(APIView):
@@ -187,7 +187,7 @@ class CustomerPaymentListAPIView(APIView):
                 message="Invalid query parameters provided.",
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         return standard_response(
             success=True,
             message="Customer payments retrieved successfully.",
