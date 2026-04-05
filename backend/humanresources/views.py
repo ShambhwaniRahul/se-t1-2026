@@ -8,7 +8,6 @@ from .serializers import EmployeeSerializer, SalarySlipSerializer, SalarySlipBre
 from core.permissions import RequiresRole
 from django.db.models import F
 from django.utils.dateparse import parse_datetime
-from django.shortcuts import get_object_or_404
 from utils.response import standard_response
 
 
@@ -117,18 +116,24 @@ class EmployeeDetailView(APIView):
     ]
 
     def get_object(self, pk):
-        return get_object_or_404(Employee, pk=pk)
+        try:
+            return Employee.objects.get(pk=pk)
+        except Employee.DoesNotExist:
+            return None
+        
+    def standard_error_response(self, message="No such employee exists.", status_code=status.HTTP_404_NOT_FOUND):
+        return standard_response(
+            success=False,
+            message=message,
+            status_code=status_code
+        )
 
     def get(self, request, pk):
         employee = self.get_object(pk)
-        serializer = EmployeeSerializer(employee)
 
-        if not serializer.data:
-            return standard_response(
-                    success=False,
-                    message="Employee not found.",
-                    status_code=status.HTTP_404_NOT_FOUND
-                )
+        if employee is None:
+            return self.standard_error_response()
+        serializer = EmployeeSerializer(employee)
 
         return standard_response(
                 success=True,
@@ -139,6 +144,9 @@ class EmployeeDetailView(APIView):
     
     def patch(self, request, pk):
         employee = self.get_object(pk)
+
+        if not employee:
+            return self.standard_error_response()
         serializer = EmployeeSerializer(employee, data=request.data, partial=True)
 
         if not serializer.is_valid():
@@ -167,12 +175,8 @@ class EmployeeDetailView(APIView):
     def delete(self, request, pk):
         employee = self.get_object(pk)
 
-        if not employee:
-            return standard_response(
-                success=False,
-                message="Employee not found.",
-                status_code=status.HTTP_404_NOT_FOUND
-            )
+        if employee is None:
+            return self.standard_error_response()
         employee.delete()
         return standard_response(
             success=True,
@@ -249,18 +253,24 @@ class SalarySlipDetailAPIView(APIView):
     ]
 
     def get_object(self, pk):
-        return get_object_or_404(SalarySlip, pk=pk)
+        try:
+            return SalarySlip.objects.get(pk=pk)
+        except SalarySlip.DoesNotExist:
+            return None
+
+    def standard_error_response(self, message="Salary slip not found.", status_code=status.HTTP_404_NOT_FOUND):
+        return standard_response(
+            success=False,
+            message=message,
+            status_code=status_code
+        )    
     
     def get(self, request, pk):
         salary_slip = self.get_object(pk)
-        serializer = SalarySlipSerializer(salary_slip)
 
-        if not serializer.data:
-            return standard_response(
-                    success=False,
-                    message="Salary slip not found.",
-                    status_code=status.HTTP_404_NOT_FOUND
-                )
+        if salary_slip is None:
+            return self.standard_error_response()
+        serializer = SalarySlipSerializer(salary_slip)
 
         return standard_response(
                 success=True,
@@ -271,6 +281,9 @@ class SalarySlipDetailAPIView(APIView):
     
     def patch(self, request, pk):
         salary_slip = self.get_object(pk)
+
+        if not salary_slip:
+            return self.standard_error_response()
         serializer = SalarySlipSerializer(salary_slip, data=request.data, partial=True)
 
         if not serializer.is_valid():
@@ -299,12 +312,8 @@ class SalarySlipDetailAPIView(APIView):
     def delete(self, request, pk):
         salary_slip = self.get_object(pk)
 
-        if not salary_slip:
-            return standard_response(
-                success=False,
-                message="Salary slip not found.",
-                status_code=status.HTTP_404_NOT_FOUND
-            )
+        if salary_slip is None:
+            return self.standard_error_response()
         salary_slip.delete()
         return standard_response(
             success=True,
@@ -370,18 +379,24 @@ class SalarySlipBreakdownDetailAPIView(APIView):
     ]
 
     def get_object(self, pk):
-        return get_object_or_404(SalarySlipBreakdown, pk=pk)
+        try:
+            return SalarySlipBreakdown.objects.get(pk=pk)
+        except SalarySlipBreakdown.DoesNotExist:
+            return None
+
+    def standard_error_response(self, message="Salary slip breakdown not found.", status_code=status.HTTP_404_NOT_FOUND):
+        return standard_response(
+            success=False,
+            message=message,
+            status_code=status_code
+        )    
     
     def get(self, request, pk):
         salary_breakdown = self.get_object(pk)
-        serializer = SalarySlipBreakdownSerializer(salary_breakdown)
 
-        if not serializer.data:
-            return standard_response(
-                    success=False,
-                    message="Salary slip breakdown not found.",
-                    status_code=status.HTTP_404_NOT_FOUND
-                )
+        if salary_breakdown is None:
+            return self.standard_error_response()
+        serializer = SalarySlipBreakdownSerializer(salary_breakdown)
 
         return standard_response(
                 success=True,
@@ -392,6 +407,9 @@ class SalarySlipBreakdownDetailAPIView(APIView):
     
     def patch(self, request, pk):
         salary_breakdown = self.get_object(pk)
+
+        if not salary_breakdown:
+            return self.standard_error_response()
         serializer = SalarySlipBreakdownSerializer(salary_breakdown, data=request.data, partial=True)
 
         if not serializer.is_valid():
@@ -419,12 +437,8 @@ class SalarySlipBreakdownDetailAPIView(APIView):
     def delete(self, request, pk):
         salary_breakdown = self.get_object(pk)
 
-        if not salary_breakdown:
-            return standard_response(
-                success=False,
-                message="Salary slip breakdown not found.",
-                status_code=status.HTTP_404_NOT_FOUND
-            )
+        if salary_breakdown is None:
+            return self.standard_error_response()
         salary_breakdown.delete()
         return standard_response(
             success=True,
@@ -498,18 +512,24 @@ class ShiftDetailAPIView(APIView):
     ]
 
     def get_object(self, pk):
-        return get_object_or_404(Shifts, pk=pk)
+        try:
+           return Shifts.objects.get(pk=pk)
+        except:
+            return None
     
+    def standard_error_response(self, message="Shift not found.", status_code=status.HTTP_404_NOT_FOUND):
+        return standard_response(
+            success=False,
+            message=message,
+            status_code=status_code
+        )
     def get(self, request, pk):
         shift = self.get_object(pk)
-        serializer = ShiftSerializer(shift)
 
-        if not serializer.data:
-            return standard_response(
-                    success=False,
-                    message="Shift not found.",
-                    status_code=status.HTTP_404_NOT_FOUND
-                )
+        if shift is None:
+            return self.standard_error_response()
+        
+        serializer = ShiftSerializer(shift)
 
         return standard_response(
                 success=True,
@@ -520,6 +540,9 @@ class ShiftDetailAPIView(APIView):
     
     def patch(self, request, pk):
         shift = self.get_object(pk)
+
+        if shift is None:
+            return self.standard_error_response()
         serializer = ShiftSerializer(shift, data=request.data, partial=True)
 
         if not serializer.is_valid():
@@ -547,12 +570,8 @@ class ShiftDetailAPIView(APIView):
     def delete(self, request, pk):
         shift = self.get_object(pk)
 
-        if not shift:
-            return standard_response(
-                success=False,
-                message="Shift not found.",
-                status_code=status.HTTP_404_NOT_FOUND
-            )
+        if shift is None:
+            return self.standard_error_response()
         shift.delete()
         return standard_response(
             success=True,
@@ -624,18 +643,23 @@ class AttendanceLogDetailAPIView(APIView):
     ]
 
     def get_object(self, pk):
-        return get_object_or_404(AttendanceLog, pk=pk)
+        try:
+           return AttendanceLog.objects.get(pk=pk)
+        except AttendanceLog.DoesNotExist:
+            return None
+        
+    def standard_error_response(self, message="Attendance log not found.", status_code=status.HTTP_404_NOT_FOUND):
+        return standard_response(
+            success=False,
+            message=message,
+            status_code=status_code
+        )
     
     def get(self, request, pk):
         attendance_log = self.get_object(pk)
+        if not attendance_log:
+            return self.standard_error_response()
         serializer = AttendanceLogSerializer(attendance_log)
-
-        if not serializer.data:
-            return standard_response(
-                    success=False,
-                    message="Attendance log not found.",
-                    status_code=status.HTTP_404_NOT_FOUND
-                )
 
         return standard_response(
                 success=True,
@@ -646,6 +670,9 @@ class AttendanceLogDetailAPIView(APIView):
     
     def patch(self, request, pk):
         attendance_log = self.get_object(pk)
+
+        if attendance_log is None:
+            return self.standard_error_response() 
         serializer = AttendanceLogSerializer(attendance_log, data=request.data, partial=True)
 
         if not serializer.is_valid():
@@ -673,12 +700,8 @@ class AttendanceLogDetailAPIView(APIView):
     def delete(self, request, pk):
         attendance_log = self.get_object(pk)
 
-        if not attendance_log:
-            return standard_response(
-                success=False,
-                message="Attendance log not found.",
-                status_code=status.HTTP_404_NOT_FOUND
-            )
+        if attendance_log is None:
+            return self.standard_error_response()
         attendance_log.delete()
         return standard_response(
             success=True,
