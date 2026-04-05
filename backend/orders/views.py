@@ -124,7 +124,17 @@ class MenuItemDetailAPIView(APIView):
     
 
     def get_object(self, pk):
-        return get_object_or_404(MenuItem, pk=pk)
+        try:
+            return MenuItem.objects.get(pk=pk)
+        except MenuItem.DoesNotExist:
+            return None
+        
+    def standard_error_response(self, message="No such menu item exists.", status_code=status.HTTP_404_NOT_FOUND):
+        return standard_response(
+            success=False,
+            message=message,
+            status_code=status_code
+        )    
     
 
     def get(self, request, pk):
@@ -132,14 +142,10 @@ class MenuItemDetailAPIView(APIView):
         Retrieve a menu item by ID.
         """
         menu_item = self.get_object(pk)
-        serializer = MenuItemSerializer(menu_item)
 
-        if not serializer.data:
-            return standard_response(
-                success=False,
-                message="No such menu item exists.",
-                status_code=status.HTTP_404_NOT_FOUND
-            )
+        if menu_item is None:
+            return self.standard_error_response()
+        serializer = MenuItemSerializer(menu_item)
         
         return standard_response(
             success=True,
@@ -153,6 +159,9 @@ class MenuItemDetailAPIView(APIView):
         Update a menu item by ID.
         """
         menu_item = self.get_object(pk)
+
+        if menu_item is None:
+            return self.standard_error_response()
         serializer = MenuItemSerializer(menu_item, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -173,12 +182,9 @@ class MenuItemDetailAPIView(APIView):
         Delete a menu item by ID.
         """
         menu_item = self.get_object(pk)
-        if not menu_item:
-            return standard_response(
-                success=False,
-                message="No such menu item exists.",
-                status_code=status.HTTP_404_NOT_FOUND
-            )
+        if menu_item is None:
+            return self.standard_error_response()
+
         menu_item.delete()
         return standard_response(
             success=True, 
@@ -264,35 +270,68 @@ class MenuItemIngredientDetailAPIView(APIView):
         return super().get_permissions()
     
     def get_object(self, pk):
-        return get_object_or_404(MenuItemIngredient, pk=pk)
+        try:
+            return MenuItemIngredient.objects.get(pk=pk)
+        except MenuItemIngredient.DoesNotExist:
+            return None
+        
+    def standard_error_response(self, message="No such menu item ingredient exists.", status_code=status.HTTP_404_NOT_FOUND):
+        return standard_response(
+            success=False,
+            message=message,
+            status_code=status_code
+        )
     
     def get(self, request, pk):
         """
         Retrieve a menu item ingredient by ID.
         """
         menu_item_ingredient = self.get_object(pk)
+        if menu_item_ingredient is None:
+            return self.standard_error_response()
         serializer = MenuItemIngredientSerializer(menu_item_ingredient)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return standard_response(
+            success=True,
+            message="Menu item ingredient retrieved successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+        )
     
     def patch(self, request, pk):
         """
         Update a menu item ingredient by ID.
         """
         menu_item_ingredient = self.get_object(pk)
+        if menu_item_ingredient is None:
+            return self.standard_error_response()
         serializer = MenuItemIngredientSerializer(menu_item_ingredient, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+            return standard_response(
+                success=True,
+                message="Menu item ingredient updated successfully.",
+                data=serializer.data,
+                status_code=status.HTTP_200_OK
+            )
+        return standard_response(
+            success=False,
+            message="Error updating menu item ingredient.",
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
+
     def delete(self, request, pk):
         """
         Delete a menu item ingredient by ID.
         """
         menu_item_ingredient = self.get_object(pk)
+        if menu_item_ingredient is None:
+            return self.standard_error_response()
         menu_item_ingredient.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-    
+        return standard_response(
+            success=True,
+            message="Menu item ingredient deleted successfully.",
+            status_code=status.HTTP_204_NO_CONTENT
+        )
 
 
 class DiningTableListCreateAPIView(APIView):
@@ -384,21 +423,26 @@ class DiningTableDetailAPIView(APIView):
         return super().get_permissions()
     
     def get_object(self, pk):
-        return get_object_or_404(DiningTable, pk=pk)
+        try:
+            return DiningTable.objects.get(pk=pk)
+        except DiningTable.DoesNotExist:
+            return None
+        
+    def standard_error_response(self, message="No such dining table exists.", status_code=status.HTTP_404_NOT_FOUND):
+        return standard_response(
+            success=False,
+            message=message,
+            status_code=status_code
+        )
     
     def get(self, request, pk):
         """
         Retrieve a dining table by ID.
         """
         dining_table = self.get_object(pk)
+        if dining_table is None:
+            return self.standard_error_response()
         serializer = DiningTableSerializer(dining_table)
-
-        if not serializer.data:
-            return standard_response(
-                success=False,
-                message="No such dining table exists.",
-                status_code=status.HTTP_404_NOT_FOUND
-            )
         return standard_response(
             success=True,
             message="Dining table retrieved successfully.",
@@ -411,6 +455,9 @@ class DiningTableDetailAPIView(APIView):
         Update a dining table by ID.
         """
         dining_table = self.get_object(pk)
+        if dining_table is None:
+            return self.standard_error_response()
+        
         if 'is_available' in request.data:
             return standard_response(
                 success=False,
@@ -437,6 +484,9 @@ class DiningTableDetailAPIView(APIView):
         Delete a dining table by ID.
         """
         dining_table = self.get_object(pk)
+
+        if dining_table is None:
+            return self.standard_error_response()
         if not dining_table.is_available:
             return standard_response(
                 success=False,
@@ -459,8 +509,21 @@ class ToggleDiningTableAvailabilityAPIView(APIView):
         EmployeeRole.RoleChoices.WAITER
     ]
 
+    def get_table(self, pk):
+        try:
+            return DiningTable.objects.get(pk=pk)
+        except DiningTable.DoesNotExist:
+            return None
+
     def patch(self, request, pk):
-        dining_table = get_object_or_404(DiningTable, pk=pk)
+        dining_table = self.get_table(pk)
+
+        if dining_table is None:
+            return standard_response(
+                success=False,
+                message="No such dining table exists.",
+                status_code=status.HTTP_404_NOT_FOUND
+            )
 
         dining_table.is_available = not dining_table.is_available
         dining_table.save()
@@ -470,6 +533,7 @@ class ToggleDiningTableAvailabilityAPIView(APIView):
         return standard_response(
             success=True, 
             message= "Availability toggled successfully.",
+            data=serializer.data,
             status_code=status.HTTP_200_OK)
 
 
@@ -642,23 +706,28 @@ class DiscountsDetailAPIView(APIView):
 
     
     def get_object(self, pk):
-        return get_object_or_404(Discounts, pk=pk)
-    
+        try: 
+            return Discounts.objects.git(pk=pk)        
+        except Discounts.DoesNotExist:
+            return None
+        
+    def standard_error_response(self, message="No such discount exists.", status_code=status.HTTP_404_NOT_FOUND):
+      return standard_response(
+          success=False,
+          message=message,
+          status_code=status.HTTP_404_NOT_FOUND
+      )
 
     def get(self, request, pk):
         """
         Retrieve a discount by ID.
         """
         discount = self.get_object(pk)
-        serializer = DiscountsSerializer(discount)
 
-        if not serializer.data:
-            return standard_response(
-                success=False,
-                message="No such discount exists.",
-                status_code=status.HTTP_404_NOT_FOUND
-            )
+        if discount is None:
+            return self.standard_error_response()
         
+        serializer = DiscountsSerializer(discount)
         return standard_response(
             success=True,
             message="Discount retrieved successfully.",
@@ -677,12 +746,9 @@ class DiscountsDetailAPIView(APIView):
     def delete(self, request, pk):
         """To delete a discount by ID."""
         discount = self.get_object(pk)
-        if not discount:
-            return standard_response(
-                success=False,
-                message="No such discount exists.",
-                status_code=status.HTTP_404_NOT_FOUND
-            )
+        if discount is None:
+            return self.standard_error_response()
+
         
         discount.delete()
         return standard_response(
@@ -857,30 +923,41 @@ class OrderDetailAPIView(APIView):
                 EmployeeRole.RoleChoices.WAITER,
                 EmployeeRole.RoleChoices.CHEF
             ]
-        else:
+        elif self.request.method == 'PATCH':
             required_roles = [
                         EmployeeRole.RoleChoices.OWNER,
                         EmployeeRole.RoleChoices.MANAGER,
                         EmployeeRole.RoleChoices.WAITER
                     ]
+        else:
+            required_roles = [
+                        EmployeeRole.RoleChoices.OWNER,
+                        EmployeeRole.RoleChoices.MANAGER
+                    ]    
 
         return super().get_permissions()
 
 
     def get_object(self, pk):
-        return get_object_or_404(Order, pk=pk)
+        try: 
+            return Order.objects.get(pk=pk)
+        except Order.DoesNotExist:
+            return None
     
+    def standard_error_response(self, message="No such order exists.", status_code=status.HTTP_404_NOT_FOUND):
+        return standard_response(
+            success=False,
+            message=message,
+            status_code=status.HTTP_404_NOT_FOUND
+        )
+
     def get(self, request, pk):
         """Retrieve an order by ID."""
         order = self.get_object(pk)
-        serializer = OrderSerializer(order)
 
-        if not serializer.data:
-            return standard_response(
-                success=False,
-                message="No such order exists.",
-                status_code=status.HTTP_404_NOT_FOUND
-            )
+        if order is None:
+            return self.standard_error_response()
+        serializer = OrderSerializer(order)
         
         return standard_response(
             success=True,
@@ -892,9 +969,11 @@ class OrderDetailAPIView(APIView):
     def patch(self, request, pk):
         """Update an order by ID."""
         order = self.get_object(pk)
+        if order is None:
+            return self.standard_error_response()
         serializer = OrderSerializer(order, data=request.data, partial=True)
         
-        if request.data.get('status') and int(request.data.get('status')) is not 1:
+        if request.data.get('status') and int(request.data.get('status')) != 1:
             return standard_response(
                 success=False,
                 message="Invalid status value.",
@@ -915,7 +994,18 @@ class OrderDetailAPIView(APIView):
             data=serializer.errors,
             status_code=status.HTTP_400_BAD_REQUEST
         )
-
+    
+    def delete(self, request, pk):
+        """Delete an order by ID."""
+        order = self.get_object(pk)
+        if order is None:
+            return self.standard_error_response()
+        
+        return standard_response(
+            success=False,
+            message="Will look into this later.",
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
 
 class AddItemsToOrderAPIView(APIView):
     """
@@ -927,7 +1017,14 @@ class AddItemsToOrderAPIView(APIView):
         pk = order_id
         """
 
-        order = get_object_or_404(Order, pk=pk)
+        order = Order.objects.get(pk=pk) if Order.objects.filter(pk=pk).exists() else None
+
+        if order is None:
+            return standard_response(
+                success=False,
+                message="No such order exists.",
+                status_code=status.HTTP_404_NOT_FOUND
+            )
 
         # 1. Check order status
         if order.status != Order.StatusChoices.OPEN:
@@ -1017,8 +1114,8 @@ class OrderMenuItemListAPIView(APIView):
 
     def get(self, request,order_id):
         """List all items in a particular order."""
-        order = get_object_or_404(Order, pk=order_id)
-        if not order:
+        order = Order.objects.get(pk=order_id) if Order.objects.filter(pk=order_id).exists() else None
+        if order is None:
             return standard_response(
                 success=False,
                 message="No such order exists.",
@@ -1055,10 +1152,21 @@ class OrderMenuItemDetailAPIView(APIView):
         return super().get_permissions()           
         
     def get_object(self, pk):
-        return get_object_or_404(OrderMenuItem, pk=pk)
+        try:
+            return OrderMenuItem.objects.get(pk=pk)
+        except OrderMenuItem.DoesNotExist:
+            return None
     
+    def standard_error_response(self, message="No such order item exists.", status_code=status.HTTP_404_NOT_FOUND):
+        return standard_response(
+            success=False,
+            message=message,
+            status_code=status_code
+        )
     def get(self, request, pk):
         order_item = self.get_object(pk)
+        if order_item is None:
+            return self.standard_error_response()
         serializer = OrderMenuItemSerializer(order_item)
         return standard_response(
             success=True,
@@ -1070,6 +1178,9 @@ class OrderMenuItemDetailAPIView(APIView):
 
     def delete(self, request, pk):
         order_item = self.get_object(pk)
+
+        if order_item is None:
+            return self.standard_error_response()
         
         if order_item.menu_item_status != OrderMenuItem.StatusChoices.PENDING:
             return standard_response(
@@ -1099,7 +1210,14 @@ class UpdateOrderMenuItemStatusAPIView(APIView):
     ]
 
     def patch(self, request, pk):
-        order_item = get_object_or_404(OrderMenuItem, pk=pk)
+        order_item = OrderMenuItem.objects.get(pk=pk) if OrderMenuItem.objects.filter(pk=pk).exists() else None
+
+        if order_item is None:
+            return standard_response(
+                success=False,
+                message="No such order item exists.",
+                status_code=status.HTTP_404_NOT_FOUND
+            )
         old_status = order_item.menu_item_status
         new_status = request.data.get('menu_item_status')
     
