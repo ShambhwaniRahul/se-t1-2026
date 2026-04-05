@@ -68,21 +68,37 @@ class VendorDetailAPIView(APIView):
     ]
 
     def get_object(self, pk):
-        return get_object_or_404(Vendor, pk=pk)
+        try:
+            return Vendor.objects.get(pk=pk)
+        except Vendor.DoesNotExist:
+            return None 
+        
+    def designed_error_response(self, message):
+        return standard_response(
+            success=False,
+            message=message,
+            status_code=status.HTTP_404_NOT_FOUND
+        )     
 
     def get(self, request, pk):
         vendor = self.get_object(pk)
+
+        if vendor is not None:
+            return standard_response(
+                success=True,
+                message="Vendor retrieved successfully.",
+                data=serializer.data,
+                status_code=status.HTTP_200_OK
+            )
         serializer = VendorSerializer(vendor)
-        return standard_response(
-            success=True,
-            message="Vendor retrieved successfully.",
-            data=serializer.data,
-            status_code=status.HTTP_200_OK
-        )
+        return self.designed_error_response("No such vendor exists.")
 
     def patch(self, request, pk):
         vendor = self.get_object(pk)
         serializer = VendorSerializer(vendor, data=request.data, partial=True)
+
+        if vendor is None:
+            return self.designed_error_response("No such vendor exists.")
         if serializer.is_valid():
             serializer.save()
             return standard_response(
@@ -101,6 +117,8 @@ class VendorDetailAPIView(APIView):
 
     def delete(self, request, pk):
         vendor = self.get_object(pk)
+        if vendor is None:
+            return self.designed_error_response("No such vendor exists.")
         vendor.delete()
         return standard_response(
             success=True,
@@ -225,19 +243,25 @@ class PurchaseOrderDetailAPIView(APIView):
     ]
 
     def get_object(self, pk):
-        return get_object_or_404(PurchaseOrder, pk=pk)
+        try:
+            return PurchaseOrder.objects.get(pk=pk)
+        except PurchaseOrder.DoesNotExist:
+            return None
+        
+    def designed_error_response(self, message="No such Purchase order exists."):
+        return standard_response(
+            success=False,
+            message=message,
+            status_code=status.HTTP_404_NOT_FOUND
+        )
 
     def get(self, request, pk):
         purchase_order = self.get_object(pk)
-        serializer = PurchaseOrderSerializer(purchase_order)
 
-        if not serializer.data:
-             return standard_response(
-                success=False,
-                message="No such Purchase order exists.",
-                data=None,
-                status_code=status.HTTP_404_NOT_FOUND
-            )
+        if purchase_order is None:
+             return self.designed_error_response()
+        
+        serializer = PurchaseOrderSerializer(purchase_order)
         return standard_response(
             success=True,
             message="Purchase order retrieved successfully.",
@@ -247,6 +271,9 @@ class PurchaseOrderDetailAPIView(APIView):
 
     def patch(self, request, pk):
         purchase_order = self.get_object(pk)
+
+        if purchase_order is None:
+            return self.designed_error_response()
 
         if "status" in request.data:
             if (
@@ -288,14 +315,8 @@ class PurchaseOrderDetailAPIView(APIView):
     def delete(self, request, pk):
         purchase_order = self.get_object(pk)
 
-        if not purchase_order:
-            return standard_response(
-                success=False,
-                message="No such Purchase order exists.",
-                data=None,
-                status_code=status.HTTP_404_NOT_FOUND
-            )
-        
+        if purchase_order is None:
+            return self.designed_error_response()
         if purchase_order.status == PurchaseOrder.StatusChoices.RECEIVED:
             return standard_response(
                 success=False,
@@ -387,20 +408,41 @@ class OrderedPerishablePurchaseSKUDetailAPIView(APIView):
     ]
 
     def get_object(self, pk):
-        return get_object_or_404(OrderedPerishablePurchaseSKU, pk=pk)
+        try:
+            return OrderedPerishablePurchaseSKU.objects.get(pk=pk)
+        except OrderedPerishablePurchaseSKU.DoesNotExist:
+            return None
+        
+    def designed_error_response(self, message="No such OrderedPerishablePurchaseSKU exists."):    
+        return standard_response(
+            success=False,
+            message=message,
+            status_code=status.HTTP_404_NOT_FOUND
+        )
+    def designed_error_response(self, message):
+        return standard_response(
+            success=False,
+            message=message,
+            status_code=status.HTTP_404_NOT_FOUND    
+        )    
 
     def get(self, request, pk):
         perishable_purchase_sku = self.get_object(pk)
+        if perishable_purchase_sku is None:
+            return self.designed_error_response()
         serializer = OrderedPerishablePurchaseSKUSerializer(perishable_purchase_sku)
         return standard_response(
-            sucess=True,
-            message="Purchase Order retrieved successfully.",
+            success=True,
+            message="Perishable purchase SKU retrieved successfully.",
             data=serializer.data,
             status_code=status.HTTP_200_OK
         )
 
     def patch(self, request, pk):
         perishable_purchase_sku = self.get_object(pk)
+
+        if perishable_purchase_sku is None:
+            return self.designed_error_response()
 
         # ✅ Prevent changing purchase reference
         if "purchase" in request.data:
@@ -435,6 +477,9 @@ class OrderedPerishablePurchaseSKUDetailAPIView(APIView):
 
     def delete(self, request, pk):
         perishable_purchase_sku = self.get_object(pk)
+
+        if perishable_purchase_sku is None:
+            return self.designed_error_response()
         if perishable_purchase_sku.purchase.status == PurchaseOrder.StatusChoices.RECEIVED:
             return standard_response(
                 success=False,
@@ -517,18 +562,22 @@ class OrderedNonPerishablePurchaseSKUDetailAPIView(APIView):
     ]
 
     def get_object(self, pk):
-        return get_object_or_404(OrderedNonPerishablePurchaseSKU, pk=pk)
-
+        try:
+            return OrderedNonPerishablePurchaseSKU.objects.get(pk=pk)
+        except OrderedNonPerishablePurchaseSKU.DoesNotExist:
+            return None
+        
+    def designed_error_response(self, message="No such Ordered non-perishable purchase SKU exists."):
+        return standard_response(
+            success=False,
+            message=message,
+            status_code=status.HTTP_404_NOT_FOUND    
+        )
     def get(self, request, pk):
         non_perishable_purchase_sku = self.get_object(pk)
+        if non_perishable_purchase_sku is None:
+            return self.designed_error_response()
         serializer = OrderedNonPerishablePurchaseSKUSerializer(non_perishable_purchase_sku)
-        if not serializer.data:
-            return standard_response(
-                success=False,
-                message="No such non-perishable purchase SKU exists.",
-                data=None,
-                status_code=status.HTTP_404_NOT_FOUND
-            )
         return standard_response(
             success=True,
             data=serializer.data,
@@ -537,6 +586,9 @@ class OrderedNonPerishablePurchaseSKUDetailAPIView(APIView):
 
     def patch(self, request, pk):
         non_perishable_purchase_sku = self.get_object(pk)
+
+        if non_perishable_purchase_sku is None:
+            return self.designed_error_response()
 
         # Prevent changing purchase reference
         if "purchase" in request.data:
@@ -572,6 +624,9 @@ class OrderedNonPerishablePurchaseSKUDetailAPIView(APIView):
 
     def delete(self, request, pk):
         non_perishable_purchase_sku = self.get_object(pk)
+
+        if non_perishable_purchase_sku is None:
+            return self.designed_error_response()
         if non_perishable_purchase_sku.purchase.status == PurchaseOrder.StatusChoices.RECEIVED:
             return standard_response(
                 success=False,
@@ -728,15 +783,16 @@ class DeliveredPerishablePurchaseInventoryDetailAPIView(APIView):
     ]
 
     def get(self, request, pk):
-        perishable_purchase_sku = get_object_or_404(DeliveredPerishableInventory, pk=pk)
-        serializer = DeliveredPerishableInventorySerializer(perishable_purchase_sku)
-        if not serializer.data:
+        perishable_purchase_sku = DeliveredPerishableInventory.objects.get(pk=pk) if DeliveredPerishableInventory.objects.filter(pk=pk).exists() else None
+
+        if perishable_purchase_sku is None:
             return standard_response(
                 success=False,
                 message="No such delivered perishable purchase SKU exists.",
                 data=None,
                 status_code=status.HTTP_404_NOT_FOUND
             )
+        serializer = DeliveredPerishableInventorySerializer(perishable_purchase_sku)
         return standard_response(
             success=True,
             message="Delivered perishable purchase SKU found.",
@@ -782,7 +838,14 @@ class DeliveredNonPerishableInventoryDetailAPIView(APIView):
     ]
 
     def get(self, request, pk):
-        non_perishable_purchase_sku = get_object_or_404(DeliveredNonPerishableInventory, pk=pk)
+        non_perishable_purchase_sku = DeliveredNonPerishableInventory(pk=pk) if DeliveredNonPerishableInventory.objects.filter(pk=pk).exists() else None
+        if non_perishable_purchase_sku is None:
+            return standard_response(
+                success=False,
+                message="No such delivered non-perishable purchase SKU exists.",
+                data=None,
+                status_code=status.HTTP_404_NOT_FOUND
+            )
         serializer = DeliveredNonPerishableInventorySerializer(non_perishable_purchase_sku)
         return standard_response(
             success=True,
