@@ -1,6 +1,6 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
+from rest_framework.views import APIView, Response
 from rest_framework import status
+from utils.response import standard_response
 from .models import (
     Vendor, PurchaseOrder,
     OrderedNonPerishablePurchaseSKU, OrderedPerishablePurchaseSKU,
@@ -34,14 +34,30 @@ class VendorListCreateAPIView(APIView):
     def get(self, request):
         vendors = Vendor.objects.all()
         serializer = VendorSerializer(vendors, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return standard_response(
+            success=True,
+            message="Vendors retrieved successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+        )
 
     def post(self, request):
         serializer = VendorSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return standard_response(
+                success=True,
+                message="Vendor created successfully.",
+                data=serializer.data,
+                status_code=status.HTTP_201_CREATED
+            )
+        
+        return standard_response(
+            success=False,
+            message="Failed to create vendor.",
+            data=serializer.errors,
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
 
 class VendorDetailAPIView(APIView):
     permission_classes = [RequiresRole]
@@ -56,21 +72,41 @@ class VendorDetailAPIView(APIView):
     def get(self, request, pk):
         vendor = self.get_object(pk)
         serializer = VendorSerializer(vendor)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return standard_response(
+            success=True,
+            message="Vendor retrieved successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+        )
 
     def patch(self, request, pk):
         vendor = self.get_object(pk)
         serializer = VendorSerializer(vendor, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return standard_response(
+                success=True,
+                message="Vendor updated successfully.",
+                data=serializer.data,
+                status_code=status.HTTP_200_OK
+            )
+
+        return standard_response(
+            success=False,
+            message="Failed to update vendor.",
+            data=serializer.errors,
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
 
     def delete(self, request, pk):
         vendor = self.get_object(pk)
         vendor.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-    
+        return standard_response(
+            success=True,
+            message="Vendor deleted successfully.",
+            data=None,
+            status_code=status.HTTP_204_NO_CONTENT
+        )
 
 """ APIs for Purchase Orderss"""
 class PurchaseOrderListCreateAPIView(APIView):
