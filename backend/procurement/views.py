@@ -1,4 +1,4 @@
-from rest_framework.views import APIView, Response
+from rest_framework.views import APIView
 from rest_framework import status
 from utils.response import standard_response
 from .models import (
@@ -156,15 +156,22 @@ class PurchaseOrderListCreateAPIView(APIView):
             queryset = queryset.filter(purchase_date=purchase_date)
     
         serializer = PurchaseOrderSerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return standard_response(
+            success=True,
+            message="Pruchase Orders retrieved successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+        )
 
 
     def post(self, request):
         # ✅ Enforce default status = Pending
         if 'status' in request.data and request.data.get("status") != PurchaseOrder.StatusChoices.PENDING:
-            return Response(
-                {"error": "New purchase orders must have status 'Pending'."}, 
-                status=status.HTTP_400_BAD_REQUEST
+            return standard_response(
+                success=False,
+                message="New purchase orders must have status 'Pending'.",
+                data=None,
+                status_code=status.HTTP_400_BAD_REQUEST 
             )
 
         serializer = PurchaseOrderSerializer(data=request.data)
@@ -385,7 +392,12 @@ class OrderedPerishablePurchaseSKUDetailAPIView(APIView):
     def get(self, request, pk):
         perishable_purchase_sku = self.get_object(pk)
         serializer = OrderedPerishablePurchaseSKUSerializer(perishable_purchase_sku)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return standard_response(
+            sucess=True,
+            message="Purchase Order retrieved successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+        )
 
     def patch(self, request, pk):
         perishable_purchase_sku = self.get_object(pk)
