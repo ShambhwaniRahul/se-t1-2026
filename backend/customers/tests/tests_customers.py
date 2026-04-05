@@ -3,7 +3,7 @@ from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
 from humanresources.models import EmployeeRole
 from customers.models import Customer, CustomerPayment
-from orders.models import Order, OrderMenuItem, DiningTable
+from orders.models import Order, OrderMenuItem, MenuItem, DiningTable
 
 @pytest.fixture
 def auth_client(db):
