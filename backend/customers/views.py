@@ -50,17 +50,21 @@ class CustomerDetailAPIView(APIView):
     required_roles = [EmployeeRole.RoleChoices.OWNER, EmployeeRole.RoleChoices.MANAGER]
 
     def get_object(self, pk):
-        return get_object_or_404(Customer, pk=pk)
-
+        try:
+            return Customer.objects.get(pk=pk)
+        except Customer.DoesNotExist:
+            return None
+    def standard_error_response(self, message="No such customer exists.", status_code=status.HTTP_404_NOT_FOUND):
+        return standard_response(
+            success=False,
+            message=message,
+            status_code=status_code
+        )
     def get(self, request, pk):
         customer = self.get_object(pk)
+        if customer is None:
+            return self.standard_error_response()
         serializer = CustomerSerializer(customer)
-        if not serializer.data:
-            return standard_response(
-                success=False,
-                message="Customer not found.",
-                status_code=status.HTTP_404_NOT_FOUND,
-            )
         return standard_response(
             success=True,
             message="Customer retrieved successfully.",
@@ -70,6 +74,8 @@ class CustomerDetailAPIView(APIView):
 
     def patch(self, request, pk):
         customer = self.get_object(pk)
+        if customer is None:
+            return self.standard_error_response()
         serializer = CustomerSerializer(customer, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -87,6 +93,8 @@ class CustomerDetailAPIView(APIView):
 
     def patch(self, request, pk):
         customer = self.get_object(pk)
+        if customer is None:
+            return self.standard_error_response()
         serializer = CustomerSerializer(customer, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -104,13 +112,9 @@ class CustomerDetailAPIView(APIView):
 
     def delete(self, request, pk):
         customer = self.get_object(pk)
+        if customer is None:
+            return self.standard_error_response()
         customer.delete()
-        if not customer:
-            return standard_response(
-                success=False,
-                message="Customer not found.",
-                status_code=status.HTTP_404_NOT_FOUND,
-            )
         return standard_response(
             success=True,
             message="Customer deleted successfully.",
@@ -130,13 +134,16 @@ class CustomerRegisterView(APIView):
     def post(self, request):
         # otp = request.data.get("OTP")
         # if not otp:
-        #     return Response(
-        #         {"detail": "OTP field is strictly required."},
-        #         status=status.HTTP_400_BAD_REQUEST,
+        #     return standard_response(
+        #         success=False,
+        #         message= "OTP field is strictly required.",
+        #         status_code=status.HTTP_400_BAD_REQUEST,
         #     )
         # if otp != "123456":
-        #     return Response(
-        #         {"detail": "Invalid OTP provided."}, status=status.HTTP_400_BAD_REQUEST
+        #     return standard_response(
+        #         success=False,
+        #         message= "Invalid OTP provided."
+        #         status_code=status.HTTP_400_BAD_REQUEST
         #     )
 
         serializer = CustomerSerializer(data=request.data)
@@ -259,10 +266,17 @@ class CustomerPaymentDetailAPIView(APIView):
     """
 
     permission_classes = [RequiresRole]
-    required_roles = [EmployeeRole.RoleChoices.OWNER, EmployeeRole.RoleChoices.MANAGER]
+    required_roles = [EmployeeRole.RoleChoices.OWNER, EmployeeRole.RoleChoices.MANAGER]    
 
     def get(self, request, pk):
-        payment = get_object_or_404(CustomerPayment, pk=pk)
+        customer_id = request.query_params.get("customer_id")
+        if not customer_id or not customer_id.strip().isnumeric():
+            return standard_response(
+                success=False,
+                message="Customer ID is required and must be numeric.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        payment = CustomerPayment.objects.get(pk=pk, customer_id=int(customer_id.strip()))
         serializer = CustomerPaymentSerializer(payment)
 
         if not serializer.data:
@@ -273,7 +287,7 @@ class CustomerPaymentDetailAPIView(APIView):
             )
         return standard_response(
             success=True,
-            message="Customer payment retrieved successfully.",
+            message="Customer payments retrieved successfully.",
             data=serializer.data,
             status_code=status.HTTP_200_OK,
         )

@@ -1,11 +1,9 @@
 from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework import status
 from core.permissions import RequiresRole
 from .models import PerishableSKU, PerishableInventory, NonPerishableInventory 
 from .serializers import PerishableSKUSerializer, NonPerishableInventorySerializer, PerishableInventorySerializer
 from humanresources.models import EmployeeRole
-from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db.models import F, ExpressionWrapper, DateField, DurationField
 from django.utils import timezone
@@ -121,18 +119,24 @@ class PerishableSKUDetailAPIView(APIView):
         return super().get_permissions() 
     
     def get_object(self,pk):
-        return get_object_or_404(PerishableSKU, pk=pk)
+        try:
+            return PerishableSKU.objects.get(pk=pk)
+        except PerishableSKU.DoesNotExist:
+            return None
+        
+    def standard_error_response(self, message="Perishable SKU not found.", status_code=status.HTTP_404_NOT_FOUND):
+        return standard_response(
+            success=False,
+            message=message,
+            status_code=status_code
+        )    
 
 
     def get(self, request, pk):
         perishable_sku = self.get_object(pk)
+        if perishable_sku is None:
+            return self.standard_error_response()
         serializer = PerishableSKUSerializer(perishable_sku)
-        if not perishable_sku:
-            return standard_response(
-                success=False,
-                message="Perishable SKU not found.",
-                status_code=status.HTTP_404_NOT_FOUND
-            )
         return standard_response(
             success=True,
             message="Perishable SKU retrieved successfully.",
@@ -142,16 +146,31 @@ class PerishableSKUDetailAPIView(APIView):
 
     def patch(self, request, pk):
         perishable_sku = self.get_object(pk)
+        if perishable_sku is None:
+            return self.standard_error_response()
         serializer = PerishableSKUSerializer(perishable_sku, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return standard_response(
+                success=True,
+                message="Perishable SKU updated successfully.",
+                data=serializer.data,
+                 status_code=status.HTTP_200_OK)
+        return standard_response(
+            success=False,
+            message="Failed to update Perishable SKU.",
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
 
     def delete(self, request, pk):
         perishable_sku = self.get_object(pk)
+        if perishable_sku is None:
+            return self.standard_error_response()
         perishable_sku.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return standard_response(
+            success=True, 
+            message="Perishable SKU deleted successfully.",
+            status_code=status.HTTP_204_NO_CONTENT)
 
  
 
@@ -203,7 +222,18 @@ class PerishableInventoryListAPIView(APIView):
             queryset = queryset.filter(expiry_date__gte=today)
     
         serializer = PerishableInventorySerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)  
+        if not queryset.exists():
+            return standard_response(
+                success=False,
+                message="No perishable inventory found.",
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+        return standard_response(
+            success=True,
+            message="Perishable Inventory list retrieved successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+            )  
 
 
 
@@ -235,20 +265,44 @@ class PerishableInventoryDetailAPIView(APIView):
     
 
     def get_object(self,pk):
-        return get_object_or_404(PerishableInventory, pk=pk)
+        try:
+            return PerishableInventory.objects.get(pk=pk)
+        except PerishableInventory.DoesNotExist:
+            return None
+        
+    def standard_error_response(self, message="Perishable Inventory not found.", status_code=status.HTTP_404_NOT_FOUND):
+        return standard_response(
+            success=False,
+            message=message,
+            status_code=status_code
+        )
 
 
     def get(self, request, pk):
             perishable_inventory = self.get_object(pk)
+            if perishable_inventory is None:
+                return self.standard_error_response()
             serializer = PerishableInventorySerializer(perishable_inventory)
-            return Response(serializer.data, status=status.HTTP_200_OK) 
+            return standard_response(
+                success=True,
+                message="Perishable Inventory retrieved successfully.", 
+                data=serializer.data,
+                status_code=status.HTTP_200_OK) 
         
     def delete(self, request, pk):
             perishable_inventory = self.get_object(pk)
+            if perishable_inventory is None:
+                return self.standard_error_response()
             if perishable_inventory.is_expired:
               perishable_inventory.delete()
-              return Response(status=status.HTTP_204_NO_CONTENT)
-            return Response({"details": "Cannot delete an non-expired perishable inventory item."},status=status.HTTP_403_FORBIDDEN)
+              return standard_response(
+                  success=True,
+                  message="Perishable Inventory deleted successfully.",
+                  status_code=status.HTTP_204_NO_CONTENT)
+            return standard_response(
+                success=False,
+                message="Cannot delete an non-expired perishable inventory item.",
+                status_code=status.HTTP_403_FORBIDDEN)
 
 
 class NonPerishableInventoryListCreateAPIView(APIView):
@@ -266,7 +320,11 @@ class NonPerishableInventoryListCreateAPIView(APIView):
     def get(self, request):
         inventory_items = NonPerishableInventory.objects.all()
         serializer = NonPerishableInventorySerializer(inventory_items, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return standard_response(
+            success=True, 
+            message="Non-Perishable Inventory list retrieved successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK)
     
 
 class NonPerishableInventoryDetailAPIView(APIView):
@@ -282,14 +340,35 @@ class NonPerishableInventoryDetailAPIView(APIView):
     ]
 
     def get_object(self,pk):
-        return get_object_or_404(NonPerishableInventory, pk=pk)
+        try:
+            return NonPerishableInventory.objects.get(pk=pk)
+        except NonPerishableInventory.DoesNotExist:
+            return None
+        
+    def standard_error_response(self, message="Non-Perishable Inventory not found.", status_code=status.HTTP_404_NOT_FOUND):
+        return standard_response(
+            success=False,
+            message=message,
+            status_code=status_code
+        )
 
     def get(self, request, pk):
         inventory_item = self.get_object(pk)
+        if inventory_item is None:
+            return self.standard_error_response()
         serializer = NonPerishableInventorySerializer(inventory_item)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return standard_response(
+            success=True,
+            message="Non-Perishable Inventory retrieved successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK)
     
     def delete(self, request, pk):
         inventory_item = self.get_object(pk)
+        if inventory_item is None:
+            return self.standard_error_response()
         inventory_item.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return standard_response(
+            success=True,
+            message="Non-Perishable Inventory deleted successfully.",
+            status_code=status.HTTP_204_NO_CONTENT)
