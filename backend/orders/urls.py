@@ -5,7 +5,10 @@ from .views import (
     MenuItemListCreateAPIView, MenuItemDetailAPIView,
     MenuItemIngredientListCreateAPIView, MenuItemIngredientDetailAPIView,
     DiningTableListCreateAPIView, DiningTableDetailAPIView, ToggleDiningTableAvailabilityAPIView,
+    DiscountsListCreateAPIView,DiscountsDetailAPIView,
     OrderListCreateAPIView, OrderDetailAPIView, AddItemsToOrderAPIView,
+    OrderMenuItemListAPIView,OrderMenuItemDetailAPIView,
+    UpdateOrderMenuItemStatusAPIView
 )
 
 
@@ -20,10 +23,12 @@ urlpatterns = [
     path("diningtables/", DiningTableListCreateAPIView.as_view(), name='diningtable-list-create'),
     path("diningtables/<int:pk>/", DiningTableDetailAPIView.as_view(), name='diningtable-detail'),
     path("diningtables/toggle-table-availability/<int:pk>/", ToggleDiningTableAvailabilityAPIView.as_view(), name='diningtable-toggle-availability'),
+    path("discounts/", DiscountsListCreateAPIView.as_view(), name='discounts-list-create'),
+    path("discounts/<int:pk>/", DiscountsDetailAPIView.as_view(), name='discounts-detail'),
     path("orders/", OrderListCreateAPIView.as_view(), name='order-list-create'),
     path("orders/<int:pk>/", OrderDetailAPIView.as_view(), name='order-detail'),
     path("orders/<int:pk>/add-items/", AddItemsToOrderAPIView.as_view(), name='order-add-items'),
-
-    # redundant
-    # path("orders/close/<int:pk>/", CloseOrderAPIView.as_view(), name='order-close'),
+    path("orders/<int:pk>/menuitems/", OrderMenuItemListAPIView.as_view(), name='order-menuitem-list'),
+    path("orders/<int:pk>/menuitems/<int:menuitem_id>/", OrderMenuItemDetailAPIView.as_view(), name='order-menuitem-detail'),
+    path("orders/<int:pk>/menuitems/<int:menuitem_id>/status/", UpdateOrderMenuItemStatusAPIView.as_view(), name='order-menuitem-status'),
 ]
