@@ -18,13 +18,14 @@ import TablePage from "@/features/pos/pages/TablePage";
 import KitchenPage from "@/features/kitchen/pages/KitchenPage";
 import InventoryPage from "@/features/inventory/pages/InventoryPage";
 import CrmPage from "@/features/crm/pages/CrmPage";
-import { KPIAnalyticsPage } from "@/features/analytics";
 import { EmployeesPage, AttendancePage, ShiftsPage, PayrollPage } from "@/features/erp/pages";
 import PosPage from "./features/pos/pages/PosPage";
 import PurchaseOrdersPage from "./features/purchase-orders/pages/PurchaseOrdersPage";
 import CreatePurchaseOrderPage from "./features/purchase-orders/pages/CreatePurchaseOrderPage";
 import PurchaseOrderDetailsPage from "./features/purchase-orders/pages/PurcahseOrderDetailsPage";
+import { VendorsPage } from "@/features/vendors";
 import SignupPage from "./features/auth/pages/SignupPage";
+import { KPIAnalyticsPage } from "./features/analytics";
 
 
 const queryClient = new QueryClient();
@@ -93,12 +94,11 @@ const App = () => (
                     </ProtectedRoute>
                   }
                 />
-
                 <Route
                   path="analytics"
                   element={
                     <ProtectedRoute allowedRoles={["owner", "manager"]}>
-                      <KPIAnalyticsPage />
+                      <KPIAnalyticsPage/>
                     </ProtectedRoute>
                   }
                 />
@@ -119,6 +119,7 @@ const App = () => (
                 <Route path="purchase-orders" element={<ProtectedRoute allowedRoles={["owner", "manager", "procurement"]}><PurchaseOrdersPage /></ProtectedRoute>} />
                 <Route path="purchase-orders/new" element={<ProtectedRoute allowedRoles={["owner", "manager", "procurement"]}><CreatePurchaseOrderPage /></ProtectedRoute>} />
                 <Route path="purchase-orders/:id" element={<ProtectedRoute allowedRoles={["owner", "manager", "procurement"]}><PurchaseOrderDetailsPage /></ProtectedRoute>} />
+                <Route path="vendors" element={<ProtectedRoute allowedRoles={["owner", "manager", "procurement"]}><VendorsPage /></ProtectedRoute>} />
                 <Route path="unauthorized" element={<UnauthorizedPage />} />
 
               </Route>
