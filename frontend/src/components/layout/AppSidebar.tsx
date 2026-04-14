@@ -1,5 +1,5 @@
 import {
-  ShoppingCart, ChefHat, Package, ClipboardList, Users, BarChart3,
+  ShoppingCart, ChefHat, Package, ClipboardList, Users, BarChart3, Store,
   LayoutDashboard, UserCog, CalendarCheck, CalendarClock, Wallet,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
@@ -33,6 +33,7 @@ const managementItems: NavItem[] = [
   { title: "Purchase Orders", url: "/purchase-orders", icon: ClipboardList, roles: ["owner", "manager", "procurement"] },
   { title: "CRM", url: "/crm", icon: Users, roles: ["owner", "manager"] },
   { title: "Analytics", url: "/analytics", icon: BarChart3, roles: ["owner", "manager"] },
+  { title: "Vendors", url: "/vendors", icon: Store, roles: ["owner", "manager", "procurement"] }
 ];
 
 const erpItems: NavItem[] = [
