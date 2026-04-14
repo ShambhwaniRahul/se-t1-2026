@@ -11,6 +11,8 @@ export const ROUTE_ACCESS: Record<string, AppRole[]> = {
   "/analytics": ["owner", "manager"],
   "/erp": ["owner", "manager"],
   "/settings": ["owner"],
+  "/vendors": ["owner", "manager", "procurement"],
+  "/menu": ["owner", "manager"]
 };
 
 /** Default landing page per role after login */
