@@ -26,6 +26,7 @@ import PurchaseOrderDetailsPage from "./features/purchase-orders/pages/PurcahseO
 import { VendorsPage } from "@/features/vendors";
 import SignupPage from "./features/auth/pages/SignupPage";
 import { KPIAnalyticsPage } from "./features/analytics";
+import { MenuItemsPage } from "@/features/menu";
 
 
 const queryClient = new QueryClient();
@@ -120,6 +121,7 @@ const App = () => (
                 <Route path="purchase-orders/new" element={<ProtectedRoute allowedRoles={["owner", "manager", "procurement"]}><CreatePurchaseOrderPage /></ProtectedRoute>} />
                 <Route path="purchase-orders/:id" element={<ProtectedRoute allowedRoles={["owner", "manager", "procurement"]}><PurchaseOrderDetailsPage /></ProtectedRoute>} />
                 <Route path="vendors" element={<ProtectedRoute allowedRoles={["owner", "manager", "procurement"]}><VendorsPage /></ProtectedRoute>} />
+                <Route path="menu" element={<ProtectedRoute allowedRoles={["owner", "manager"]}><MenuItemsPage /></ProtectedRoute>} />
                 <Route path="unauthorized" element={<UnauthorizedPage />} />
 
               </Route>
