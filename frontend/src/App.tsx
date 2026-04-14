@@ -18,7 +18,6 @@ import TablePage from "@/features/pos/pages/TablePage";
 import KitchenPage from "@/features/kitchen/pages/KitchenPage";
 import InventoryPage from "@/features/inventory/pages/InventoryPage";
 import CrmPage from "@/features/crm/pages/CrmPage";
-import AnalyticsPage from "@/features/analytics/AnalyticsPage";
 import { KPIAnalyticsPage } from "@/features/analytics";
 import { EmployeesPage, AttendancePage, ShiftsPage, PayrollPage } from "@/features/erp/pages";
 import PosPage from "./features/pos/pages/PosPage";
@@ -94,16 +93,9 @@ const App = () => (
                     </ProtectedRoute>
                   }
                 />
+
                 <Route
                   path="analytics"
-                  element={
-                    <ProtectedRoute allowedRoles={["owner", "manager"]}>
-                      <AnalyticsPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="analytics/kpi"
                   element={
                     <ProtectedRoute allowedRoles={["owner", "manager"]}>
                       <KPIAnalyticsPage />
