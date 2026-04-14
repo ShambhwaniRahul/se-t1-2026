@@ -18,7 +18,7 @@ def get_invoice_ocr_prompt(expected_skus: dict[str, str]) -> str:
     3.  **IGNORE UNMATCHED:** If an item cannot be logically mapped to ANY key in the AUTHORIZED SKU MAPPING, completely ignore it.
     4.  **UNIT CONVERSION & NORMALIZATION:** You MUST convert the physical invoice quantity to the EXACT required unit specified for that SKU in the AUTHORIZED SKU MAPPING.
         - Example: If the invoice says "500g" and the required unit is "KG", extract quantity as 0.5 and unit as "KG".
-        - Example: If the invoice says "2 Dozen" and the required unit is "Pc", extract quantity as 24 and unit as "Pc".
+        - Example: If the invoice says "2 Dozen" and the required unit is "Pieces", extract quantity as 24 and unit as "Pieces".
         - Price Adjustment: If a unit conversion occurs, you MUST adjust the `price_per_unit` accordingly so that `quantity` * `price_per_unit` equals the `total_price` physically printed on the invoice.
     5.  **NO GUESSING OTHER VALUES:** Only extract data physically visible. Do not calculate missing values except for required unit/price adjustments. Use `null` if missing.
     6.  **STRICT SCHEMA:** Adhere to this exact JSON schema:
