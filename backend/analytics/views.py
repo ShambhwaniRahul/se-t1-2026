@@ -3,6 +3,7 @@ from rest_framework.views import APIView
 from utils.response import standard_response
 from orders.models import Order
 from datetime import datetime, time, timedelta
+from django.utils import timezone
 
 # Create your views here.
 
@@ -20,7 +21,7 @@ class RevenueKPIsView(APIView):
         if end_date:
             orders = orders.filter(created_at__date__lte=end_date)
 
-        total_revenue = sum(order.total_amount for order in orders)
+        total_revenue = sum(order.order_total for order in orders)
         total_orders = orders.count()
         average_revenue_per_order = round(total_revenue / total_orders, 2) if total_orders > 0 else 0
 
@@ -75,7 +76,7 @@ class SalesByCategoryView(APIView):
         sales_by_category = {}
 
         for order in orders:
-            for item in order.ordermenuitem_set.all():
+            for item in order.items.all():
                 category_name = item.menu_item.get_category_display()
                 sales_by_category[category_name] = sales_by_category.get(category_name, 0) + item.item_total
 
@@ -99,9 +100,9 @@ class TopSellingItemsView(APIView):
         item_sales = {}
 
         for order in orders:
-            for item in order.ordermenuitem_set.all():
+            for item in order.items.all():
                 item_name = item.menu_item.name
-                item_sales[item_name] = item_sales.get(item_name, 0) + item.quantity
+                item_sales[item_name] = item_sales.get(item_name, 0) + 1
 
         sorted_items = sorted(item_sales.items(), key=lambda x: x[1], reverse=True)
 
@@ -120,10 +121,10 @@ class RecentOrdersView(APIView):
                 "table_number": order.table.table_number,
                 "status": order.get_status_display(),
                 "dining_type": order.get_dining_type_display(),
-                "total_items": len(order.ordermenuitem_set.all()),
-                "total_amount": order.total_amount,
+                "total_items": len(order.items.all()),
+                "total_amount": order.order_total,
                 "created_at": order.created_at.isoformat(),
-                "timedelta_since_order": timedelta(minutes=(datetime.now() - order.created_at).total_seconds() / 60)
+                "timedelta_since_order": (timezone.now() - order.created_at).total_seconds() // 60
             }
             for order in recent_orders
         ])
