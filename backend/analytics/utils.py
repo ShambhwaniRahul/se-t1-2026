@@ -1,8 +1,5 @@
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-import matplotlib.ticker as ticker
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 import warnings
@@ -112,61 +109,6 @@ def apply_dynamic_ewma(df, start_date=None, end_date=None, span=1, alpha=0.3):
     aggregated_df['Date'] = aggregated_df['Date'].dt.date
     
     return aggregated_df
-
-
-def render_ewma_visualization(df):
-    """
-    Renders a high-fidelity time-series chart comparing raw daily revenue 
-    against the dynamically calculated EWMA trendline.
-    
-    Expects a DataFrame containing 'Date', 'Revenue', and 'EWMA' columns.
-    """
-    
-    if df.empty or 'EWMA' not in df.columns:
-        raise ValueError("DataFrame is empty or missing the 'EWMA' column. Run apply_dynamic_ewma first.")
-
-    fig, ax = plt.subplots(figsize=(14, 7))
-    
-    # Render raw daily revenue as a muted background layer to show variance
-    ax.plot(
-        df['Date'], 
-        df['Revenue'], 
-        label='Daily Revenue (Raw)', 
-        color='#B0C4DE', 
-        linestyle='-', 
-        linewidth=1.5, 
-        alpha=0.7
-    )
-    
-    # Render the EWMA as a prominent foreground line to show the smoothed trend
-    ax.plot(
-        df['Date'], 
-        df['EWMA'], 
-        label='EWMA Trendline', 
-        color='#FF4500', 
-        linestyle='-', 
-        linewidth=2.5
-    )
-    
-    # Configure chart metadata and gridlines
-    ax.set_title('Restaurant Revenue Analysis: Raw Volatility vs. EWMA Smoothing', fontsize=14, pad=15)
-    ax.set_xlabel('Date', fontsize=12)
-    ax.set_ylabel('Revenue Volume', fontsize=12)
-    ax.legend(loc='upper left', fontsize=11)
-    ax.grid(True, which='major', color='#E0E0E0', linestyle='--', alpha=0.8)
-    
-    # Format X-axis to cleanly display dates (e.g., "Jan 2025")
-    ax.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))
-    plt.xticks(rotation=45)
-    
-    # Format Y-axis to display values as standard currency
-    currency_formatter = ticker.StrMethodFormatter('${x:,.0f}')
-    ax.yaxis.set_major_formatter(currency_formatter)
-    
-    plt.tight_layout()
-    plt.show()
-
 
 
 def generate_holt_winters_forecast(df, forecast_days=14, seasonal_periods=7):

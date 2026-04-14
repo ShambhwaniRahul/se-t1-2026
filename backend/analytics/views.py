@@ -1,3 +1,4 @@
+import pandas as pd
 from django.shortcuts import render
 from rest_framework.views import APIView
 from utils.response import standard_response
@@ -143,3 +144,54 @@ class RecentOrdersView(APIView):
 
 
 # PART 2 - ANALYTICS VIEW
+class RevenueOverTimeView(APIView):
+    def get(self, request):
+        start_date = request.query_params.get('start_date', None)
+        end_date = request.query_params.get('end_date', None)
+
+        orders = Order.objects.filter(status=Order.StatusChoices.CLOSED)
+        # orders = Order.objects.all()
+
+        if start_date:
+            orders = orders.filter(created_at__date__gte=start_date)
+
+        if end_date:
+            orders = orders.filter(created_at__date__lte=end_date)
+
+        revenue_data = {}
+        span = int(request.query_params.get('span', 1))
+        alpha = float(request.query_params.get('alpha', 0.3))
+        for order in orders:
+            date_str = order.created_at.date().isoformat()
+            revenue_data[date_str] = revenue_data.get(date_str, 0) + order.order_total
+        revenue_df = pd.DataFrame(list(revenue_data.items()), columns=['Date', 'Revenue'])
+        ewma_df = apply_dynamic_ewma(revenue_df, span=span, alpha=alpha)
+        return standard_response(data={
+            "revenue_over_time": revenue_df.to_dict(orient='records'),
+            "ewma_trendline": ewma_df.reset_index().to_dict(orient='records')
+        })
+
+
+class OrderVersusRevenueView(APIView):
+    def get(self, request):
+        start_date = request.query_params.get('start_date', None)
+        end_date = request.query_params.get('end_date', None)
+
+        orders = Order.objects.filter(status=Order.StatusChoices.CLOSED)
+        # orders = Order.objects.all()
+
+        if start_date:
+            orders = orders.filter(created_at__date__gte=start_date)
+
+        if end_date:
+            orders = orders.filter(created_at__date__lte=end_date)
+
+        order_revenue_data = {}
+
+        for order in orders:
+            date_str = order.created_at.date().isoformat()
+            if date_str not in order_revenue_data:
+                order_revenue_data[date_str] = {"total_revenue": 0, "total_orders": 0}
+            order_revenue_data[date_str]["total_revenue"] += order.order_total
+            order_revenue_data[date_str]["total_orders"] += 1
+        return standard_response(data=order_revenue_data)
