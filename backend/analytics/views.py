@@ -118,8 +118,35 @@ class TopSellingItemsView(APIView):
                 item_sales[item_name] = item_sales.get(item_name, 0) + 1
 
         sorted_items = sorted(item_sales.items(), key=lambda x: x[1], reverse=True)
+        sorted_items = sorted_items[:top_n]
 
-        return standard_response(data=dict(sorted_items[:top_n]))
+        return standard_response(data=sorted_items)
+
+
+class LeastSellingItemsView(APIView):
+    def get(self, request):
+        start_date = request.query_params.get('start_date', None)
+        end_date = request.query_params.get('end_date', None)
+        least_n = int(request.query_params.get('least_n', 5))
+
+        orders = Order.objects.all()
+
+        if start_date:
+            orders = orders.filter(created_at__date__gte=start_date)
+
+        if end_date:
+            orders = orders.filter(created_at__date__lte=end_date)
+
+        item_sales = {}
+
+        for order in orders:
+            for item in order.items.all():
+                item_name = item.menu_item.name
+                item_sales[item_name] = item_sales.get(item_name, 0) + 1
+
+        sorted_items = sorted(item_sales.items(), key=lambda x: x[1], reverse=False)
+        sorted_items = sorted_items[:least_n]
+        return standard_response(data=sorted_items)
 
 
 class RecentOrdersView(APIView):
