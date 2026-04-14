@@ -1,6 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework import status
+import json
 from utils.response import standard_response
+import requests
 from .models import (
     Vendor, PurchaseOrder,
     OrderedNonPerishablePurchaseSKU, OrderedPerishablePurchaseSKU,
@@ -21,7 +23,7 @@ from django.shortcuts import get_object_or_404
 from utils.response import standard_response
 from drf_spectacular.utils import extend_schema
 
-OCR_URL = "localhost:5000/scan/"
+OCR_URL = "http://localhost:5000/scan/"
 
 # Create your views here.
 
@@ -208,7 +210,7 @@ class PurchaseOrderListCreateAPIView(APIView):
                 if serializer.validated_data['purchase_type'] == PurchaseOrder.TypeChoices.PERISHABLE:
                     # sku_obj = get_object_or_404(PerishableSKU, pk=sku['sku'])
                     try:
-                        sku_obj = PerishableSKU.objects.het(pk=sku['sku'])
+                        sku_obj = PerishableSKU.objects.get(pk=sku['sku'])
                     except PerishableSKU.DoesNotExist:
                         return standard_response(
                             success=False,
@@ -702,24 +704,62 @@ class VendorInvoiceListCreateAPIView(APIView):
             purchase_order = PurchaseOrder.objects.get(pk=po_number)
         except PurchaseOrder.DoesNotExist:
             return standard_response(
-        success=False,
-        message="Purchase order does not exist.",
-        status_code=status.HTTP_404_NOT_FOUND
-         )
-
-        if not request.data.get("items") or len(request.data.get("items")) == 0:
+                success=False,
+                message="Purchase order does not exist.",
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+        invoice_image = request.FILES.get("invoice_image")
+        po_skus = purchase_order.purchase_set()
+        expected_skus_json = {}
+        for item in po_skus:
+            expected_skus_json[item.sku.name] = item.sku.get_unit_display() if purchase_order.purchase_type == PurchaseOrder.TypeChoices.PERISHABLE else "Pieces"
+        file_payload = {
+            "file": (invoice_image.name, invoice_image, invoice_image.content_type)
+        }
+        data_payload = {"expected_skus_json": json.dumps(expected_skus_json)}
+        try:
+            response = requests.post(OCR_URL, files=file_payload, data=data_payload, timeout=120)
+            data = response.json()
+            # data = {
+            #     'invoice_number': '4242', 
+            #     'date': '2021-09-01', 
+            #     'items': [
+            #         {'mapped_sku': 'Chana Dal', 'quantity': 50.0, 'unit': 'KG', 'price_per_unit': 55.2, 'total_price': 2760.0}, 
+            #         {'mapped_sku': 'Chickpea', 'quantity': 5.0, 'unit': 'KG', 'price_per_unit': 140.0, 'total_price': 700.0}, 
+            #         {'mapped_sku': 'Oil', 'quantity': 3.0, 'unit': 'Liters', 'price_per_unit': 1338.6, 'total_price': 4015.8},
+            #         {'mapped_sku': 'Chana Dal', 'quantity': 5.0, 'unit': 'KG', 'price_per_unit': 145.0, 'total_price': 725.0}, 
+            #         {'mapped_sku': 'Masoor Dal', 'quantity': 50.0, 'unit': 'KG', 'price_per_unit': 96.5, 'total_price': 4825.0}, 
+            #         {'mapped_sku': 'Oil Can', 'quantity': 100.0, 'unit': 'Liters', 'price_per_unit': 197.5, 'total_price': 19750.0}, 
+            #         {'mapped_sku': 'Sugar', 'quantity': 2.0, 'unit': 'Pieces', 'price_per_unit': 1925.0, 'total_price': 3850.0}, 
+            #         {'mapped_sku': 'Sabudana - Khichdi', 'quantity': 25.0, 'unit': 'KG', 'price_per_unit': 45.0, 'total_price': 1125.0}, 
+            #         {'mapped_sku': 'Sabudana', 'quantity': 30.0, 'unit': 'KG', 'price_per_unit': 44.67, 'total_price': 1340.0}, 
+            #         {'mapped_sku': 'Urad Dal', 'quantity': 20.0, 'unit': 'KG', 'price_per_unit': 48.0, 'total_price': 960.0}, 
+            #         {'mapped_sku': 'Kidney Beans', 'quantity': 25.0, 'unit': 'KG', 'price_per_unit': 45.0, 'total_price': 1125.0}, 
+            #         {'mapped_sku': 'Biscuit', 'quantity': 5.0, 'unit': 'Pieces', 'price_per_unit': 650.0, 'total_price': 3250.0}    
+            #     ]}
+        except Exception as e:
+            return standard_response(success=False,
+                                     message=f"Failed to process invoice image: {str(e)}. Please try again later.",
+                                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+        if response.status_code != 200:
+            return standard_response(success=False,
+                                     message=f"Failed to extract data from invoice image: {response.status_code}. {response.text}",
+                                     status_code=status.HTTP_400_BAD_REQUEST)
+        if not data.get("items") or len(data.get("items")) == 0:
             return standard_response(success=False,
                                      message="At least one item must be included in the invoice.",
                                      status_code=status.HTTP_400_BAD_REQUEST)
         invoice_serializer = VendorInvoiceSerializer(data={
             "purchase": po_number,
-            "invoice_number": request.data.get("invoice_number"),
-            "delivery_date": request.data.get("date"),
+            "invoice_number": data.get("invoice_number"),
+            "delivery_date": data.get("date"),
+            "invoice_file": invoice_image
         })
         if invoice_serializer.is_valid():
             invoice_serializer.save()
+
             if purchase_order.purchase_type == PurchaseOrder.TypeChoices.PERISHABLE:
-                for item in request.data.get("items", []):
+                for item in data.get("items", []):
                     sku_name = item.get("mapped_sku")
                     if not PerishableSKU.objects.filter(name=sku_name).exists():
                         return standard_response(success=False,
@@ -729,7 +769,7 @@ class VendorInvoiceListCreateAPIView(APIView):
                     serializer = PerishableInventorySerializer(data={
                         "sku": sku.id,
                         "quantity": item.get("quantity"),
-                        "purchase_date": request.data.get("date")
+                        "purchase_date": data.get("date")
                     })
                     if serializer.is_valid():
                         serializer.save()
@@ -739,7 +779,7 @@ class VendorInvoiceListCreateAPIView(APIView):
                                                  status_code=status.HTTP_400_BAD_REQUEST)
                 delivery_serializer = DeliveredPerishableInventorySerializer(data={
                     "invoice": invoice_serializer.instance.id,
-                    "delivered_json": request.data.get("items")
+                    "delivered_json": data.get("items")
                 })
                 if delivery_serializer.is_valid():
                     delivery_serializer.save()
@@ -748,7 +788,7 @@ class VendorInvoiceListCreateAPIView(APIView):
                                              message="Invalid data for delivered perishable inventory.",
                                              status_code=status.HTTP_400_BAD_REQUEST)
             else:
-                for item in request.data.get("items", []):
+                for item in data.get("items", []):
                     sku_name = item.get("mapped_sku")
                     if not NonPerishableInventory.objects.filter(name=sku_name).exists():
                         return standard_response(success=False,
@@ -765,7 +805,7 @@ class VendorInvoiceListCreateAPIView(APIView):
                 
                 delivery_serializer = DeliveredNonPerishableInventorySerializer(data={
                     "invoice": invoice_serializer.instance.id,
-                    "delivered_json": request.data.get("items")
+                    "delivered_json": data.get("items")
                 })
                 if delivery_serializer.is_valid():
                     delivery_serializer.save()
@@ -777,9 +817,9 @@ class VendorInvoiceListCreateAPIView(APIView):
                 success=True,
                 message="Vendor invoice created successfully.",
                 data=invoice_serializer.data,
-                 status=status.HTTP_201_CREATED)
+                status_code=status.HTTP_201_CREATED)
         return standard_response(success=False,
-                                 message="Invalid data for vendor invoice.",
+                                 message=f"Invalid data for vendor invoice. {invoice_serializer.errors}",
                                  status_code=status.HTTP_400_BAD_REQUEST)
 
 class DeliveredPerishablePurchaseInventoryListAPIView(APIView):

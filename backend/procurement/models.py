@@ -139,7 +139,7 @@ class OrderedNonPerishablePurchaseSKU(TimeStampedModel):
 class VendorInvoice(TimeStampedModel):
     purchase = models.ForeignKey(PurchaseOrder,on_delete=models.CASCADE,db_column='purchase_id')
 
-    invoice_number = models.CharField(max_length=100,unique=True,db_column='invoice_number')
+    invoice_number = models.CharField(max_length=100, db_column='invoice_number')
 
     delivery_date = models.DateField(db_column='delivery_date')
 
