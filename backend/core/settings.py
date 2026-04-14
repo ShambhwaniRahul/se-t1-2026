@@ -17,6 +17,10 @@ import dj_database_url
 from datetime import timedelta
 
 
+# Setting the timezone
+USE_TZ = True
+TIME_ZONE = 'Asia/Kolkata'
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / '.env')
@@ -49,6 +53,7 @@ INSTALLED_APPS = [
     'orders',
     "logs",
     "humanresources",
+    "drf_spectacular",
 ]
 
 MIDDLEWARE = [
@@ -70,7 +75,17 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+
 }
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Your API",
+    "DESCRIPTION": "API Docs",
+    "VERSION": "1.0.0",
+    "SECURITY": [{"BearerAuth": []}],
+}
+
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=300),

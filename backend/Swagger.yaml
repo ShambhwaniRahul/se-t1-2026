@@ -1,0 +1,3856 @@
+openapi: 3.0.3
+info:
+  title: Your API
+  version: 1.0.0
+  description: |
+    # API Documentation
+
+    This API powers the backend for the procurement and inventory system.
+
+    ## User Stories Mapping
+  
+    - As an Owner, I can manage employees and assign roles at localhost:8000/api/v1/hr/auth/employees .
+    - As a Manager, I can create and manage purchase orders, and track inventory at localhost:8000/api/v1/procurement/purchase-orders.
+    - As a Store Manager, I can update stock levels after receiving goods at localhost:8000/api/v1/inventory/perishable-inventory.
+    - As a Chef, I can create and manage customer orders at localhost:8000/api/v1/pos/orders.
+    - As a Waiter, I can update the status of menu items within an order at localhost:8000/api/v1/pos/orders/<int:order_id>/menuitems/<int:pk>.
+  
+    ## Key Workflows
+  
+    1. Purchase Order is created by Manager
+    2. Vendor delivers the ordered items
+    3. Vendor invoice is generated and recorded
+    4. Inventory is updated based on received goods
+  
+    ## Authentication
+  
+    This API uses JWT-based authentication.
+  
+    - Obtain tokens via `/api/token/`
+    - Refresh tokens via `/api/token/refresh/`
+    - Include access token in Authorization header:
+      ```
+      Authorization: Bearer <access_token>
+      ```
+
+paths:
+  /api/schema/:
+    get:
+      operationId: schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - ckb
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - ms
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - ug
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
+      tags:
+      - schema
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/token/:
+    post:
+      operationId: token_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+        required: true
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/token/refresh/:
+    post:
+      operationId: token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/v1/customers/:
+    get:
+      operationId: v1_customers_retrieve
+      description: |-
+        Handles customer listing and creation operations.
+        Requires OWNER or MANAGER role for access.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+  /api/v1/customers/{id}/:
+    get:
+      operationId: v1_customers_retrieve_2
+      description: |-
+        Handles customer retrieve, update, and delete operations.
+        Requires OWNER or MANAGER role for access.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: v1_customers_partial_update
+      description: |-
+        Handles customer retrieve, update, and delete operations.
+        Requires OWNER or MANAGER role for access.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomer'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomer'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomer'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: v1_customers_destroy
+      description: |-
+        Handles customer retrieve, update, and delete operations.
+        Requires OWNER or MANAGER role for access.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/customers/auth/register/:
+    post:
+      operationId: v1_customers_auth_register_create
+      description: |-
+        Registers a new customer.
+        Validates OTP prior to saving the serialized customer data.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Customer'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Customer'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Customer'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/customers/payments/:
+    get:
+      operationId: v1_customers_payments_retrieve
+      description: |-
+        Lists all customer payments.
+        Requires OWNER or MANAGER role for access.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: v1_customers_payments_create
+      description: |-
+        Lists all customer payments.
+        Requires OWNER or MANAGER role for access.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerPayment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CustomerPayment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CustomerPayment'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/customers/payments/{id}/:
+    get:
+      operationId: v1_customers_payments_retrieve_2
+      description: Retrieves details of a specific customer payment.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/hr/auth/attendance-logs/:
+    get:
+      operationId: v1_hr_auth_attendance_logs_retrieve
+      description: Handles listing all attendance logs and creating new attendance
+        logs.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: v1_hr_auth_attendance_logs_create
+      description: Handles listing all attendance logs and creating new attendance
+        logs.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttendanceLog'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AttendanceLog'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AttendanceLog'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/hr/auth/attendance-logs/{id}/:
+    get:
+      operationId: v1_hr_auth_attendance_logs_retrieve_2
+      description: Handles retrieving, updating, and deleting a specific attendance
+        log by its ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: v1_hr_auth_attendance_logs_partial_update
+      description: Handles retrieving, updating, and deleting a specific attendance
+        log by its ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAttendanceLog'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAttendanceLog'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAttendanceLog'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: v1_hr_auth_attendance_logs_destroy
+      description: Handles retrieving, updating, and deleting a specific attendance
+        log by its ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/hr/auth/employees/:
+    get:
+      operationId: v1_hr_auth_employees_list
+      description: |-
+        Retrieves a list of all registered employees.
+        Accessible only to users with OWNER or MANAGER roles.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Employee'
+          description: ''
+  /api/v1/hr/auth/employees/{id}/:
+    get:
+      operationId: v1_hr_auth_employees_retrieve
+      description: |-
+        Retrieves detailed information about a specific employee by their ID.
+        Accessible only to users with OWNER or MANAGER roles.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: ''
+    patch:
+      operationId: v1_hr_auth_employees_partial_update
+      description: |-
+        Retrieves detailed information about a specific employee by their ID.
+        Accessible only to users with OWNER or MANAGER roles.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployee'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployee'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployee'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: ''
+    delete:
+      operationId: v1_hr_auth_employees_destroy
+      description: |-
+        Retrieves detailed information about a specific employee by their ID.
+        Accessible only to users with OWNER or MANAGER roles.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/hr/auth/login/:
+    post:
+      operationId: v1_hr_auth_login_create
+      description: |-
+        Authenticates an identity utilizing phone_no and password.
+        Issues a JSON Web Token (JWT) pair for authorized sessions.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeLogin'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmployeeLogin'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmployeeLogin'
+        required: true
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeLogin'
+          description: ''
+  /api/v1/hr/auth/refresh/:
+    post:
+      operationId: v1_hr_auth_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/v1/hr/auth/register/:
+    post:
+      operationId: v1_hr_auth_register_create
+      description: |-
+        Registers a new employee using provided details.
+        Expects phone_no, password, and other relevant fields in the request data.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Employee'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Employee'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Employee'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: ''
+  /api/v1/hr/auth/salary-breakdowns/:
+    get:
+      operationId: v1_hr_auth_salary_breakdowns_retrieve
+      description: |-
+        Handles listing all salary slip breakdowns and creating new salary slip breakdowns.
+        GET: Retrieves a list of all salary slip breakdowns.
+        POST: Creates a new salary slip breakdown with the provided data.
+        Accessible only to users with OWNER or MANAGER roles.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: v1_hr_auth_salary_breakdowns_create
+      description: |-
+        Handles listing all salary slip breakdowns and creating new salary slip breakdowns.
+        GET: Retrieves a list of all salary slip breakdowns.
+        POST: Creates a new salary slip breakdown with the provided data.
+        Accessible only to users with OWNER or MANAGER roles.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SalarySlipBreakdown'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SalarySlipBreakdown'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SalarySlipBreakdown'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalarySlipBreakdown'
+          description: ''
+  /api/v1/hr/auth/salary-breakdowns/{id}/:
+    get:
+      operationId: v1_hr_auth_salary_breakdowns_retrieve_2
+      description: Handles retrieving, updating, and deleting a specific salary slip
+        breakdown by its ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: v1_hr_auth_salary_breakdowns_partial_update
+      description: Handles retrieving, updating, and deleting a specific salary slip
+        breakdown by its ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSalarySlipBreakdown'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSalarySlipBreakdown'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSalarySlipBreakdown'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: v1_hr_auth_salary_breakdowns_destroy
+      description: Handles retrieving, updating, and deleting a specific salary slip
+        breakdown by its ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/hr/auth/salary-slips/:
+    get:
+      operationId: v1_hr_auth_salary_slips_list
+      description: |-
+        Handles listing all salary slips and creating new salary slips.
+        GET: Retrieves a list of all salary slips.
+        POST: Creates a new salary slip with the provided data.
+        Accessible only to users with OWNER or MANAGER roles.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SalarySlip'
+          description: ''
+    post:
+      operationId: v1_hr_auth_salary_slips_create
+      description: |-
+        Handles listing all salary slips and creating new salary slips.
+        GET: Retrieves a list of all salary slips.
+        POST: Creates a new salary slip with the provided data.
+        Accessible only to users with OWNER or MANAGER roles.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SalarySlip'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SalarySlip'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SalarySlip'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalarySlip'
+          description: ''
+  /api/v1/hr/auth/salary-slips/{id}/:
+    get:
+      operationId: v1_hr_auth_salary_slips_retrieve
+      description: Handles retrieving, updating, and deleting a specific salary slip
+        by its ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalarySlip'
+          description: ''
+    patch:
+      operationId: v1_hr_auth_salary_slips_partial_update
+      description: Handles retrieving, updating, and deleting a specific salary slip
+        by its ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSalarySlip'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSalarySlip'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSalarySlip'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: v1_hr_auth_salary_slips_destroy
+      description: Handles retrieving, updating, and deleting a specific salary slip
+        by its ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/hr/auth/shifts/:
+    get:
+      operationId: v1_hr_auth_shifts_retrieve
+      description: |-
+        Handles listing all shifts and creating new shifts.
+        GET: Retrieves a list of all shifts.
+        POST: Creates a new shift with the provided data.
+        Accessible only to users with OWNER or MANAGER roles.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: v1_hr_auth_shifts_create
+      description: |-
+        Handles listing all shifts and creating new shifts.
+        GET: Retrieves a list of all shifts.
+        POST: Creates a new shift with the provided data.
+        Accessible only to users with OWNER or MANAGER roles.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Shift'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Shift'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Shift'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shift'
+          description: ''
+  /api/v1/hr/auth/shifts/{id}/:
+    get:
+      operationId: v1_hr_auth_shifts_retrieve_2
+      description: Handles retrieving, updating, and deleting a specific shift by
+        its ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: v1_hr_auth_shifts_partial_update
+      description: Handles retrieving, updating, and deleting a specific shift by
+        its ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedShift'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedShift'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedShift'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: v1_hr_auth_shifts_destroy
+      description: Handles retrieving, updating, and deleting a specific shift by
+        its ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/inventory/non-perishable-inventory/:
+    get:
+      operationId: v1_inventory_non_perishable_inventory_retrieve
+      description: Handles listing and creating Non-Perishable Inventory items.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/inventory/non-perishable-inventory/{id}/:
+    get:
+      operationId: v1_inventory_non_perishable_inventory_retrieve_2
+      description: Handles retrieve, update, and delete for a single Non-Perishable
+        Inventory item.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: v1_inventory_non_perishable_inventory_destroy
+      description: Handles retrieve, update, and delete for a single Non-Perishable
+        Inventory item.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/inventory/perishable-inventory/:
+    get:
+      operationId: v1_inventory_perishable_inventory_retrieve
+      description: |-
+        Handles the list operations for Perishable Inventory batches.
+        Supports filtering by SKU and expiration status.
+        The type of requests for perishable-inventory/ endpoint are:-
+        1. GET : /perishable-inventory/ : Will return a list of all perishable inventory items.
+        3. GET : /perishable-inventory/?sku=<int:sku_id>/ : Will return a list of perishable inventory items filtered by the specified SKU ID.
+        4. GET : /perishable-inventory/?expiry=true/ : Will return a list of expired perishable inventory items.
+        5. GET : /perishable-inventory/?sku=<int:sku_id>&expired=false : Will return a list of non-expired perishable inventory items filtered by the specified SKU ID.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerishableInventory'
+          description: ''
+  /api/v1/inventory/perishable-inventory/{id}/:
+    get:
+      operationId: v1_inventory_perishable_inventory_retrieve_2
+      description: Handles retrieve and delete for a single Perishable Inventory batch.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerishableInventory'
+          description: ''
+    delete:
+      operationId: v1_inventory_perishable_inventory_destroy
+      description: Handles retrieve and delete for a single Perishable Inventory batch.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/inventory/perishable-skus/:
+    get:
+      operationId: v1_inventory_perishable_skus_retrieve
+      description: |-
+        Handles listing and creating Perishable SKUs.
+        The Owner, manager, inventory manager, and chef can view it, but the chef can't create.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: v1_inventory_perishable_skus_create
+      description: |-
+        Handles listing and creating Perishable SKUs.
+        The Owner, manager, inventory manager, and chef can view it, but the chef can't create.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PerishableSKU'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PerishableSKU'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PerishableSKU'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerishableSKU'
+          description: ''
+  /api/v1/inventory/perishable-skus/{id}/:
+    get:
+      operationId: v1_inventory_perishable_skus_retrieve_2
+      description: |-
+        Handles retrieve, update, and delete for a single Perishable SKU.
+        The Owner, manager, inventory manager, and chef can view it, but the chef can't edit or delete.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: v1_inventory_perishable_skus_partial_update
+      description: |-
+        Handles retrieve, update, and delete for a single Perishable SKU.
+        The Owner, manager, inventory manager, and chef can view it, but the chef can't edit or delete.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: v1_inventory_perishable_skus_destroy
+      description: |-
+        Handles retrieve, update, and delete for a single Perishable SKU.
+        The Owner, manager, inventory manager, and chef can view it, but the chef can't edit or delete.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/orders/diningtables/:
+    get:
+      operationId: v1_orders_diningtables_retrieve
+      description: List all dining tables.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: v1_orders_diningtables_create
+      description: Create a new dining table.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiningTable'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DiningTable'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DiningTable'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/orders/diningtables/{id}/:
+    get:
+      operationId: v1_orders_diningtables_retrieve_2
+      description: Retrieve a dining table by ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: v1_orders_diningtables_partial_update
+      description: Update a dining table by ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDiningTable'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDiningTable'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDiningTable'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: v1_orders_diningtables_destroy
+      description: Delete a dining table by ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/orders/diningtables/toggle-table-availability/{id}/:
+    patch:
+      operationId: v1_orders_diningtables_toggle_table_availability_partial_update
+      description: API view to update the availability status of a dining table.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDiningTable'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDiningTable'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDiningTable'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/orders/discounts/:
+    get:
+      operationId: v1_orders_discounts_retrieve
+      description: List all discounts.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: v1_orders_discounts_create
+      description: |-
+        Create discounts for multiple menu items.
+        It will get the input data in the following format:
+        {
+            "rate": 0.2,
+            "validity": 7,
+            "menu_items": [1, 2, 3]
+        }
+
+        The data will be saved as follows:
+        {menu_item :1, rate:0.2, validity:7},
+        {menu_item :2, rate:0.2, validity:7},
+        {menu_item :3, rate:0.2, validity:7}
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Discounts'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Discounts'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Discounts'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/orders/discounts/{id}/:
+    get:
+      operationId: v1_orders_discounts_retrieve_2
+      description: Retrieve a discount by ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: v1_orders_discounts_partial_update
+      description: API view to retrieve, update, or delete a discount.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDiscounts'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDiscounts'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDiscounts'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: v1_orders_discounts_destroy
+      description: To delete a discount by ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/orders/menuitem-ingredients/:
+    get:
+      operationId: v1_orders_menuitem_ingredients_retrieve
+      description: List all menu item ingredients.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: v1_orders_menuitem_ingredients_create
+      description: Create a new menu item ingredient.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MenuItemIngredient'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MenuItemIngredient'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MenuItemIngredient'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/orders/menuitem-ingredients/{id}/:
+    get:
+      operationId: v1_orders_menuitem_ingredients_retrieve_2
+      description: Retrieve a menu item ingredient by ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: v1_orders_menuitem_ingredients_partial_update
+      description: Update a menu item ingredient by ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMenuItemIngredient'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMenuItemIngredient'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMenuItemIngredient'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: v1_orders_menuitem_ingredients_destroy
+      description: Delete a menu item ingredient by ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/orders/menuitems/:
+    get:
+      operationId: v1_orders_menuitems_retrieve
+      description: List all menu items.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: v1_orders_menuitems_create
+      description: Create a new menu item.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MenuItem'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MenuItem'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MenuItem'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/orders/menuitems/{id}/:
+    get:
+      operationId: v1_orders_menuitems_retrieve_2
+      description: Retrieve a menu item by ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: v1_orders_menuitems_partial_update
+      description: Update a menu item by ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMenuItem'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMenuItem'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMenuItem'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: v1_orders_menuitems_destroy
+      description: Delete a menu item by ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/orders/orders/:
+    get:
+      operationId: v1_orders_orders_retrieve
+      description: List all orders.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: v1_orders_orders_create
+      description: |-
+        Create a new order, and, it must have menu items in it.
+        Input data format:
+        {
+            "table": 1,
+            "dining_type": 0,
+            "packaging_cost": 0
+            "items": [
+                {
+                    "menu_item": 1,
+                    "special_instructions": "Less spicy",
+                    "price_at_time": 250
+                },
+                {
+                    "menu_item": 2,
+                    "special_instructions": "",
+                    "price_at_time": 150
+                }
+            ]
+
+        Output data format:
+        In the Order Table:
+        {
+            "id": 1,
+            "table": 1,
+            "status": 0,
+            "dining_type": 0,
+            "packaging_cost": 0,
+            "order_total": "computed total"
+        }
+
+        In the OrderMenuItem Table:
+        [
+            {
+                "id": 1,
+                "order": 1,
+                "menu_item": 1,
+                "chef": null,
+                "menu_item_status": 0,
+                "special_instructions": "Less spicy",
+                "price_at_time": "price of the menu item at the time of order"
+            },
+            {
+                "id": 2,
+                "order": 1,
+                "menu_item": 2,
+                "item_total": "computed total for this menu item",
+                "chef": null,
+                "menu_item_status": 0,
+                "special_instructions": "",
+                "price_at_time": "price of the menu item at the time of order"
+            }
+        ]
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Order'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Order'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Order'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/orders/orders/{id}/:
+    get:
+      operationId: v1_orders_orders_retrieve_2
+      description: Retrieve an order by ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: v1_orders_orders_partial_update
+      description: Update an order by ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderCreate'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+    delete:
+      operationId: v1_orders_orders_destroy
+      description: Delete an order by ID.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/orders/orders/{id}/add-items/:
+    post:
+      operationId: v1_orders_orders_add_items_create
+      description: pk = order_id
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/orders/orders/{id}/menuitems/:
+    get:
+      operationId: v1_orders_orders_menuitems_retrieve
+      description: List all items in a particular order.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/orders/orders/{id}/menuitems/{menuitem_id}/:
+    get:
+      operationId: v1_orders_orders_menuitems_retrieve_2
+      description: To retrieve, update or delete an order item.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: menuitem_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: v1_orders_orders_menuitems_destroy
+      description: To retrieve, update or delete an order item.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: menuitem_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/orders/orders/{id}/menuitems/{menuitem_id}/status/:
+    patch:
+      operationId: v1_orders_orders_menuitems_status_partial_update
+      description: To update the status of an order item.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: menuitem_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/procurement/delivered-nonperishable-inventory/:
+    get:
+      operationId: v1_procurement_delivered_nonperishable_inventory_retrieve
+      description: APIView for listing and creating non-perishable purchase SKUs
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/procurement/delivered-nonperishable-inventory/{id}/:
+    get:
+      operationId: v1_procurement_delivered_nonperishable_inventory_retrieve_2
+      description: APIView for retrieving, updating, and deleting a single non-perishable
+        purchase SKU
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/procurement/delivered-perishable-inventory/:
+    get:
+      operationId: v1_procurement_delivered_perishable_inventory_retrieve
+      description: APIView for listing and creating perishable purchase SKUs
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/procurement/delivered-perishable-inventory/{id}/:
+    get:
+      operationId: v1_procurement_delivered_perishable_inventory_retrieve_2
+      description: APIView for retrieving, updating, and deleting a single perishable
+        purchase SKU
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/procurement/ordered-nonperishable-purchase-skus/:
+    get:
+      operationId: v1_procurement_ordered_nonperishable_purchase_skus_retrieve
+      description: Handles listing all non-perishable purchase SKUs and creating a
+        new one.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: v1_procurement_ordered_nonperishable_purchase_skus_create
+      description: Handles listing all non-perishable purchase SKUs and creating a
+        new one.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderedNonPerishablePurchaseSKU'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OrderedNonPerishablePurchaseSKU'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OrderedNonPerishablePurchaseSKU'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/procurement/ordered-nonperishable-purchase-skus/{id}/:
+    get:
+      operationId: v1_procurement_ordered_nonperishable_purchase_skus_retrieve_2
+      description: Handles retrieve, update, and delete for a single non-perishable
+        purchase SKU.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: v1_procurement_ordered_nonperishable_purchase_skus_partial_update
+      description: Handles retrieve, update, and delete for a single non-perishable
+        purchase SKU.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderedNonPerishablePurchaseSKU'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderedNonPerishablePurchaseSKU'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderedNonPerishablePurchaseSKU'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: v1_procurement_ordered_nonperishable_purchase_skus_destroy
+      description: Handles retrieve, update, and delete for a single non-perishable
+        purchase SKU.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/procurement/ordered-perishable-purchase-skus/:
+    get:
+      operationId: v1_procurement_ordered_perishable_purchase_skus_retrieve
+      description: |-
+        GET /api/procurement/perishable-purchase-skus/ : List all perishable purchase SKUs.
+        GET /api/procurement/perishable-purchase-skus/?vendor=<vendor_id> : Filter perishable purchase SKUs by vendor.
+        GET /api/procurement/perishable-purchase-skus/?sku=<sku_id> : Filter perishable purchase SKUs by SKU.
+        GET /api/procurement/perishable-purchase-skus/?po_number=<purchase_order_id> : Filter perishable purchase SKUs by purchase order.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: v1_procurement_ordered_perishable_purchase_skus_create
+      description: Handles listing all perishable purchase SKUs and creating a new
+        one.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderedPerishablePurchaseSKU'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OrderedPerishablePurchaseSKU'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OrderedPerishablePurchaseSKU'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/procurement/ordered-perishable-purchase-skus/{id}/:
+    get:
+      operationId: v1_procurement_ordered_perishable_purchase_skus_retrieve_2
+      description: Handles retrieve, update, and delete for a single perishable purchase
+        SKU.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: v1_procurement_ordered_perishable_purchase_skus_partial_update
+      description: Handles retrieve, update, and delete for a single perishable purchase
+        SKU.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderedPerishablePurchaseSKU'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderedPerishablePurchaseSKU'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderedPerishablePurchaseSKU'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: v1_procurement_ordered_perishable_purchase_skus_destroy
+      description: Handles retrieve, update, and delete for a single perishable purchase
+        SKU.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/procurement/purchase-orders/:
+    get:
+      operationId: v1_procurement_purchase_orders_retrieve
+      description: |-
+        These will be ordered by most recent purchase orders first by default.
+        The endpoints here are:-
+        GET /api/procurement/purchase-orders/ : List all purchase orders.
+        GET /api/procurement/purchase-orders/?vendor=<vendor_id> : Filter purchase orders by vendor.
+        GET /api/procurement/purchase-orders/?purchase_type=<purchase_type> : Filter purchase orders by purchase type.
+        GET /api/procurement/purchase-orders/?status=<status> : Filter purchase orders by status.
+        GET /api/procurement/purchase-orders/?purchase_date=<purchase_date> : Filter purchase orders by purchase date.
+        Also, supports combinations of the above query parameters for more specific filtering.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: v1_procurement_purchase_orders_create
+      description: Handles listing all purchase orders and creating a new purchase
+        order.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrder'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrder'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrder'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/procurement/purchase-orders/{id}/:
+    get:
+      operationId: v1_procurement_purchase_orders_retrieve_2
+      description: Handles retrieve, update, and delete for a single purchase order.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: v1_procurement_purchase_orders_partial_update
+      description: Handles retrieve, update, and delete for a single purchase order.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPurchaseOrder'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPurchaseOrder'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPurchaseOrder'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: v1_procurement_purchase_orders_destroy
+      description: Handles retrieve, update, and delete for a single purchase order.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/procurement/vendor-invoices/:
+    get:
+      operationId: v1_procurement_vendor_invoices_retrieve
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: v1_procurement_vendor_invoices_create
+      description: Create a vendor invoice and update inventory accordingly.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VendorInvoice'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VendorInvoice'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VendorInvoice'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VendorInvoice'
+          description: ''
+  /api/v1/procurement/vendors/:
+    get:
+      operationId: v1_procurement_vendors_retrieve
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: v1_procurement_vendors_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Vendor'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Vendor'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Vendor'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/procurement/vendors/{id}/:
+    get:
+      operationId: v1_procurement_vendors_retrieve_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: v1_procurement_vendors_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedVendor'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedVendor'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedVendor'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: v1_procurement_vendors_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '204':
+          description: No response body
+components:
+  schemas:
+    AttendanceLog:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        shift:
+          type: integer
+        employee_name:
+          type: string
+          readOnly: true
+        entry_time:
+          type: string
+          format: date-time
+        exit_time:
+          type: string
+          format: date-time
+        entry_delay:
+          type: string
+          readOnly: true
+        early_exit:
+          type: string
+          readOnly: true
+        completed_work_hours:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - completed_work_hours
+      - created_at
+      - early_exit
+      - employee_name
+      - entry_delay
+      - entry_time
+      - exit_time
+      - id
+      - shift
+      - updated_at
+    CategoryEnum:
+      enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      type: integer
+      description: |-
+        * `0` - Starter
+        * `1` - Main Course
+        * `2` - Dessert
+        * `3` - Beverage
+    Customer:
+      type: object
+      description: Transforms Customer model instances into JSON payloads and validates
+        incoming structural data.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        phone_no:
+          type: string
+          maxLength: 10
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - first_name
+      - id
+      - last_name
+      - phone_no
+      - updated_at
+    CustomerPayment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        payment_mode:
+          allOf:
+          - $ref: '#/components/schemas/PaymentModeEnum'
+          minimum: -2147483648
+          maximum: 2147483647
+        payment_mode_display:
+          type: string
+          readOnly: true
+        order:
+          type: integer
+        order_id:
+          type: integer
+          readOnly: true
+        customer:
+          type: integer
+        customer_name:
+          type: string
+          readOnly: true
+        earned_loyalty_points:
+          type: integer
+          readOnly: true
+        usage_type:
+          allOf:
+          - $ref: '#/components/schemas/UsageTypeEnum'
+          minimum: -2147483648
+          maximum: 2147483647
+        usage_type_display:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - customer
+      - customer_name
+      - earned_loyalty_points
+      - id
+      - order
+      - order_id
+      - payment_mode
+      - payment_mode_display
+      - updated_at
+      - usage_type
+      - usage_type_display
+    DiningTable:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        table_number:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        total_seats:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        is_available:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - table_number
+      - total_seats
+      - updated_at
+    Discounts:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        menu_item:
+          type: integer
+        menu_item_name:
+          type: string
+          readOnly: true
+        rate:
+          type: number
+          format: double
+          maximum: 1.0
+          minimum: 0.0
+        validity:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: Enter validity period in days
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - menu_item
+      - menu_item_name
+      - updated_at
+      - validity
+    Employee:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          nullable: true
+          maxLength: 100
+        full_name:
+          type: string
+          readOnly: true
+        gender:
+          allOf:
+          - $ref: '#/components/schemas/GenderEnum'
+          minimum: -2147483648
+          maximum: 2147483647
+        gender_display:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 100
+        phone_no:
+          type: string
+          maxLength: 15
+        monthly_salary:
+          type: number
+          format: double
+          nullable: true
+          description: The monthly salary in INR
+        joining_date:
+          type: string
+          format: date
+          readOnly: true
+        leaving_date:
+          type: string
+          format: date
+          nullable: true
+        is_working:
+          type: boolean
+        is_staff:
+          type: boolean
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmployeeRole'
+          readOnly: true
+        role_ids:
+          type: array
+          items:
+            type: integer
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - first_name
+      - full_name
+      - gender_display
+      - id
+      - joining_date
+      - phone_no
+      - roles
+      - updated_at
+    EmployeeLogin:
+      type: object
+      properties:
+        phone_no:
+          type: string
+        password:
+          type: string
+      required:
+      - password
+      - phone_no
+    EmployeeRole:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          minimum: -2147483648
+          maximum: 2147483647
+        role_display:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - role
+      - role_display
+    GenderEnum:
+      enum:
+      - 0
+      - 1
+      type: integer
+      description: |-
+        * `0` - Male
+        * `1` - Female
+    MenuItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 250
+        price:
+          type: number
+          format: double
+        estimated_prep_time:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        discount:
+          type: string
+          readOnly: true
+        is_veg:
+          type: boolean
+        category:
+          nullable: true
+          minimum: -2147483648
+          maximum: 2147483647
+          oneOf:
+          - $ref: '#/components/schemas/CategoryEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - discount
+      - estimated_prep_time
+      - id
+      - name
+      - price
+      - updated_at
+    MenuItemIngredient:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        menu_item:
+          type: integer
+        menu_item_name:
+          type: string
+          readOnly: true
+        ingredient_name:
+          type: integer
+        ingredient_name_display:
+          type: string
+          readOnly: true
+        quantity_required:
+          type: number
+          format: double
+          description: Quantity of the perishable item required for the Default size
+            of the menu item
+        is_available:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - ingredient_name
+      - ingredient_name_display
+      - is_available
+      - menu_item
+      - menu_item_name
+      - quantity_required
+      - updated_at
+    NullEnum:
+      enum:
+      - null
+    Order:
+      type: object
+      properties:
+        table:
+          type: integer
+        dining_type:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderMenuItemCreate'
+      required:
+      - dining_type
+      - items
+      - table
+    OrderMenuItemCreate:
+      type: object
+      properties:
+        menu_item:
+          type: integer
+        special_instructions:
+          type: string
+      required:
+      - menu_item
+    OrderedNonPerishablePurchaseSKU:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        purchase:
+          type: integer
+        purchase_id:
+          type: integer
+          readOnly: true
+        sku:
+          type: integer
+        sku_name:
+          type: string
+          readOnly: true
+        quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        unit_price:
+          type: number
+          format: double
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - purchase
+      - purchase_id
+      - quantity
+      - sku
+      - sku_name
+      - unit_price
+      - updated_at
+    OrderedPerishablePurchaseSKU:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        purchase:
+          type: integer
+        purchase_id:
+          type: integer
+          readOnly: true
+        sku:
+          type: integer
+        sku_name:
+          type: string
+          readOnly: true
+        sku_unit:
+          type: string
+          readOnly: true
+        quantity:
+          type: number
+          format: double
+        unit_price:
+          type: number
+          format: double
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - purchase
+      - purchase_id
+      - quantity
+      - sku
+      - sku_name
+      - sku_unit
+      - unit_price
+      - updated_at
+    PatchedAttendanceLog:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        shift:
+          type: integer
+        employee_name:
+          type: string
+          readOnly: true
+        entry_time:
+          type: string
+          format: date-time
+        exit_time:
+          type: string
+          format: date-time
+        entry_delay:
+          type: string
+          readOnly: true
+        early_exit:
+          type: string
+          readOnly: true
+        completed_work_hours:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedCustomer:
+      type: object
+      description: Transforms Customer model instances into JSON payloads and validates
+        incoming structural data.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        phone_no:
+          type: string
+          maxLength: 10
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedDiningTable:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        table_number:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        total_seats:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        is_available:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedDiscounts:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        menu_item:
+          type: integer
+        menu_item_name:
+          type: string
+          readOnly: true
+        rate:
+          type: number
+          format: double
+          maximum: 1.0
+          minimum: 0.0
+        validity:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: Enter validity period in days
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedEmployee:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          nullable: true
+          maxLength: 100
+        full_name:
+          type: string
+          readOnly: true
+        gender:
+          allOf:
+          - $ref: '#/components/schemas/GenderEnum'
+          minimum: -2147483648
+          maximum: 2147483647
+        gender_display:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 100
+        phone_no:
+          type: string
+          maxLength: 15
+        monthly_salary:
+          type: number
+          format: double
+          nullable: true
+          description: The monthly salary in INR
+        joining_date:
+          type: string
+          format: date
+          readOnly: true
+        leaving_date:
+          type: string
+          format: date
+          nullable: true
+        is_working:
+          type: boolean
+        is_staff:
+          type: boolean
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmployeeRole'
+          readOnly: true
+        role_ids:
+          type: array
+          items:
+            type: integer
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedMenuItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 250
+        price:
+          type: number
+          format: double
+        estimated_prep_time:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        discount:
+          type: string
+          readOnly: true
+        is_veg:
+          type: boolean
+        category:
+          nullable: true
+          minimum: -2147483648
+          maximum: 2147483647
+          oneOf:
+          - $ref: '#/components/schemas/CategoryEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedMenuItemIngredient:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        menu_item:
+          type: integer
+        menu_item_name:
+          type: string
+          readOnly: true
+        ingredient_name:
+          type: integer
+        ingredient_name_display:
+          type: string
+          readOnly: true
+        quantity_required:
+          type: number
+          format: double
+          description: Quantity of the perishable item required for the Default size
+            of the menu item
+        is_available:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedOrderCreate:
+      type: object
+      properties:
+        table:
+          type: integer
+        dining_type:
+          type: integer
+        packaging_cost:
+          type: number
+          format: double
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderMenuItemCreate'
+    PatchedOrderedNonPerishablePurchaseSKU:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        purchase:
+          type: integer
+        purchase_id:
+          type: integer
+          readOnly: true
+        sku:
+          type: integer
+        sku_name:
+          type: string
+          readOnly: true
+        quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        unit_price:
+          type: number
+          format: double
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedOrderedPerishablePurchaseSKU:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        purchase:
+          type: integer
+        purchase_id:
+          type: integer
+          readOnly: true
+        sku:
+          type: integer
+        sku_name:
+          type: string
+          readOnly: true
+        sku_unit:
+          type: string
+          readOnly: true
+        quantity:
+          type: number
+          format: double
+        unit_price:
+          type: number
+          format: double
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedPurchaseOrder:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        vendor:
+          type: integer
+        vendor_name:
+          type: string
+          readOnly: true
+        purchase_type:
+          $ref: '#/components/schemas/PurchaseTypeEnum'
+        purchase_date:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        delivery_cost:
+          type: number
+          format: double
+        file_location:
+          type: string
+          format: uri
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedSalarySlip:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        employee:
+          type: integer
+        employee_name:
+          type: string
+          readOnly: true
+        date_paid:
+          type: string
+          format: date
+          readOnly: true
+        total_amount:
+          type: number
+          format: double
+        transaction_no:
+          type: string
+          pattern: ^Tr[0-9]+
+          maxLength: 100
+        breakdowns:
+          type: array
+          items:
+            $ref: '#/components/schemas/SalarySlipBreakdown'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedSalarySlipBreakdown:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        salary_slip:
+          type: integer
+        name:
+          type: string
+          description: Name of the part of salary it is, like 'Basic Pay'
+          maxLength: 100
+        amount:
+          type: number
+          format: double
+        type_pay:
+          allOf:
+          - $ref: '#/components/schemas/TypePayEnum'
+          minimum: -2147483648
+          maximum: 2147483647
+        type_pay_display:
+          type: string
+          readOnly: true
+    PatchedShift:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        employee:
+          type: integer
+        employee_name:
+          type: string
+          readOnly: true
+        start_time:
+          type: string
+          format: time
+        end_time:
+          type: string
+          format: time
+        work_hours:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedVendor:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 200
+        address:
+          type: string
+        contact_no:
+          type: string
+          maxLength: 10
+        email:
+          type: string
+          format: email
+          maxLength: 100
+        gst_no:
+          type: string
+    PaymentModeEnum:
+      enum:
+      - 0
+      - 1
+      - 2
+      type: integer
+      description: |-
+        * `0` - Cash
+        * `1` - Upi
+        * `2` - Card
+    PerishableInventory:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        sku:
+          type: integer
+        sku_name:
+          type: string
+          readOnly: true
+        sku_unit:
+          type: string
+          readOnly: true
+        purchase_date:
+          type: string
+          format: date
+        expiry_date:
+          type: string
+          readOnly: true
+        quantity:
+          type: number
+          format: double
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - expiry_date
+      - id
+      - purchase_date
+      - quantity
+      - sku
+      - sku_name
+      - sku_unit
+      - updated_at
+    PerishableSKU:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        unit:
+          $ref: '#/components/schemas/UnitEnum'
+        typical_shelf_life:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: Typical shelf life in days
+      required:
+      - id
+      - name
+      - typical_shelf_life
+      - unit
+    PurchaseOrder:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        vendor:
+          type: integer
+        vendor_name:
+          type: string
+          readOnly: true
+        purchase_type:
+          $ref: '#/components/schemas/PurchaseTypeEnum'
+        purchase_date:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        delivery_cost:
+          type: number
+          format: double
+        file_location:
+          type: string
+          format: uri
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - file_location
+      - id
+      - purchase_date
+      - purchase_type
+      - updated_at
+      - vendor
+      - vendor_name
+    PurchaseTypeEnum:
+      enum:
+      - Perishable
+      - Non-Perishable
+      type: string
+      description: |-
+        * `Perishable` - Perishable
+        * `Non-Perishable` - Non-Perishable
+    RoleEnum:
+      enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      type: integer
+      description: |-
+        * `0` - Owner
+        * `1` - Manager
+        * `2` - Inventory Manager
+        * `3` - Accounts
+        * `4` - Chef
+        * `5` - Waiter
+        * `6` - Housekeeping
+        * `7` - Watchman
+    SalarySlip:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        employee:
+          type: integer
+        employee_name:
+          type: string
+          readOnly: true
+        date_paid:
+          type: string
+          format: date
+          readOnly: true
+        total_amount:
+          type: number
+          format: double
+        transaction_no:
+          type: string
+          pattern: ^Tr[0-9]+
+          maxLength: 100
+        breakdowns:
+          type: array
+          items:
+            $ref: '#/components/schemas/SalarySlipBreakdown'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - breakdowns
+      - created_at
+      - date_paid
+      - employee
+      - employee_name
+      - id
+      - total_amount
+      - transaction_no
+      - updated_at
+    SalarySlipBreakdown:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        salary_slip:
+          type: integer
+        name:
+          type: string
+          description: Name of the part of salary it is, like 'Basic Pay'
+          maxLength: 100
+        amount:
+          type: number
+          format: double
+        type_pay:
+          allOf:
+          - $ref: '#/components/schemas/TypePayEnum'
+          minimum: -2147483648
+          maximum: 2147483647
+        type_pay_display:
+          type: string
+          readOnly: true
+      required:
+      - amount
+      - id
+      - name
+      - salary_slip
+      - type_pay
+      - type_pay_display
+    Shift:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        employee:
+          type: integer
+        employee_name:
+          type: string
+          readOnly: true
+        start_time:
+          type: string
+          format: time
+        end_time:
+          type: string
+          format: time
+        work_hours:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - employee
+      - employee_name
+      - end_time
+      - id
+      - start_time
+      - updated_at
+      - work_hours
+    StatusEnum:
+      enum:
+      - Pending
+      - Received
+      - Cancelled
+      type: string
+      description: |-
+        * `Pending` - Pending
+        * `Received` - Received
+        * `Cancelled` - Cancelled
+    TokenObtainPair:
+      type: object
+      properties:
+        phone_no:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - password
+      - phone_no
+      - refresh
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          writeOnly: true
+      required:
+      - access
+      - refresh
+    TypePayEnum:
+      enum:
+      - 1
+      - -1
+      type: integer
+      description: |-
+        * `1` - Increment
+        * `-1` - Deduction
+    UnitEnum:
+      enum:
+      - KG
+      - L
+      - Pc
+      type: string
+      description: |-
+        * `KG` - KG
+        * `L` - Liters
+        * `Pc` - Pieces
+    UsageTypeEnum:
+      enum:
+      - -1
+      - 1
+      type: integer
+      description: |-
+        * `-1` - Invalid
+        * `1` - Valid
+    Vendor:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 200
+        address:
+          type: string
+        contact_no:
+          type: string
+          maxLength: 10
+        email:
+          type: string
+          format: email
+          maxLength: 100
+        gst_no:
+          type: string
+      required:
+      - address
+      - contact_no
+      - email
+      - first_name
+      - gst_no
+      - id
+      - last_name
+    VendorInvoice:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        purchase:
+          type: integer
+        invoice_number:
+          type: string
+          maxLength: 100
+        delivery_date:
+          type: string
+          format: date
+        invoice_file:
+          type: string
+          format: uri
+          nullable: true
+        vendor_name:
+          type: string
+          readOnly: true
+        purchase_date:
+          type: string
+          format: date
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - delivery_date
+      - id
+      - invoice_number
+      - purchase
+      - purchase_date
+      - updated_at
+      - vendor_name
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
