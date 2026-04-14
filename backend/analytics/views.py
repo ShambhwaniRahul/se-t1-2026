@@ -4,6 +4,7 @@ from utils.response import standard_response
 from orders.models import Order, DiningTable
 from datetime import datetime, time, timedelta
 from django.utils import timezone
+from .utils import apply_dynamic_ewma, generate_holt_winters_forecast, generate_sarima_forecast
 
 # Create your views here.
 
@@ -13,7 +14,7 @@ class RevenueKPIsView(APIView):
         start_date = request.query_params.get('start_date', None)
         end_date = request.query_params.get('end_date', None)
 
-        orders = Order.objects.all()
+        orders = Order.objects.filter(status=Order.StatusChoices.CLOSED)
 
         if start_date:
             orders = orders.filter(created_at__date__gte=start_date)
