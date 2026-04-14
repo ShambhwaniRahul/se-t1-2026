@@ -4,11 +4,18 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from .models import Employee, EmployeeRole, SalarySlip, SalarySlipBreakdown, Shifts
 from logs.models import AttendanceLog
-from .serializers import EmployeeSerializer, SalarySlipSerializer, SalarySlipBreakdownSerializer, ShiftSerializer, AttendanceLogSerializer
+from .serializers import (
+    EmployeeSerializer,EmployeeLoginSerializer,
+    SalarySlipSerializer,
+    SalarySlipBreakdownSerializer,
+    ShiftSerializer, AttendanceLogSerializer
+)
 from core.permissions import RequiresRole
 from django.db.models import F
 from django.utils.dateparse import parse_datetime
 from utils.response import standard_response
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
 
 class EmployeeLoginView(APIView):
@@ -18,6 +25,11 @@ class EmployeeLoginView(APIView):
     """
     permission_classes = []
     authentication_classes = []
+
+    @extend_schema(
+        request=EmployeeLoginSerializer,
+        responses=EmployeeLoginSerializer
+    )
 
     def post(self, request):
         phone_no = request.data.get('phone_no')
@@ -64,6 +76,11 @@ class EmployeeRegisterView(APIView):
         EmployeeRole.RoleChoices.MANAGER
     ]
 
+    @extend_schema(
+        request=EmployeeSerializer,
+        responses=EmployeeSerializer
+    )
+
     def post(self, request):
         serializer = EmployeeSerializer(data=request.data)
         if serializer.is_valid():
@@ -77,7 +94,7 @@ class EmployeeRegisterView(APIView):
         
         return standard_response(
             success=False,
-            message="Failed to register employee.",
+            message=f"Failed to register employee due to the following reason: {serializer.errors}.",
             status_code=status.HTTP_400_BAD_REQUEST
         )
 
@@ -92,6 +109,10 @@ class EmployeeListView(APIView):
         EmployeeRole.RoleChoices.OWNER,
         EmployeeRole.RoleChoices.MANAGER
     ]
+
+    @extend_schema(
+        responses=EmployeeSerializer(many=True)
+    )
 
     def get(self, request):
         employees = Employee.objects.all()
@@ -114,7 +135,6 @@ class EmployeeDetailView(APIView):
         EmployeeRole.RoleChoices.OWNER,
         EmployeeRole.RoleChoices.MANAGER
     ]
-
     def get_object(self, pk):
         try:
             return Employee.objects.get(pk=pk)
@@ -128,6 +148,9 @@ class EmployeeDetailView(APIView):
             status_code=status_code
         )
 
+    @extend_schema(
+        responses=EmployeeSerializer
+    )
     def get(self, request, pk):
         employee = self.get_object(pk)
 
@@ -142,7 +165,11 @@ class EmployeeDetailView(APIView):
                 status_code=status.HTTP_200_OK
             )
     
-    def patch(self, request, pk):
+    @extend_schema(
+        request=EmployeeSerializer,
+        responses=EmployeeSerializer
+    )
+    def patch(self, request, pk):  
         employee = self.get_object(pk)
 
         if not employee:
@@ -198,6 +225,41 @@ class SalarySlipListCreateAPIView(APIView):
         EmployeeRole.RoleChoices.MANAGER
     ]
 
+    @extend_schema(responses=SalarySlipSerializer(many=True),
+    parameters=[
+        OpenApiParameter(
+            name='min_date_paid',
+            type=OpenApiTypes.DATE,
+            description="Minimum date paid in the format YYYY-MM-DD",
+            required=False
+        ),
+        OpenApiParameter(
+            name='max_date_paid',
+            type=OpenApiTypes.DATE,
+            description="Maximum date paid in the format YYYY-MM-DD",
+            required=False
+        ),
+        OpenApiParameter(
+            name='transaction_no',
+            type=OpenApiTypes.STR,
+            description="Transaction number",
+            required=False
+        ),
+        OpenApiParameter(
+            name='min_amount',
+            type=OpenApiTypes.FLOAT,
+            description="Minimum amount",
+            required=False
+        ),
+        OpenApiParameter(
+            name='max_amount',
+            type=OpenApiTypes.FLOAT,
+            description="Maximum amount",
+            required=False
+        ),
+    ]
+)
+
     def get(self, request):
 
         min_date_paid = request.query_params.get('min_date_paid')
@@ -226,7 +288,12 @@ class SalarySlipListCreateAPIView(APIView):
             data=serializer.data,
             status_code=status.HTTP_200_OK
         )
-
+    
+    
+    @extend_schema(
+        request=SalarySlipSerializer,
+        responses=SalarySlipSerializer
+    )
     def post(self, request):
         serializer = SalarySlipSerializer(data=request.data)
         if serializer.is_valid():
@@ -265,6 +332,10 @@ class SalarySlipDetailAPIView(APIView):
             status_code=status_code
         )    
     
+
+    @extend_schema(
+        responses=SalarySlipSerializer
+    )
     def get(self, request, pk):
         salary_slip = self.get_object(pk)
 
@@ -279,6 +350,9 @@ class SalarySlipDetailAPIView(APIView):
                 status_code=status.HTTP_200_OK
             )
     
+    @extend_schema(
+        request=SalarySlipSerializer,
+    )
     def patch(self, request, pk):
         salary_slip = self.get_object(pk)
 
@@ -336,6 +410,17 @@ class SalarySlipBreakdownListAPIView(APIView):
         EmployeeRole.RoleChoices.MANAGER
     ]
 
+    
+    @extend_schema(responses=SalarySlipBreakdownSerializer,
+                parameters=[
+                    OpenApiParameter(
+                        name="type",
+                        type=OpenApiTypes.INT,
+                        description="Type of the salary slip breakdown.  +1 : Increment, -1 : Deduction",
+                        required=False
+                    )
+                ]
+                   )
     def get(self, request):
         type = request.query_params.get('type')
 
@@ -352,6 +437,10 @@ class SalarySlipBreakdownListAPIView(APIView):
             status_code=status.HTTP_200_OK
         )
 
+    @extend_schema(
+        request=SalarySlipBreakdownSerializer,
+        responses=SalarySlipBreakdownSerializer
+    ) 
     def post(self, request):
         serializer = SalarySlipBreakdownSerializer(data=request.data)
         if serializer.is_valid():
@@ -405,6 +494,9 @@ class SalarySlipBreakdownDetailAPIView(APIView):
                 status_code=status.HTTP_200_OK
             )
     
+    @extend_schema(
+        request=SalarySlipBreakdownSerializer
+    )
     def patch(self, request, pk):
         salary_breakdown = self.get_object(pk)
 
@@ -461,6 +553,28 @@ class ShiftListCreateAPIView(APIView):
         EmployeeRole.RoleChoices.MANAGER
     ]
 
+
+    @extend_schema(responses=ShiftSerializer(many=True),
+            parameters=[
+                OpenApiParameter(
+                    name="start_time",
+                    type=OpenApiTypes.DATETIME,
+                    description="Start time of the shift in the format YYYY-MM-DD HH:MM:SS",
+                    required=False
+                ),
+                OpenApiParameter(
+                    name="end_time",
+                    type=OpenApiTypes.DATETIME,
+                    description="End time of the shift in the format YYYY-MM-DD HH:MM:SS",
+                    required=False
+                ),
+                OpenApiParameter(
+                    name="employee_id",
+                    type=OpenApiTypes.INT,
+                    description="ID of the employee",
+                    required=False
+                ),
+            ])
     def get(self, request):
         shifts = Shifts.objects.all().order_by('-created_at')
         start_time = request.query_params.get('start_time')
@@ -481,11 +595,15 @@ class ShiftListCreateAPIView(APIView):
         serializer = ShiftSerializer(shifts, many=True)
         return standard_response(
             success=True,
-            message="Shifts retrieved successfully.",
+            message="Shifts retrieved successfully." if serializer.data else "No shifts found for the given Parameters.",
             data=serializer.data,
             status_code=status.HTTP_200_OK
         )
 
+    @extend_schema(
+        request=ShiftSerializer,
+        responses=ShiftSerializer
+    )
     def post(self, request):
         serializer = ShiftSerializer(data=request.data)
         if serializer.is_valid():
@@ -538,6 +656,9 @@ class ShiftDetailAPIView(APIView):
                 status_code=status.HTTP_200_OK
             )
     
+    @extend_schema(
+        request=ShiftSerializer,
+    )
     def patch(self, request, pk):
         shift = self.get_object(pk)
 
@@ -589,6 +710,20 @@ class  AttendenceLogListCreateAPIView(APIView):
         EmployeeRole.RoleChoices.MANAGER
     ]
 
+
+    @extend_schema(
+        responses=AttendanceLogSerializer(many=True),
+        parameters=[
+            OpenApiParameter(
+            name="employee_id",
+            type=OpenApiTypes.INT,
+            description="ID of the employee",            
+        ),
+        OpenApiParameter(
+            name="is_late",
+            type=OpenApiTypes.STR,
+            description="Filter for late attendance logs. Value should be 'true' or 'false'",
+            )])
     def get(self, request):
         employee_id = request.query_params.get('employee_id')
         is_late = request.query_params.get('is_late')
@@ -596,27 +731,24 @@ class  AttendenceLogListCreateAPIView(APIView):
 
         attendance_logs = AttendanceLog.objects.all().order_by('-created_at')
         if employee_id and employee_id.isdigit():
-            attendance_logs = attendance_logs.filter(employee_id=employee_id)
+            attendance_logs = attendance_logs.filter(shift__employee_id=employee_id)
 
         if is_late == 'true':
             attendance_logs = attendance_logs.filter(check_in__gt=F('shift__start_time'))
     
         serializer = AttendanceLogSerializer(attendance_logs, many=True)
 
-        if not serializer.data:
-            return standard_response(
-                    success=False,
-                    message="Error fetching the attendance logs",
-                    status_code=status.HTTP_404_NOT_FOUND
-                )
         return standard_response(
             success=True,
-            message="Attendance logs retrieved successfully.",
+            message="Attendance logs retrieved successfully." if len(attendance_logs)>0 else "No attendance logs found for the given Parameters.",
             data=serializer.data,
             status_code=status.HTTP_200_OK
         )
     
 
+    @extend_schema(
+        request=AttendanceLogSerializer,
+    )
     def post(self, request):
         serializer = AttendanceLogSerializer(data=request.data)
         if serializer.is_valid():
@@ -668,12 +800,21 @@ class AttendanceLogDetailAPIView(APIView):
                 status_code=status.HTTP_200_OK
             )
     
+    @extend_schema(
+        request=AttendanceLogSerializer,
+    )
     def patch(self, request, pk):
         attendance_log = self.get_object(pk)
 
         if attendance_log is None:
-            return self.standard_error_response() 
-        serializer = AttendanceLogSerializer(attendance_log, data=request.data, partial=True)
+            return self.standard_error_response()
+        if not request.data.get('exit_time'):
+            return standard_response(
+                success=False,
+                message="Exit time is required.",
+                status_code=status.HTTP_400_BAD_REQUEST
+            ) 
+        serializer = AttendanceLogSerializer(attendance_log, data=request.data['exit_time'], partial=True)
 
         if not serializer.is_valid():
             return standard_response(

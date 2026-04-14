@@ -99,6 +99,15 @@ class EmployeeSerializer(serializers.ModelSerializer):
 
         return instance
     
+
+class EmployeeLoginSerializer(serializers.Serializer):
+    phone_no = serializers.CharField()
+    password = serializers.CharField()
+
+    class Meta:
+        model = Employee
+        fields = ['phone_no', 'password']
+
 class SalarySlipBreakdownSerializer(serializers.ModelSerializer):
     type_pay_display = serializers.CharField(source='get_type_pay_display', read_only=True)
     salary_slip = serializers.PrimaryKeyRelatedField(queryset=SalarySlip.objects.all())
