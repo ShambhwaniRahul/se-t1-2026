@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+from django.db import connection
+
 import dj_database_url
 from datetime import timedelta
 
@@ -21,9 +23,13 @@ from datetime import timedelta
 USE_TZ = True
 TIME_ZONE = 'Asia/Kolkata'
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / '.env')
+# print("DATABASE_URL:", os.environ.get("DATABASE_URL"))
+# print("DB HOST:", connection)
+# print("DB NAME:", connection.settings_dict['NAME'])
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -125,6 +131,9 @@ DATABASES = {
         conn_health_checks=True
     )
 }
+
+# print("DATABASE_URL:", os.environ.get("DATABASE_URL"))
+# print("DATABASE CONFIG:", DATABASES['default'])
 
 AUTH_USER_MODEL = 'humanresources.Employee'
 

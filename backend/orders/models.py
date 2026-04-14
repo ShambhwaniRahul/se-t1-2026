@@ -155,7 +155,7 @@ class OrderMenuItem(TimeStampedModel):
         CANCELLED = 4, "Cancelled"
         REJECTED = 5, "Rejected"
 
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, db_column="order_id")
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, db_column="order_id", related_name="items")
     menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE, db_column="menu_item_id")
     chef = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, db_column="chef_id")
     menu_item_status = models.IntegerField(choices=StatusChoices.choices, default=StatusChoices.PENDING, db_column="item_status")

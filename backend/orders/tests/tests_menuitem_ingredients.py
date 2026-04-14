@@ -4,7 +4,7 @@ from inventory.models import PerishableInventory, PerishableSKU
 
 
 
-BASE = "/api/v1/orders/menuitem-ingredients/"
+BASE = "/api/v1/pos/menuitem-ingredients/"
 
 
 # =========================

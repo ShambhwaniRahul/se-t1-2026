@@ -1,7 +1,7 @@
 import pytest
 from orders.models import MenuItem
 
-BASE = "/api/v1/orders"
+BASE = "/api/v1/pos"
 
 
 @pytest.mark.django_db

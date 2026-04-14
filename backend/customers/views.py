@@ -8,7 +8,7 @@ from .models import Customer, CustomerPayment
 from .serializers import CustomerSerializer, CustomerPaymentSerializer
 from orders.models import Order, OrderMenuItem
 from utils.response import standard_response
-
+from drf_spectacular.utils import extend_schema
 
 class CustomerListCreateAPIView(APIView):
     """
@@ -19,6 +19,10 @@ class CustomerListCreateAPIView(APIView):
     permission_classes = [RequiresRole]
     required_roles = [EmployeeRole.RoleChoices.OWNER, EmployeeRole.RoleChoices.MANAGER]
 
+    
+    @extend_schema(
+        responses=CustomerSerializer
+        )
     def get(self, request):
         min_loyalty_points = request.query_params.get("min_loyalty_points")
         queryset = Customer.objects.all().order_by("-created_at")
@@ -60,6 +64,10 @@ class CustomerDetailAPIView(APIView):
             message=message,
             status_code=status_code
         )
+    
+    @extend_schema(
+        responses=CustomerSerializer
+    )
     def get(self, request, pk):
         customer = self.get_object(pk)
         if customer is None:
@@ -71,26 +79,10 @@ class CustomerDetailAPIView(APIView):
             data=serializer.data,
             status_code=status.HTTP_200_OK,
         )
-
-    def patch(self, request, pk):
-        customer = self.get_object(pk)
-        if customer is None:
-            return self.standard_error_response()
-        serializer = CustomerSerializer(customer, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return standard_response(
-                success=True,
-                message="Customer updated successfully.",
-                data=serializer.data,
-                status_code=status.HTTP_200_OK,
-            )
-        return standard_response(
-            success=False,
-            message="Invalid data provided.",
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
-
+    
+    @extend_schema(
+        request=CustomerSerializer,
+    )
     def patch(self, request, pk):
         customer = self.get_object(pk)
         if customer is None:
@@ -131,6 +123,10 @@ class CustomerRegisterView(APIView):
     permission_classes = [RequiresRole]
     required_roles = [EmployeeRole.RoleChoices.OWNER, EmployeeRole.RoleChoices.MANAGER]
 
+
+    @extend_schema(
+        request=CustomerSerializer
+    )
     def post(self, request):
         # otp = request.data.get("OTP")
         # if not otp:
@@ -201,6 +197,10 @@ class CustomerPaymentListAPIView(APIView):
             status_code=status.HTTP_200_OK,
         )
 
+    
+    @extend_schema(
+        request=CustomerPaymentSerializer
+    )
     def post(self, request):
         serializer = CustomerPaymentSerializer(data=request.data)
 

@@ -19,6 +19,7 @@ from core.permissions import RequiresRole
 from humanresources.models import EmployeeRole
 from django.shortcuts import get_object_or_404
 from utils.response import standard_response
+from drf_spectacular.utils import extend_schema
 
 OCR_URL = "localhost:5000/scan/"
 
@@ -42,6 +43,7 @@ class VendorListCreateAPIView(APIView):
             status_code=status.HTTP_200_OK
         )
 
+    @extend_schema(request=VendorSerializer)
     def post(self, request):
         serializer = VendorSerializer(data=request.data)
         if serializer.is_valid():
@@ -93,6 +95,7 @@ class VendorDetailAPIView(APIView):
         serializer = VendorSerializer(vendor)
         return self.designed_error_response("No such vendor exists.")
 
+    @extend_schema(request=VendorSerializer)
     def patch(self, request, pk):
         vendor = self.get_object(pk)
         serializer = VendorSerializer(vendor, data=request.data, partial=True)
@@ -181,7 +184,7 @@ class PurchaseOrderListCreateAPIView(APIView):
             status_code=status.HTTP_200_OK
         )
 
-
+    @extend_schema(request=PurchaseOrderSerializer)
     def post(self, request):
         # ✅ Enforce default status = Pending
         if 'status' in request.data and request.data.get("status") != PurchaseOrder.StatusChoices.PENDING:
@@ -203,7 +206,15 @@ class PurchaseOrderListCreateAPIView(APIView):
             serializer.save(status=PurchaseOrder.StatusChoices.PENDING)
             for sku in request.data.get("skus", []):
                 if serializer.validated_data['purchase_type'] == PurchaseOrder.TypeChoices.PERISHABLE:
-                    sku_obj = get_object_or_404(PerishableSKU, pk=sku['sku'])
+                    # sku_obj = get_object_or_404(PerishableSKU, pk=sku['sku'])
+                    try:
+                        sku_obj = PerishableSKU.objects.het(pk=sku['sku'])
+                    except PerishableSKU.DoesNotExist:
+                        return standard_response(
+                            success=False,
+                            message=f"No such perishable SKU exists with ID: {sku['sku']}.",
+                            status_code=status.HTTP_400_BAD_REQUEST
+                        )
                     OrderedPerishablePurchaseSKU.objects.create(
                         purchase=serializer.instance,
                         sku=sku_obj,
@@ -211,7 +222,15 @@ class PurchaseOrderListCreateAPIView(APIView):
                         unit_price=sku['unit_price']
                     )
                 else:
-                    sku_obj = get_object_or_404(NonPerishableInventory, pk=sku['sku'])
+                    # sku_obj = get_object_or_404(NonPerishableInventory, pk=sku['sku'])
+                    try:
+                        sku_obj = NonPerishableInventory.objects.get(pk=sku['sku'])
+                    except NonPerishableInventory.DoesNotExist:
+                        return standard_response(
+                            success=False,
+                            message=f"No such non-perishable SKU exists with ID: {sku['sku']}.",
+                            status_code=status.HTTP_400_BAD_REQUEST
+                        )     
                     OrderedNonPerishablePurchaseSKU.objects.create(
                         purchase=serializer.instance,
                         sku=sku_obj,
@@ -268,7 +287,8 @@ class PurchaseOrderDetailAPIView(APIView):
             data=serializer.data,
             status_code=status.HTTP_200_OK
         )
-
+    
+    @extend_schema(request=PurchaseOrderSerializer)
     def patch(self, request, pk):
         purchase_order = self.get_object(pk)
 
@@ -378,7 +398,7 @@ class OrderedPerishablePurchaseSKUListCreateAPIView(APIView):
             data=serializer.data,
             status_code=status.HTTP_200_OK
         )
-
+    @extend_schema(request=OrderedPerishablePurchaseSKUSerializer)
     def post(self, request):
         serializer = OrderedPerishablePurchaseSKUSerializer(data=request.data)
         if serializer.is_valid():
@@ -438,6 +458,7 @@ class OrderedPerishablePurchaseSKUDetailAPIView(APIView):
             status_code=status.HTTP_200_OK
         )
 
+    @extend_schema(request=OrderedPerishablePurchaseSKUSerializer)
     def patch(self, request, pk):
         perishable_purchase_sku = self.get_object(pk)
 
@@ -533,6 +554,7 @@ class OrderedNonPerishablePurchaseSKUListCreateAPIView(APIView):
             status_code=status.HTTP_200_OK
         )
 
+    @extend_schema(request=OrderedNonPerishablePurchaseSKUSerializer)
     def post(self, request):
         serializer = OrderedNonPerishablePurchaseSKUSerializer(data=request.data)
         if serializer.is_valid():
@@ -583,7 +605,8 @@ class OrderedNonPerishablePurchaseSKUDetailAPIView(APIView):
             data=serializer.data,
             status_code=status.HTTP_200_OK
         )
-
+    
+    @extend_schema(request=OrderedNonPerishablePurchaseSKUSerializer)
     def patch(self, request, pk):
         non_perishable_purchase_sku = self.get_object(pk)
 
@@ -664,13 +687,26 @@ class VendorInvoiceListCreateAPIView(APIView):
                                   data=serializer.data,
                                   status_code=status.HTTP_200_OK)
 
+    @extend_schema(
+    request=VendorInvoiceSerializer,
+    responses=VendorInvoiceSerializer,
+    description="Create a vendor invoice and update inventory accordingly."
+    )
     def post(self, request):
         po_number = request.data.get("purchase")
         if not po_number:
             return standard_response(success=False,
                                      message="Purchase order ID is required to create a vendor invoice.",
                                      status_code=status.HTTP_400_BAD_REQUEST)
-        purchase_order = get_object_or_404(PurchaseOrder, pk=po_number)
+        try:
+            purchase_order = PurchaseOrder.objects.get(pk=po_number)
+        except PurchaseOrder.DoesNotExist:
+            return standard_response(
+        success=False,
+        message="Purchase order does not exist.",
+        status_code=status.HTTP_404_NOT_FOUND
+         )
+
         if not request.data.get("items") or len(request.data.get("items")) == 0:
             return standard_response(success=False,
                                      message="At least one item must be included in the invoice.",
