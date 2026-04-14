@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
 from utils.response import standard_response
-from orders.models import Order
+from orders.models import Order, DiningTable
 from datetime import datetime, time, timedelta
 from django.utils import timezone
 
@@ -29,6 +29,17 @@ class RevenueKPIsView(APIView):
             "total_revenue": total_revenue,
             "total_orders": total_orders,
             "average_revenue_per_order": average_revenue_per_order,
+        })
+
+
+class ActiveTablesView(APIView):
+    def get(self, request):
+        active_tables = DiningTable.objects.filter(is_available=False)
+        inactive_tables = DiningTable.objects.filter(is_available=True)
+        return standard_response(data={
+            "total_tables": active_tables.count() + inactive_tables.count(),
+            "active_tables": active_tables.count(),
+            "inactive_tables": inactive_tables.count(),
         })
 
 
