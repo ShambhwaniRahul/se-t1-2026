@@ -29,6 +29,7 @@ urlpatterns = [
     path('api/v1/pos/', include('orders.urls')),   
     path('api/v1/inventory/', include('inventory.urls')),
     path('api/v1/procurement/', include('procurement.urls')),
+    path('api/v1/analytics/', include('analytics.urls')),
     # Schema (YAML/JSON)
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     # Swagger UI

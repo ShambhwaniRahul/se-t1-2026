@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'orders',
     "logs",
     "humanresources",
+    'analytics',
     "drf_spectacular",
 ]
 

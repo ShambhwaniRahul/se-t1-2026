@@ -128,7 +128,7 @@ class Order(TimeStampedModel):
         """
         Computes the total cost of the order by summing up the total cost of each menu item in the order and adding the packaging cost if it's a take away order.
         """
-        return sum(menu_item.item_total for menu_item in self.ordermenuitem_set.all()) + self.packaging_cost
+        return sum(menu_item.item_total for menu_item in self.items.all()) + self.packaging_cost
 
 
     class Meta:
