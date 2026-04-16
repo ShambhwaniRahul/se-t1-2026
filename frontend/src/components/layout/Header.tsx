@@ -1,6 +1,5 @@
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
-import { RoleSwitcher } from "@/components/shared/RoleSwitcher";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 
@@ -14,7 +13,6 @@ export function Header() {
         <Badge variant="outline" className="hidden text-[10px] sm:inline-flex">
           DEV
         </Badge>
-        <RoleSwitcher />
         <ThemeToggle />
       </div>
     </header>

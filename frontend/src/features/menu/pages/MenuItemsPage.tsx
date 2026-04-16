@@ -10,10 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MenuItemFormSheet } from "../components/MenuItemFormSheet";
 import { initialMenuItems } from "../data/mockMenuItems";
 import { MENU_CATEGORIES, type MenuItem } from "../data/types";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 export default function MenuItemsPage() {
-  const { toast } = useToast();
   const [items, setItems] = useState<MenuItem[]>(initialMenuItems);
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("all");
@@ -72,11 +71,11 @@ export default function MenuItemsPage() {
   const handleSave = (data: Omit<MenuItem, "id">) => {
     if (editing) {
       setItems((prev) => prev.map((i) => (i.id === editing.id ? { ...i, ...data } : i)));
-      toast({ title: "Menu item updated" });
+      toast.success("Menu item updated");
     } else {
       const newItem: MenuItem = { ...data, id: `mi-${Date.now()}` };
       setItems((prev) => [newItem, ...prev]);
-      toast({ title: "Menu item created" });
+      toast.success("Menu item created");
     }
     setEditing(null);
   };
@@ -84,7 +83,7 @@ export default function MenuItemsPage() {
   const handleDelete = () => {
     if (!deleteTarget) return;
     setItems((prev) => prev.filter((i) => i.id !== deleteTarget.id));
-    toast({ title: "Menu item deleted", variant: "destructive" });
+    toast.error("Menu item deleted");
     setDeleteTarget(null);
   };
 
