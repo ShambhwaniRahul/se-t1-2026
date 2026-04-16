@@ -2,6 +2,7 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
     EmployeeLoginView, EmployeeRegisterView, EmployeeListView, EmployeeDetailView, 
+    ChangeEmployeePasswordView,
     SalarySlipListCreateAPIView, SalarySlipDetailAPIView, SalarySlipBreakdownListAPIView,   SalarySlipBreakdownDetailAPIView,
     ShiftListCreateAPIView, ShiftDetailAPIView,
     AttendenceLogListCreateAPIView, AttendanceLogDetailAPIView
@@ -13,6 +14,7 @@ urlpatterns = [
     path('auth/register/', EmployeeRegisterView.as_view(), name='api-register'),
     path('auth/employees/', EmployeeListView.as_view(), name='employee-list'),
     path('auth/employees/<int:pk>/', EmployeeDetailView.as_view(), name='employee-detail'),
+    path('auth/employees/<int:pk>/change-password/', ChangeEmployeePasswordView.as_view(), name='change-password'),
     path('auth/salary-slips/', SalarySlipListCreateAPIView.as_view(), name='salary-slip-list-create'),
     path('auth/salary-slips/<int:pk>/', SalarySlipDetailAPIView.as_view(), name='salary-slip-detail'),
     path('auth/salary-breakdowns/', SalarySlipBreakdownListAPIView.as_view(), name='salary-breakdown-list'),
