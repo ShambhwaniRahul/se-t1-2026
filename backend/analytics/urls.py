@@ -1,4 +1,4 @@
-from .views import RevenueKPIsView, RevenueByDateView, RecentOrdersView, SalesByCategoryView, TopSellingItemsView, LeastSellingItemsView, ActiveTablesView, RevenueOverTimeView, OrderVersusRevenueView
+from .views import RevenueKPIsView, RevenueByDateView, RecentOrdersView, SalesByCategoryView, TopSellingItemsView, LeastSellingItemsView, ActiveTablesView, RevenueOverTimeView, OrderVersusRevenueView, SalesForecastView
 from django.urls import path
 
 urlpatterns = [
@@ -11,4 +11,5 @@ urlpatterns = [
     path('least-selling-items/', LeastSellingItemsView.as_view(), name='least-selling-items'),
     path('revenue-over-time/', RevenueOverTimeView.as_view(), name='revenue-over-time'),
     path('order-versus-revenue/', OrderVersusRevenueView.as_view(), name='order-versus-revenue'),
+    path('sales-forecast/', SalesForecastView.as_view(), name='sales-forecast'),
 ]

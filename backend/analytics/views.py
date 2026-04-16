@@ -222,3 +222,38 @@ class OrderVersusRevenueView(APIView):
             order_revenue_data[date_str]["total_revenue"] += order.order_total
             order_revenue_data[date_str]["total_orders"] += 1
         return standard_response(data=order_revenue_data)
+
+
+class SalesForecastView(APIView):
+    def get(self, request):
+        start_date = request.query_params.get('start_date', None)
+        end_date = request.query_params.get('end_date', None)
+
+        orders = Order.objects.filter(status=Order.StatusChoices.CLOSED)
+        # orders = Order.objects.all()
+
+        if start_date:
+            orders = orders.filter(created_at__date__gte=start_date)
+
+        if end_date:
+            orders = orders.filter(created_at__date__lte=end_date)
+
+        revenue_by_date = {}
+
+        for order in orders:
+            date_str = order.created_at.date().isoformat()
+            revenue_by_date[date_str] = revenue_by_date.get(date_str, 0) + order.order_total
+
+        revenue_df = pd.DataFrame(list(revenue_by_date.items()), columns=['Date', 'Revenue'])
+        revenue_df['Date'] = pd.to_datetime(revenue_df['Date'])
+        revenue_df.set_index('Date', inplace=True)
+        forecast_days = int(request.query_params.get('forecast_days', 14))
+        seasonal_periods = int(request.query_params.get('seasonal_periods', 7))
+
+        hw_forecast = generate_holt_winters_forecast(revenue_df, forecast_days=forecast_days, seasonal_periods=seasonal_periods)
+        sarima_forecast = generate_sarima_forecast(revenue_df, forecast_days=forecast_days, seasonal_periods=seasonal_periods)
+
+        return standard_response(data={
+            "holt_winters_forecast": hw_forecast.reset_index().to_dict(orient='records'),
+            "sarima_forecast": sarima_forecast.reset_index().to_dict(orient='records')
+        })
