@@ -4,44 +4,46 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ALL_ROLES, ROLE_LABELS, type AppRole } from "@/types/roles";
-import type { MockEmployee } from "@/data/mockEmployee";
+import { ROLES, type AppRole, type Employee } from "@/config/types/role";
 import { toast } from "sonner";
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  employee?: MockEmployee | null;
-  onSave: (data: Omit<MockEmployee, "id"> & { id?: string }) => void;
+  employee?: Employee | null;
+  onSave: (data: EmployeeFormData) => void;
 }
 
-const DEPARTMENTS = ["Management", "Front of House", "Kitchen", "Bar", "Procurement"];
+type EmployeeFormData = {
+  id?: number;
+  full_name: string;
+  email: string;
+  phone_no: string;
+  roles: { role_display: AppRole }[];
+  is_working: boolean;
+};
 
 export function EmployeeFormModal({ open, onOpenChange, employee, onSave }: Props) {
   const isEdit = !!employee;
-  const [name, setName] = useState(employee?.name ?? "");
+  const [full_name, setName] = useState(employee?.full_name ?? "");
   const [email, setEmail] = useState(employee?.email ?? "");
-  const [phone, setPhone] = useState(employee?.phone ?? "");
-  const [role, setRole] = useState<AppRole>(employee?.role ?? "pos");
-  const [department, setDepartment] = useState(employee?.department ?? "Front of House");
-  const [password, setPassword] = useState("");
-  const [status, setStatus] = useState<"active" | "disabled">(employee?.status ?? "active");
+  const [phone_no, setPhone] = useState(employee?.phone_no ?? "");
+  const [role, setRole] = useState<AppRole>(employee?.roles?.[0]?.role_display ?? "other");
+  const [is_working, setStatus] = useState<boolean>(employee?.is_working ?? true);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !email) {
+    if (!full_name || !email) {
       toast.error("Name and email are required");
       return;
     }
     onSave({
       ...(employee ? { id: employee.id } : {}),
-      name,
+      full_name,
       email,
-      phone,
-      role,
-      department,
-      password: password || employee?.password || "changeme",
-      status,
+      phone_no,
+      roles: [{ role_display: role }],
+      is_working,
     });
     onOpenChange(false);
     toast.success(isEdit ? "Employee updated" : "Employee created");
@@ -56,7 +58,7 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSave }: Prop
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label>Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} required />
+            <Input value={full_name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
@@ -65,7 +67,7 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSave }: Prop
             </div>
             <div className="space-y-2">
               <Label>Phone</Label>
-              <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
+              <Input value={phone_no} onChange={(e) => setPhone(e.target.value)} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -74,26 +76,17 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSave }: Prop
               <Select value={role} onValueChange={(v) => setRole(v as AppRole)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {ALL_ROLES.map((r) => (
-                    <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Department</Label>
-              <Select value={department} onValueChange={setDepartment}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {DEPARTMENTS.map((d) => (
-                    <SelectItem key={d} value={d}>{d}</SelectItem>
+                  {Object.values(ROLES).map((r) => (
+                    <SelectItem key={r.value} value={r.value}>
+                      {r.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label>{isEdit ? "New Password (leave blank to keep)" : "Password"}</Label>
               <Input
                 type="password"
@@ -102,11 +95,16 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSave }: Prop
                 required={!isEdit}
                 placeholder={isEdit ? "Unchanged" : ""}
               />
-            </div>
+            </div> */}
             <div className="space-y-2">
               <Label>Status</Label>
-              <Select value={status} onValueChange={(v) => setStatus(v as "active" | "disabled")}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={is_working ? "active" : "disabled"}
+                onValueChange={(v) => setStatus(v === "active")}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="disabled">Disabled</SelectItem>

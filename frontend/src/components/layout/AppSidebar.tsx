@@ -10,7 +10,7 @@ import {
   SidebarSeparator, useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import type { AppRole } from "@/types/roles";
+import type { AppRole } from "@/config/types/role";
 
 interface NavItem {
   title: string;
@@ -24,16 +24,16 @@ const dashboardItems: NavItem[] = [
 ];
 
 const operationItems: NavItem[] = [
-  { title: "Point of Sale", url: "/pos/tables", icon: ShoppingCart, roles: ["owner", "manager", "pos"] },
-  { title: "Kitchen Display", url: "/kitchen", icon: ChefHat, roles: ["owner", "manager", "kitchen"] },
+  { title: "Point of Sale", url: "/pos/tables", icon: ShoppingCart, roles: ["owner", "manager", "waiter"] },
+  { title: "Kitchen Display", url: "/kitchen", icon: ChefHat, roles: ["owner", "manager", "chef"] },
 ];
 
 const managementItems: NavItem[] = [
-  { title: "Inventory", url: "/inventory", icon: Package, roles: ["owner", "manager", "procurement"] },
-  { title: "Purchase Orders", url: "/purchase-orders", icon: ClipboardList, roles: ["owner", "manager", "procurement"] },
+  { title: "Inventory", url: "/inventory", icon: Package, roles: ["owner", "manager", "inventory_manager"] },
+  { title: "Purchase Orders", url: "/purchase-orders", icon: ClipboardList, roles: ["owner", "manager", "inventory_manager"] },
   { title: "CRM", url: "/crm", icon: Users, roles: ["owner", "manager"] },
   { title: "Analytics", url: "/analytics", icon: BarChart3, roles: ["owner", "manager"] },
-  { title: "Vendors", url: "/vendors", icon: Store, roles: ["owner", "manager", "procurement"] },
+  { title: "Vendors", url: "/vendors", icon: Store, roles: ["owner", "manager", "inventory_manager"] },
   { title: "Menu Items", url: "/menu", icon: UtensilsCrossed, roles: ["owner", "manager"] },
 ];
 

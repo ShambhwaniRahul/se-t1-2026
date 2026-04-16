@@ -10,7 +10,7 @@ import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
 
 
 import LoginPage from "@/features/auth/pages/LoginPage";
-import EmployeeManagementPage from "@/features/employees/pages/EmployeesPage";
+// import EmployeeManagementPage from "@/features/employees/pages/EmployeesPage";
 import DashboardPage from "@/features/dashboard/pages/Dashboard";
 import UnauthorizedPage from "@/pages/Unauthorized";
 import NotFound from "@/pages/NotFound";
@@ -58,15 +58,15 @@ const App = () => (
                 <Route
                   path="pos/tables"
                   element={
-                    <ProtectedRoute allowedRoles={["owner", "manager", "pos"]}>
+                    <ProtectedRoute allowedRoles={["owner", "manager", "waiter"]}>
                       <TablePage />
                     </ProtectedRoute>
                   }
                 />
                 <Route
-                  path="/pos/tables/:tableId"
+                  path="/waiter/tables/:tableId"
                   element={
-                    <ProtectedRoute allowedRoles={["owner", "manager", "pos"]}>
+                    <ProtectedRoute allowedRoles={["owner", "manager", "waiter"]}>
                       <PosPage />
                     </ProtectedRoute>
                   }
@@ -74,7 +74,7 @@ const App = () => (
                 <Route
                   path="kitchen"
                   element={
-                    <ProtectedRoute allowedRoles={["owner", "manager", "kitchen"]}>
+                    <ProtectedRoute allowedRoles={["owner", "manager", "chef"]}>
                       <KitchenPage />
                     </ProtectedRoute>
                   }
@@ -103,24 +103,24 @@ const App = () => (
                     </ProtectedRoute>
                   }
                 />
-                <Route
+                {/* <Route
                   path="settings/employees"
                   element={
                     <ProtectedRoute allowedRoles={["owner"]}>
                       <EmployeeManagementPage />
                     </ProtectedRoute>
                   }
-                />
+                /> */}
                 <Route path="erp/employees" element={<ErpRoute><EmployeesPage /></ErpRoute>} />
                 <Route path="erp/attendance" element={<ErpRoute><AttendancePage /></ErpRoute>} />
                 <Route path="erp/shifts" element={<ErpRoute><ShiftsPage /></ErpRoute>} />
                 <Route path="erp/payroll" element={<ErpRoute><PayrollPage /></ErpRoute>} />
                 <Route path="unauthorized" element={<UnauthorizedPage />} />
 
-                <Route path="purchase-orders" element={<ProtectedRoute allowedRoles={["owner", "manager", "procurement"]}><PurchaseOrdersPage /></ProtectedRoute>} />
-                <Route path="purchase-orders/new" element={<ProtectedRoute allowedRoles={["owner", "manager", "procurement"]}><CreatePurchaseOrderPage /></ProtectedRoute>} />
-                <Route path="purchase-orders/:id" element={<ProtectedRoute allowedRoles={["owner", "manager", "procurement"]}><PurchaseOrderDetailsPage /></ProtectedRoute>} />
-                <Route path="vendors" element={<ProtectedRoute allowedRoles={["owner", "manager", "procurement"]}><VendorsPage /></ProtectedRoute>} />
+                <Route path="purchase-orders" element={<ProtectedRoute allowedRoles={["owner", "manager", "inventory_manager"]}><PurchaseOrdersPage /></ProtectedRoute>} />
+                <Route path="purchase-orders/new" element={<ProtectedRoute allowedRoles={["owner", "manager", "inventory_manager"]}><CreatePurchaseOrderPage /></ProtectedRoute>} />
+                <Route path="purchase-orders/:id" element={<ProtectedRoute allowedRoles={["owner", "manager", "inventory_manager"]}><PurchaseOrderDetailsPage /></ProtectedRoute>} />
+                <Route path="vendors" element={<ProtectedRoute allowedRoles={["owner", "manager", "inventory_manager"]}><VendorsPage /></ProtectedRoute>} />
                 <Route path="menu" element={<ProtectedRoute allowedRoles={["owner", "manager"]}><MenuItemsPage /></ProtectedRoute>} />
                 <Route path="unauthorized" element={<UnauthorizedPage />} />
 
