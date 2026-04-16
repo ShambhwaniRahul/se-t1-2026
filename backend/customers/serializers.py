@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Customer, CustomerPayment
+from django.db.models import Sum
 
 
 class CustomerSerializer(serializers.ModelSerializer):
@@ -21,6 +22,35 @@ class CustomerSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
         # read_only_fields = ['id']
+
+class CustomerReadSerializer(serializers.ModelSerializer):
+    """
+    Transforms Customer model instances into JSON payloads.
+    """
+
+    id = serializers.ReadOnlyField()
+    total_points = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Customer
+        fields = [
+            "id",
+            "phone_no",
+            "first_name",
+            "last_name",
+            "total_points",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def get_total_points(self, obj):
+        return CustomerPayment.objects.filter(
+            customer=obj,
+            usage_type=CustomerPayment.TypeChoices.VALID
+        ).aggregate(
+            total=Sum("earned_loyalty_points")
+        )["total"] or 0
 
 
 class CustomerPaymentSerializer(serializers.ModelSerializer):
