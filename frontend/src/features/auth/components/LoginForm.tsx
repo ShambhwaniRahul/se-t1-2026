@@ -30,6 +30,7 @@ export function LoginForm() {
     if (result.success) {
       toast.success(result.message ?? "Welcome back!");
 
+      console.log("User Role: ", role)
       if (role && ROLE_HOME[role]) {
         navigate(ROLE_HOME[role]);
       } else {

@@ -69,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(() => {
     localStorage.removeItem("access");
     localStorage.removeItem("refresh");
-    localStorage.removeItem("roles");
+    localStorage.removeItem("employee");
 
     setUser(null);
   }, []);
@@ -89,7 +89,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   //   });
   // }, []);
 
-  const role = user?.roles?.[0]?.role_display ?? "other";
+  const role = user?.roles?.[0]?.role_display ?? "Other";
+  console.log("USER ROLES:", user?.roles)
 
   return (
     <AuthContext.Provider

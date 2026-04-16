@@ -20,34 +20,34 @@ interface NavItem {
 }
 
 const dashboardItems: NavItem[] = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard, roles: ["owner", "manager"] },
+  { title: "Dashboard", url: "/", icon: LayoutDashboard, roles: ["Owner", "Manager"] },
 ];
 
 const operationItems: NavItem[] = [
-  { title: "Point of Sale", url: "/pos/tables", icon: ShoppingCart, roles: ["owner", "manager", "waiter"] },
-  { title: "Kitchen Display", url: "/kitchen", icon: ChefHat, roles: ["owner", "manager", "chef"] },
+  { title: "Point of Sale", url: "/pos/tables", icon: ShoppingCart, roles: ["Owner", "Manager", "Waiter"] },
+  { title: "Kitchen Display", url: "/kitchen", icon: ChefHat, roles: ["Owner", "Manager", "Chef"] },
 ];
 
 const managementItems: NavItem[] = [
-  { title: "Inventory", url: "/inventory", icon: Package, roles: ["owner", "manager", "inventory_manager"] },
-  { title: "Purchase Orders", url: "/purchase-orders", icon: ClipboardList, roles: ["owner", "manager", "inventory_manager"] },
-  { title: "CRM", url: "/crm", icon: Users, roles: ["owner", "manager"] },
-  { title: "Analytics", url: "/analytics", icon: BarChart3, roles: ["owner", "manager"] },
-  { title: "Vendors", url: "/vendors", icon: Store, roles: ["owner", "manager", "inventory_manager"] },
-  { title: "Menu Items", url: "/menu", icon: UtensilsCrossed, roles: ["owner", "manager"] },
+  { title: "Inventory", url: "/inventory", icon: Package, roles: ["Owner", "Manager", "Inventory Manager"] },
+  { title: "Purchase Orders", url: "/purchase-orders", icon: ClipboardList, roles: ["Owner", "Manager", "Inventory Manager"] },
+  { title: "CRM", url: "/crm", icon: Users, roles: ["Owner", "Manager"] },
+  { title: "Analytics", url: "/analytics", icon: BarChart3, roles: ["Owner", "Manager"] },
+  { title: "Vendors", url: "/vendors", icon: Store, roles: ["Owner", "Manager", "Inventory Manager"] },
+  { title: "Menu Items", url: "/menu", icon: UtensilsCrossed, roles: ["Owner", "Manager"] },
 ];
 
 const erpItems: NavItem[] = [
-  { title: "Employees", url: "/erp/employees", icon: UserCog, roles: ["owner", "manager"] },
-  { title: "Attendance", url: "/erp/attendance", icon: CalendarCheck, roles: ["owner", "manager"] },
-  { title: "Shifts", url: "/erp/shifts", icon: CalendarClock, roles: ["owner", "manager"] },
-  { title: "Payroll", url: "/erp/payroll", icon: Wallet, roles: ["owner", "manager"] },
+  { title: "Employees", url: "/erp/employees", icon: UserCog, roles: ["Owner", "Manager"] },
+  { title: "Attendance", url: "/erp/attendance", icon: CalendarCheck, roles: ["Owner", "Manager"] },
+  { title: "Shifts", url: "/erp/shifts", icon: CalendarClock, roles: ["Owner", "Manager"] },
+  { title: "Payroll", url: "/erp/payroll", icon: Wallet, roles: ["Owner", "Manager"] },
 ];
 
 // const systemItems: NavItem[] = [
-//   { title: "Settings", url: "/settings", icon: Settings, roles: ["owner"] },
-//   { title: "Roles", url: "/settings/roles", icon: Shield, roles: ["owner"] },
-//   { title: "Employees", url: "/settings/employees", icon: UsersRound, roles: ["owner"] },
+//   { title: "Settings", url: "/settings", icon: Settings, roles: ["Owner"] },
+//   { title: "Roles", url: "/settings/roles", icon: Shield, roles: ["Owner"] },
+//   { title: "Employees", url: "/settings/employees", icon: UsersRound, roles: ["Owner"] },
 // ];
 
 function NavGroup({ label, items }: { label: string; items: NavItem[] }) {

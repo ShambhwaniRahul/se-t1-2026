@@ -2,12 +2,12 @@
 // ROLE DEFINITIONS
 // =======================
 export const ROLES = {
-  OWNER: { value: "owner", label: "Owner" },
-  MANAGER: { value: "manager", label: "Manager" },
-  CHEF: { value: "chef", label: "Chef" },
-  WAITER: { value: "waiter", label: "Waiter" },
-  INVENTORY_MANAGER: { value: "inventory_manager", label: "Inventory_Manager" },
-  OTHER: { value: "other", label: "Other" }
+  OWNER: { value: "Owner", label: "Owner" },
+  MANAGER: { value: "Manager", label: "Manager" },
+  CHEF: { value: "Chef", label: "Chef" },
+  WAITER: { value: "Waiter", label: "Waiter" },
+  INVENTORY_MANAGER: { value: "Inventory Manager", label: "Inventory Manager" },
+  OTHER: { value: "Other", label: "Other" }
   // ACCOUNTS: { value: "accounts", label: "Accounts" },
   // HOUSEKEEPING: { value: "housekeeping", label: "Housekeeping" },
   // WATCHMAN: { value: "watchman", label: "Watchman" },
