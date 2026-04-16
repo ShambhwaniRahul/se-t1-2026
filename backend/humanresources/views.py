@@ -8,7 +8,8 @@ from .serializers import (
     EmployeeSerializer,EmployeeLoginSerializer,
     SalarySlipSerializer,
     SalarySlipBreakdownSerializer,
-    ShiftSerializer, AttendanceLogSerializer
+    ShiftSerializer, AttendanceLogSerializer,
+    changeEmployeePasswordSerializer
 )
 from core.permissions import RequiresRole
 from django.db.models import F
@@ -172,6 +173,13 @@ class EmployeeDetailView(APIView):
     def patch(self, request, pk):  
         employee = self.get_object(pk)
 
+        if request.data("password") is not None:
+            return standard_response(
+                success=False,
+                message="Password cannot be updated from this endpoint.",
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+
         if not employee:
             return self.standard_error_response()
         serializer = EmployeeSerializer(employee, data=request.data, partial=True)
@@ -211,6 +219,57 @@ class EmployeeDetailView(APIView):
             status_code=status.HTTP_204_NO_CONTENT
         )
     
+class ChangeEmployeePasswordView(APIView):
+    """Endpoint to change the password of an employee."""
+    permission_classes = [RequiresRole]
+    required_roles = []
+
+    @extend_schema(request=changeEmployeePasswordSerializer)
+    def patch(self, request, pk):
+        try:
+           employee = Employee.objects.get(pk=pk)
+        except Employee.DoesNotExist:
+            return standard_response(
+                success=False,
+                message="No such employee exists.",
+                status_code=status.HTTP_404_NOT_FOUND            
+            )
+        if employee.pk != request.user.pk and not EmployeeRole.objects.filter(employee=request.user,role__in=[EmployeeRole.RoleChoices.OWNER,EmployeeRole.RoleChoices.MANAGER]).exists():
+
+            return standard_response(
+                success=False,
+                message="You cannot change the password of another employee.",
+                status_code=status.HTTP_403_FORBIDDEN            
+            )
+        
+        serializer = changeEmployeePasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            # Check-1: For correct old_password
+            if not request.user.check_password(serializer.validated_data['old_password']):
+                return standard_response(
+                    success=False,
+                    message="Incorrect old password.",
+                    status_code=status.HTTP_400_BAD_REQUEST
+                )
+ 
+            if serializer.validated_data['new_password'] != serializer.validated_data['confirm_password']:
+                return standard_response(
+                    success=False,
+                    message="Passwords do not match.",
+                    status_code=status.HTTP_400_BAD_REQUEST
+                )
+            employee.set_password(serializer.validated_data['new_password'])
+            employee.save()
+            return standard_response(
+                success=True,
+                message="Password changed successfully.",
+                status_code=status.HTTP_200_OK
+            )
+        return standard_response(
+            success=False,
+            message="Invalid data provided.",
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
 
 class SalarySlipListCreateAPIView(APIView):
     """

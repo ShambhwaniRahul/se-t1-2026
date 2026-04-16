@@ -136,7 +136,12 @@ class SalarySlipBreakdownSerializer(serializers.ModelSerializer):
 
         return data
 
+class changeEmployeePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+    new_password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+    confirm_password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})   
 
+    
 class SalarySlipSerializer(serializers.ModelSerializer):
     employee_name = serializers.CharField(source='employee.full_name', read_only=True)
 
