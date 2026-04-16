@@ -13,13 +13,23 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+from django.db import connection
+
 import dj_database_url
 from datetime import timedelta
+
+
+# Setting the timezone
+USE_TZ = True
+TIME_ZONE = 'Asia/Kolkata'
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / '.env')
+# print("DATABASE_URL:", os.environ.get("DATABASE_URL"))
+# print("DB HOST:", connection)
+# print("DB NAME:", connection.settings_dict['NAME'])
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -42,6 +52,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
     'rest_framework',
     'inventory',
     'procurement',
@@ -49,17 +60,27 @@ INSTALLED_APPS = [
     'orders',
     "logs",
     "humanresources",
+    'analytics',
+    "drf_spectacular",
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+]
+
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'core.urls'
 
@@ -70,7 +91,17 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+
 }
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Your API",
+    "DESCRIPTION": "API Docs",
+    "VERSION": "1.0.0",
+    "SECURITY": [{"BearerAuth": []}],
+}
+
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=300),
@@ -110,6 +141,9 @@ DATABASES = {
         conn_health_checks=True
     )
 }
+
+# print("DATABASE_URL:", os.environ.get("DATABASE_URL"))
+# print("DATABASE CONFIG:", DATABASES['default'])
 
 AUTH_USER_MODEL = 'humanresources.Employee'
 

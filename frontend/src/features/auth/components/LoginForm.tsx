@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-// import { ROLE_HOME } from "@/config/roles";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,36 +13,32 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
+import { ROLE_HOME } from "@/config/types/role";
 
 export function LoginForm() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, role } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    await new Promise((r) => setTimeout(r, 500));
 
-    const result = login(identifier, password);
+    const result = await login(identifier, password);
+    console.log("This is returned: ", result);
 
     if (result.success) {
-      toast.success("Welcome back!");
-      // We need to get the role after login to redirect properly
-      // Small trick: re-read from the identifier to find the role
-      const emp = identifier.trim().toLowerCase();
-      // Navigate will happen, useAuth will have the user by then
-      // We use a timeout to let state settle
-      setTimeout(() => {
-        // The user is now set, we can read role from context indirectly
-        navigate("/");
-      }, 0);
+      toast.success(result.message ?? "Welcome back!");
+
+      console.log("User Role: ", role)
+      if (role && ROLE_HOME[role]) {
+        navigate(ROLE_HOME[role]);
+      } else {
+        navigate("/"); // fallback
+      }
     } else {
-      toast.error(result.error ?? "Login failed");
+      toast.error(result.message ?? "Login failed");
     }
-    setLoading(false);
   };
 
   return (
@@ -81,17 +76,10 @@ export function LoginForm() {
               autoComplete="current-password"
             />
           </div>
-          <div className="rounded-md border border-border bg-muted/50 p-3 text-xs text-muted-foreground space-y-1">
-            <p className="font-medium text-foreground">Demo credentials:</p>
-            <p>Owner: sarah@coherence.app / owner123</p>
-            <p>Manager: elena@coherence.app / manager123</p>
-            <p>POS: tomas@coherence.app / pos123</p>
-            <p>Kitchen: marco@coherence.app / kitchen123</p>
-          </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Signing in…" : "Sign in"}
+          <Button type="submit" className="w-full">
+            {"Sign in"}
           </Button>
             <p className="text-center text-sm text-muted-foreground">
               Need an account?{" "}

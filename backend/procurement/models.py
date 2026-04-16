@@ -13,7 +13,7 @@ class Vendor(TimeStampedModel):
     address = models.TextField(db_column='vendor_address')
     contact_no = models.CharField(db_column='vendor_contact_no', max_length=10, unique=True)
     email = models.EmailField(db_column='vendor_email', max_length=100, unique=True)
-    gst_no = models.CharField(db_column='vendor_gst_no',unique=True)
+    gst_no = models.CharField(db_column='vendor_gst_no',max_length=15,unique=True)
     
     @property
     def full_name(self):
@@ -80,16 +80,21 @@ class PurchaseOrder(TimeStampedModel):
     def __str__(self):
         return f"{self.vendor.full_name} - {self.purchase_date}"
 
+    def purchase_set(self):
+        """
+        Helper method to get the related purchase items based on the purchase type
+        """
+        return (
+            self.orderedperishablepurchasesku_set.all()
+            if self.purchase_type == self.TypeChoices.PERISHABLE
+            else self.orderednonperishablepurchasesku_set.all()
+        )
+
     def total_cost(self):
         """
         Calculate total cost of the purchase by summing up the cost of each item
         """
-
-        purchase_set = (
-            self.perishablepurchasesku_set.all()
-            if self.purchase_type == self.TypeChoices.PERISHABLE
-            else self.nonperishablepurchaseitem_set.all()
-        )
+        purchase_set = self.purchase_set()
 
         return self.delivery_cost + sum(
             item.quantity * item.unit_price
@@ -134,7 +139,7 @@ class OrderedNonPerishablePurchaseSKU(TimeStampedModel):
 class VendorInvoice(TimeStampedModel):
     purchase = models.ForeignKey(PurchaseOrder,on_delete=models.CASCADE,db_column='purchase_id')
 
-    invoice_number = models.CharField(max_length=100,unique=True,db_column='invoice_number')
+    invoice_number = models.CharField(max_length=100, db_column='invoice_number')
 
     delivery_date = models.DateField(db_column='delivery_date')
 

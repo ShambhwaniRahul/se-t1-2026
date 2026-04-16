@@ -8,7 +8,8 @@ class EmployeeRoleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = EmployeeRole
-        fields = ['id', 'role', 'role_display']
+        fields = ['role_display'] # Passing just the role_display from here
+        # fields = ['id', 'role', 'role_display']
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
@@ -99,6 +100,15 @@ class EmployeeSerializer(serializers.ModelSerializer):
 
         return instance
     
+
+class EmployeeLoginSerializer(serializers.Serializer):
+    phone_no = serializers.CharField()
+    password = serializers.CharField()
+
+    class Meta:
+        model = Employee
+        fields = ['phone_no', 'password']
+
 class SalarySlipBreakdownSerializer(serializers.ModelSerializer):
     type_pay_display = serializers.CharField(source='get_type_pay_display', read_only=True)
     salary_slip = serializers.PrimaryKeyRelatedField(queryset=SalarySlip.objects.all())
@@ -126,7 +136,12 @@ class SalarySlipBreakdownSerializer(serializers.ModelSerializer):
 
         return data
 
+class changeEmployeePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+    new_password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+    confirm_password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})   
 
+    
 class SalarySlipSerializer(serializers.ModelSerializer):
     employee_name = serializers.CharField(source='employee.full_name', read_only=True)
 

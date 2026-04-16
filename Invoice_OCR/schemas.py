@@ -4,7 +4,7 @@ from typing import List, Optional, Literal
 class Item(BaseModel):
     mapped_sku: str = Field(..., description="The authorized SKU name mapped from the invoice")
     quantity: Optional[float] = None
-    unit: Optional[Literal['KG', 'L', 'Pc']] = Field(None, description="'KG', 'L', 'Pc' only")
+    unit: Optional[Literal['KG', 'Liters', 'Pieces']] = Field(None, description="'KG', 'Liters', 'Pieces' only")
     price_per_unit: Optional[float] = None
     total_price: Optional[float] = None
 

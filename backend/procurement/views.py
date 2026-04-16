@@ -1,6 +1,8 @@
 from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework import status
+import json
+from utils.response import standard_response
+import requests
 from .models import (
     Vendor, PurchaseOrder,
     OrderedNonPerishablePurchaseSKU, OrderedPerishablePurchaseSKU,
@@ -18,8 +20,10 @@ from inventory.models import PerishableSKU, NonPerishableInventory
 from core.permissions import RequiresRole
 from humanresources.models import EmployeeRole
 from django.shortcuts import get_object_or_404
+from utils.response import standard_response
+from drf_spectacular.utils import extend_schema
 
-OCR_URL = "localhost:5000/scan/"
+OCR_URL = "http://localhost:5000/scan/"
 
 # Create your views here.
 
@@ -34,14 +38,31 @@ class VendorListCreateAPIView(APIView):
     def get(self, request):
         vendors = Vendor.objects.all()
         serializer = VendorSerializer(vendors, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return standard_response(
+            success=True,
+            message="Vendors retrieved successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+        )
 
+    @extend_schema(request=VendorSerializer)
     def post(self, request):
         serializer = VendorSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return standard_response(
+                success=True,
+                message="Vendor created successfully.",
+                data=serializer.data,
+                status_code=status.HTTP_201_CREATED
+            )
+        
+        return standard_response(
+            success=False,
+            message="Failed to create vendor.",
+            data=serializer.errors,
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
 
 class VendorDetailAPIView(APIView):
     permission_classes = [RequiresRole]
@@ -51,26 +72,65 @@ class VendorDetailAPIView(APIView):
     ]
 
     def get_object(self, pk):
-        return get_object_or_404(Vendor, pk=pk)
+        try:
+            return Vendor.objects.get(pk=pk)
+        except Vendor.DoesNotExist:
+            return None 
+        
+    def designed_error_response(self, message):
+        return standard_response(
+            success=False,
+            message=message,
+            status_code=status.HTTP_404_NOT_FOUND
+        )     
 
     def get(self, request, pk):
         vendor = self.get_object(pk)
-        serializer = VendorSerializer(vendor)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
+        if vendor is not None:
+            return standard_response(
+                success=True,
+                message="Vendor retrieved successfully.",
+                data=serializer.data,
+                status_code=status.HTTP_200_OK
+            )
+        serializer = VendorSerializer(vendor)
+        return self.designed_error_response("No such vendor exists.")
+
+    @extend_schema(request=VendorSerializer)
     def patch(self, request, pk):
         vendor = self.get_object(pk)
         serializer = VendorSerializer(vendor, data=request.data, partial=True)
+
+        if vendor is None:
+            return self.designed_error_response("No such vendor exists.")
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return standard_response(
+                success=True,
+                message="Vendor updated successfully.",
+                data=serializer.data,
+                status_code=status.HTTP_200_OK
+            )
+
+        return standard_response(
+            success=False,
+            message="Failed to update vendor.",
+            data=serializer.errors,
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
 
     def delete(self, request, pk):
         vendor = self.get_object(pk)
+        if vendor is None:
+            return self.designed_error_response("No such vendor exists.")
         vendor.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-    
+        return standard_response(
+            success=True,
+            message="Vendor deleted successfully.",
+            data=None,
+            status_code=status.HTTP_204_NO_CONTENT
+        )
 
 """ APIs for Purchase Orderss"""
 class PurchaseOrderListCreateAPIView(APIView):
@@ -119,28 +179,44 @@ class PurchaseOrderListCreateAPIView(APIView):
             queryset = queryset.filter(purchase_date=purchase_date)
     
         serializer = PurchaseOrderSerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return standard_response(
+            success=True,
+            message="Pruchase Orders retrieved successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+        )
 
-
+    @extend_schema(request=PurchaseOrderSerializer)
     def post(self, request):
         # ✅ Enforce default status = Pending
         if 'status' in request.data and request.data.get("status") != PurchaseOrder.StatusChoices.PENDING:
-            return Response(
-                {"error": "New purchase orders must have status 'Pending'."}, 
-                status=status.HTTP_400_BAD_REQUEST
+            return standard_response(
+                success=False,
+                message="New purchase orders must have status 'Pending'.",
+                data=None,
+                status_code=status.HTTP_400_BAD_REQUEST 
             )
 
         serializer = PurchaseOrderSerializer(data=request.data)
         if serializer.is_valid():
             if not request.data.get("skus") or len(request.data.get("skus")) == 0:
-                return Response(
-                    {"error": "At least one SKU must be included in the purchase order."},
-                    status=status.HTTP_400_BAD_REQUEST
+                return standard_response(
+                    success=False, 
+                    message= "At least one SKU must be included in the purchase order.",
+                    status_code=status.HTTP_400_BAD_REQUEST
                 )
             serializer.save(status=PurchaseOrder.StatusChoices.PENDING)
             for sku in request.data.get("skus", []):
                 if serializer.validated_data['purchase_type'] == PurchaseOrder.TypeChoices.PERISHABLE:
-                    sku_obj = get_object_or_404(PerishableSKU, pk=sku['sku'])
+                    # sku_obj = get_object_or_404(PerishableSKU, pk=sku['sku'])
+                    try:
+                        sku_obj = PerishableSKU.objects.get(pk=sku['sku'])
+                    except PerishableSKU.DoesNotExist:
+                        return standard_response(
+                            success=False,
+                            message=f"No such perishable SKU exists with ID: {sku['sku']}.",
+                            status_code=status.HTTP_400_BAD_REQUEST
+                        )
                     OrderedPerishablePurchaseSKU.objects.create(
                         purchase=serializer.instance,
                         sku=sku_obj,
@@ -148,15 +224,33 @@ class PurchaseOrderListCreateAPIView(APIView):
                         unit_price=sku['unit_price']
                     )
                 else:
-                    sku_obj = get_object_or_404(NonPerishableInventory, pk=sku['sku'])
+                    # sku_obj = get_object_or_404(NonPerishableInventory, pk=sku['sku'])
+                    try:
+                        sku_obj = NonPerishableInventory.objects.get(pk=sku['sku'])
+                    except NonPerishableInventory.DoesNotExist:
+                        return standard_response(
+                            success=False,
+                            message=f"No such non-perishable SKU exists with ID: {sku['sku']}.",
+                            status_code=status.HTTP_400_BAD_REQUEST
+                        )     
                     OrderedNonPerishablePurchaseSKU.objects.create(
                         purchase=serializer.instance,
                         sku=sku_obj,
                         quantity=sku['quantity'],
                         unit_price=sku['unit_price']
                     )
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return standard_response(
+                success=True,
+                message="Purchase order created successfully.",
+                data=serializer.data,
+                status_code=status.HTTP_201_CREATED
+            )
+        return standard_response(
+            success=False,
+            message="Failed to create purchase order.",
+            data=serializer.errors,
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
 
 class PurchaseOrderDetailAPIView(APIView):
     """
@@ -170,15 +264,38 @@ class PurchaseOrderDetailAPIView(APIView):
     ]
 
     def get_object(self, pk):
-        return get_object_or_404(PurchaseOrder, pk=pk)
+        try:
+            return PurchaseOrder.objects.get(pk=pk)
+        except PurchaseOrder.DoesNotExist:
+            return None
+        
+    def designed_error_response(self, message="No such Purchase order exists."):
+        return standard_response(
+            success=False,
+            message=message,
+            status_code=status.HTTP_404_NOT_FOUND
+        )
 
     def get(self, request, pk):
         purchase_order = self.get_object(pk)
-        serializer = PurchaseOrderSerializer(purchase_order)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
+        if purchase_order is None:
+             return self.designed_error_response()
+        
+        serializer = PurchaseOrderSerializer(purchase_order)
+        return standard_response(
+            success=True,
+            message="Purchase order retrieved successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+        )
+    
+    @extend_schema(request=PurchaseOrderSerializer)
     def patch(self, request, pk):
         purchase_order = self.get_object(pk)
+
+        if purchase_order is None:
+            return self.designed_error_response()
 
         if "status" in request.data:
             if (
@@ -188,12 +305,12 @@ class PurchaseOrderDetailAPIView(APIView):
                 ]
                 and request.data["status"] != purchase_order.status
             ):
-                return Response(
-                    {
-                        "error": f"Cannot change status from '{purchase_order.status}' to '{request.data['status']}'."
-                    },
-                    status=status.HTTP_409_CONFLICT
-                    )
+                return standard_response(
+                    success=False,
+                    message=f"Cannot change status from '{purchase_order.status}' to '{request.data['status']}'.",
+                    data=None,
+                    status_code=status.HTTP_409_CONFLICT
+                )
 
         serializer = PurchaseOrderSerializer(
             purchase_order,
@@ -203,15 +320,40 @@ class PurchaseOrderDetailAPIView(APIView):
 
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return standard_response(
+                success=True,
+                message="Purchase order updated successfully.",
+                data=serializer.data,
+                status_code=status.HTTP_200_OK
+            )
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return standard_response(
+            success=False,
+            message="Failed to update purchase order.",
+            data=serializer.errors,
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
 
     def delete(self, request, pk):
         purchase_order = self.get_object(pk)
+
+        if purchase_order is None:
+            return self.designed_error_response()
+        if purchase_order.status == PurchaseOrder.StatusChoices.RECEIVED:
+            return standard_response(
+                success=False,
+                message="Cannot delete a purchase order that has already been received.",
+                data=None,
+                status_code=status.HTTP_403_FORBIDDEN
+            )
+        
         purchase_order.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-    
+        return standard_response(
+            success=True,
+            message="Purchase order deleted successfully.",
+            data=None,
+            status_code=status.HTTP_204_NO_CONTENT
+        )
 
 """ APIs for Ordered Perishable Purchase SKUs"""
 class OrderedPerishablePurchaseSKUListCreateAPIView(APIView):
@@ -244,15 +386,38 @@ class OrderedPerishablePurchaseSKUListCreateAPIView(APIView):
         if po_number and po_number.isdigit():
             queryset = queryset.filter(purchase__id=int(po_number))
         serializer = OrderedPerishablePurchaseSKUSerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
+        if not queryset.exists():
+            return standard_response(
+                success=False,
+                message="No perishable purchase SKUs found matching the criteria.",
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+        
+        return standard_response(
+            success=True, 
+            message="Perishable purchase SKUs retrieved successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+        )
+    @extend_schema(request=OrderedPerishablePurchaseSKUSerializer)
     def post(self, request):
         serializer = OrderedPerishablePurchaseSKUSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+            return standard_response(
+                success=True,
+                message="Perishable purchase SKU created successfully.",
+                data=serializer.data,
+                status_code=status.HTTP_201_CREATED
+            )
+        return standard_response(
+            success=False,
+            message="Failed to create perishable purchase SKU.",
+            data=serializer.errors,
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
+
 class OrderedPerishablePurchaseSKUDetailAPIView(APIView):
     """
     Handles retrieve, update, and delete for a single perishable purchase SKU.
@@ -265,22 +430,50 @@ class OrderedPerishablePurchaseSKUDetailAPIView(APIView):
     ]
 
     def get_object(self, pk):
-        return get_object_or_404(OrderedPerishablePurchaseSKU, pk=pk)
+        try:
+            return OrderedPerishablePurchaseSKU.objects.get(pk=pk)
+        except OrderedPerishablePurchaseSKU.DoesNotExist:
+            return None
+        
+    def designed_error_response(self, message="No such OrderedPerishablePurchaseSKU exists."):    
+        return standard_response(
+            success=False,
+            message=message,
+            status_code=status.HTTP_404_NOT_FOUND
+        )
+    def designed_error_response(self, message):
+        return standard_response(
+            success=False,
+            message=message,
+            status_code=status.HTTP_404_NOT_FOUND    
+        )    
 
     def get(self, request, pk):
         perishable_purchase_sku = self.get_object(pk)
+        if perishable_purchase_sku is None:
+            return self.designed_error_response()
         serializer = OrderedPerishablePurchaseSKUSerializer(perishable_purchase_sku)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return standard_response(
+            success=True,
+            message="Perishable purchase SKU retrieved successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+        )
 
+    @extend_schema(request=OrderedPerishablePurchaseSKUSerializer)
     def patch(self, request, pk):
         perishable_purchase_sku = self.get_object(pk)
+
+        if perishable_purchase_sku is None:
+            return self.designed_error_response()
 
         # ✅ Prevent changing purchase reference
         if "purchase" in request.data:
             if perishable_purchase_sku.purchase.id != request.data["purchase"]:
-                return Response(
-                    {"error": "Cannot change the purchase associated with this SKU."},
-                    status=status.HTTP_400_BAD_REQUEST
+                return standard_response(
+                    success=False,
+                    message="Cannot change the purchase associated with this SKU.",
+                    status_code=status.HTTP_400_BAD_REQUEST
                 )
 
         serializer = OrderedPerishablePurchaseSKUSerializer(
@@ -291,19 +484,37 @@ class OrderedPerishablePurchaseSKUDetailAPIView(APIView):
 
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return standard_response(
+                success=True,
+                message="Perishable purchase SKU updated successfully.",
+                data=serializer.data,
+                status_code=status.HTTP_200_OK
+            )
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return standard_response(
+            success=False,
+            message="Failed to update perishable purchase SKU.",
+            data=serializer.errors,
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
 
     def delete(self, request, pk):
         perishable_purchase_sku = self.get_object(pk)
+
+        if perishable_purchase_sku is None:
+            return self.designed_error_response()
         if perishable_purchase_sku.purchase.status == PurchaseOrder.StatusChoices.RECEIVED:
-            return Response(
-                {"error": "Cannot delete a purchase SKU that has already been received!"},
-                status=status.HTTP_403_FORBIDDEN
+            return standard_response(
+                success=False,
+                message="Cannot delete a purchase SKU that has already been received!",
+                status_code=status.HTTP_403_FORBIDDEN
             )
         perishable_purchase_sku.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return standard_response(
+            success=True,
+            message="Perishable purchase SKU deleted successfully.",
+            status_code=status.HTTP_204_NO_CONTENT
+        )
 
 
 """ APIs for Ordered Non-Perishable Purchase SKUs"""
@@ -331,14 +542,37 @@ class OrderedNonPerishablePurchaseSKUListCreateAPIView(APIView):
             queryset = queryset.filter(sku=int(sku))
 
         serializer = OrderedNonPerishablePurchaseSKUSerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
+        if not queryset.exists():
+            return standard_response(
+                success=False,
+                message="No non-perishable purchase SKUs found matching the criteria.",
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+        return standard_response(
+            success=True,
+            message="Non-perishable purchase SKUs retrieved successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+        )
+
+    @extend_schema(request=OrderedNonPerishablePurchaseSKUSerializer)
     def post(self, request):
         serializer = OrderedNonPerishablePurchaseSKUSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return standard_response(
+                success=True,
+                message="Non-perishable purchase SKU created successfully.",
+                data=serializer.data,
+                status_code=status.HTTP_201_CREATED
+            )
+        return standard_response(
+            success=False,
+            message="Failed to create non-perishable purchase SKU.",
+            data=serializer.errors,
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
 
 class OrderedNonPerishablePurchaseSKUDetailAPIView(APIView):
     """
@@ -352,22 +586,43 @@ class OrderedNonPerishablePurchaseSKUDetailAPIView(APIView):
     ]
 
     def get_object(self, pk):
-        return get_object_or_404(OrderedNonPerishablePurchaseSKU, pk=pk)
-
+        try:
+            return OrderedNonPerishablePurchaseSKU.objects.get(pk=pk)
+        except OrderedNonPerishablePurchaseSKU.DoesNotExist:
+            return None
+        
+    def designed_error_response(self, message="No such Ordered non-perishable purchase SKU exists."):
+        return standard_response(
+            success=False,
+            message=message,
+            status_code=status.HTTP_404_NOT_FOUND    
+        )
     def get(self, request, pk):
         non_perishable_purchase_sku = self.get_object(pk)
+        if non_perishable_purchase_sku is None:
+            return self.designed_error_response()
         serializer = OrderedNonPerishablePurchaseSKUSerializer(non_perishable_purchase_sku)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
+        return standard_response(
+            success=True,
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+        )
+    
+    @extend_schema(request=OrderedNonPerishablePurchaseSKUSerializer)
     def patch(self, request, pk):
         non_perishable_purchase_sku = self.get_object(pk)
+
+        if non_perishable_purchase_sku is None:
+            return self.designed_error_response()
 
         # Prevent changing purchase reference
         if "purchase" in request.data:
             if non_perishable_purchase_sku.purchase.id != request.data["purchase"]:
-                return Response(
-                    {"details": "Cannot change the purchase associated with this SKU."},
-                    status=status.HTTP_400_BAD_REQUEST
+                return standard_response(
+                    success=False,
+                    message="Cannot change the purchase associated with this SKU.",
+                    data=None,
+                    status_code=status.HTTP_400_BAD_REQUEST
                 )
 
         serializer = OrderedNonPerishablePurchaseSKUSerializer(
@@ -378,19 +633,39 @@ class OrderedNonPerishablePurchaseSKUDetailAPIView(APIView):
 
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return standard_response(
+                success=True,
+                message="Non-perishable purchase SKU updated successfully.",
+                data=serializer.data,
+                status_code=status.HTTP_200_OK
+            )
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return standard_response(
+            success=False,
+            message="Failed to update non-perishable purchase SKU.",
+            data=serializer.errors,
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
 
     def delete(self, request, pk):
         non_perishable_purchase_sku = self.get_object(pk)
+
+        if non_perishable_purchase_sku is None:
+            return self.designed_error_response()
         if non_perishable_purchase_sku.purchase.status == PurchaseOrder.StatusChoices.RECEIVED:
-            return Response(
-                {"details": "Cannot delete a purchase SKU that has already been received!"},
-                status=status.HTTP_403_FORBIDDEN
+            return standard_response(
+                success=False,
+                message="Cannot delete a purchase SKU that has already been received!",
+                data=None,
+                status_code=status.HTTP_403_FORBIDDEN
             )
         non_perishable_purchase_sku.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return standard_response(
+            success=True,
+            message="Non-perishable purchase SKU deleted successfully.",
+            data=None,
+            status_code=status.HTTP_204_NO_CONTENT
+        )
 
 
 class VendorInvoiceListCreateAPIView(APIView):
@@ -404,82 +679,148 @@ class VendorInvoiceListCreateAPIView(APIView):
     def get(self, request):
         invoices = VendorInvoice.objects.all().order_by('-created_at')
         serializer = VendorInvoiceSerializer(invoices, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
+        if not invoices.exists():
+            return standard_response(success=False,
+                                     message="No vendor invoices found.",
+                                     status_code=status.HTTP_404_NOT_FOUND)
+        return standard_response(success=True,
+                                  message="Vendor invoices retrieved successfully.",
+                                  data=serializer.data,
+                                  status_code=status.HTTP_200_OK)
+
+    @extend_schema(
+    request=VendorInvoiceSerializer,
+    responses=VendorInvoiceSerializer,
+    description="Create a vendor invoice and update inventory accordingly."
+    )
     def post(self, request):
         po_number = request.data.get("purchase")
         if not po_number:
-            return Response(
-                {"error": "Purchase order ID is required to create a vendor invoice."},
-                status=status.HTTP_400_BAD_REQUEST
+            return standard_response(success=False,
+                                     message="Purchase order ID is required to create a vendor invoice.",
+                                     status_code=status.HTTP_400_BAD_REQUEST)
+        try:
+            purchase_order = PurchaseOrder.objects.get(pk=po_number)
+        except PurchaseOrder.DoesNotExist:
+            return standard_response(
+                success=False,
+                message="Purchase order does not exist.",
+                status_code=status.HTTP_404_NOT_FOUND
             )
-        purchase_order = get_object_or_404(PurchaseOrder, pk=po_number)
-        if not request.data.get("items") or len(request.data.get("items")) == 0:
-            return Response(
-                {"error": "At least one item must be included in the invoice."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        invoice_image = request.FILES.get("invoice_image")
+        po_skus = purchase_order.purchase_set()
+        expected_skus_json = {}
+        for item in po_skus:
+            expected_skus_json[item.sku.name] = item.sku.get_unit_display() if purchase_order.purchase_type == PurchaseOrder.TypeChoices.PERISHABLE else "Pieces"
+        file_payload = {
+            "file": (invoice_image.name, invoice_image, invoice_image.content_type)
+        }
+        data_payload = {"expected_skus_json": json.dumps(expected_skus_json)}
+        try:
+            response = requests.post(OCR_URL, files=file_payload, data=data_payload, timeout=120)
+            data = response.json()
+            # data = {
+            #     'invoice_number': '4242', 
+            #     'date': '2021-09-01', 
+            #     'items': [
+            #         {'mapped_sku': 'Chana Dal', 'quantity': 50.0, 'unit': 'KG', 'price_per_unit': 55.2, 'total_price': 2760.0}, 
+            #         {'mapped_sku': 'Chickpea', 'quantity': 5.0, 'unit': 'KG', 'price_per_unit': 140.0, 'total_price': 700.0}, 
+            #         {'mapped_sku': 'Oil', 'quantity': 3.0, 'unit': 'Liters', 'price_per_unit': 1338.6, 'total_price': 4015.8},
+            #         {'mapped_sku': 'Chana Dal', 'quantity': 5.0, 'unit': 'KG', 'price_per_unit': 145.0, 'total_price': 725.0}, 
+            #         {'mapped_sku': 'Masoor Dal', 'quantity': 50.0, 'unit': 'KG', 'price_per_unit': 96.5, 'total_price': 4825.0}, 
+            #         {'mapped_sku': 'Oil Can', 'quantity': 100.0, 'unit': 'Liters', 'price_per_unit': 197.5, 'total_price': 19750.0}, 
+            #         {'mapped_sku': 'Sugar', 'quantity': 2.0, 'unit': 'Pieces', 'price_per_unit': 1925.0, 'total_price': 3850.0}, 
+            #         {'mapped_sku': 'Sabudana - Khichdi', 'quantity': 25.0, 'unit': 'KG', 'price_per_unit': 45.0, 'total_price': 1125.0}, 
+            #         {'mapped_sku': 'Sabudana', 'quantity': 30.0, 'unit': 'KG', 'price_per_unit': 44.67, 'total_price': 1340.0}, 
+            #         {'mapped_sku': 'Urad Dal', 'quantity': 20.0, 'unit': 'KG', 'price_per_unit': 48.0, 'total_price': 960.0}, 
+            #         {'mapped_sku': 'Kidney Beans', 'quantity': 25.0, 'unit': 'KG', 'price_per_unit': 45.0, 'total_price': 1125.0}, 
+            #         {'mapped_sku': 'Biscuit', 'quantity': 5.0, 'unit': 'Pieces', 'price_per_unit': 650.0, 'total_price': 3250.0}    
+            #     ]}
+        except Exception as e:
+            return standard_response(success=False,
+                                     message=f"Failed to process invoice image: {str(e)}. Please try again later.",
+                                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+        if response.status_code != 200:
+            return standard_response(success=False,
+                                     message=f"Failed to extract data from invoice image: {response.status_code}. {response.text}",
+                                     status_code=status.HTTP_400_BAD_REQUEST)
+        if not data.get("items") or len(data.get("items")) == 0:
+            return standard_response(success=False,
+                                     message="At least one item must be included in the invoice.",
+                                     status_code=status.HTTP_400_BAD_REQUEST)
         invoice_serializer = VendorInvoiceSerializer(data={
             "purchase": po_number,
-            "invoice_number": request.data.get("invoice_number"),
-            "delivery_date": request.data.get("date"),
+            "invoice_number": data.get("invoice_number"),
+            "delivery_date": data.get("date"),
+            "invoice_file": invoice_image
         })
         if invoice_serializer.is_valid():
             invoice_serializer.save()
+
             if purchase_order.purchase_type == PurchaseOrder.TypeChoices.PERISHABLE:
-                for item in request.data.get("items", []):
+                for item in data.get("items", []):
                     sku_name = item.get("mapped_sku")
                     if not PerishableSKU.objects.filter(name=sku_name).exists():
-                        return Response(
-                            {"error": f"Perishable SKU with name '{sku_name}' does not exist."},
-                            status=status.HTTP_404_NOT_FOUND
-                        )
+                        return standard_response(success=False,
+                                                 message=f"Perishable SKU with name '{sku_name}' does not exist.",
+                                                 status_code=status.HTTP_404_NOT_FOUND)
                     sku = PerishableSKU.objects.get(name=sku_name)
                     serializer = PerishableInventorySerializer(data={
                         "sku": sku.id,
                         "quantity": item.get("quantity"),
-                        "purchase_date": request.data.get("date")
+                        "purchase_date": data.get("date")
                     })
                     if serializer.is_valid():
                         serializer.save()
                     else:
-                        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                        return standard_response(success=False,
+                                                 message="Invalid data for perishable inventory item.",
+                                                 status_code=status.HTTP_400_BAD_REQUEST)
                 delivery_serializer = DeliveredPerishableInventorySerializer(data={
                     "invoice": invoice_serializer.instance.id,
-                    "delivered_json": request.data.get("items")
+                    "delivered_json": data.get("items")
                 })
                 if delivery_serializer.is_valid():
                     delivery_serializer.save()
                 else:
-                    return Response(delivery_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                    return standard_response(success=False,
+                                             message="Invalid data for delivered perishable inventory.",
+                                             status_code=status.HTTP_400_BAD_REQUEST)
             else:
-                for item in request.data.get("items", []):
+                for item in data.get("items", []):
                     sku_name = item.get("mapped_sku")
                     if not NonPerishableInventory.objects.filter(name=sku_name).exists():
-                        return Response(
-                            {"error": f"Non-perishable inventory item with name '{sku_name}' does not exist."},
-                            status=status.HTTP_404_NOT_FOUND
-                        )
+                        return standard_response(success=False,
+                                                 message=f"Non-perishable inventory item with name '{sku_name}' does not exist.",
+                                                 status_code=status.HTTP_404_NOT_FOUND)
                     sku = NonPerishableInventory.objects.get(name=sku_name)
                     if item.get("quantity"):
                         sku.quantity += item.get("quantity")
                         sku.save()
                     else:
-                        return Response(
-                            {"error": f"Quantity is required for non-perishable inventory item '{sku_name}'."},
-                            status=status.HTTP_400_BAD_REQUEST
-                        )
+                        return standard_response(success=False,
+                                                 message=f"Quantity is required for non-perishable inventory item '{sku_name}'.",
+                                                 status_code=status.HTTP_400_BAD_REQUEST)
                 
                 delivery_serializer = DeliveredNonPerishableInventorySerializer(data={
                     "invoice": invoice_serializer.instance.id,
-                    "delivered_json": request.data.get("items")
+                    "delivered_json": data.get("items")
                 })
                 if delivery_serializer.is_valid():
                     delivery_serializer.save()
                 else:
-                    return Response(delivery_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            return Response(invoice_serializer.data, status=status.HTTP_201_CREATED)
-        return Response(invoice_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                    return standard_response(success=False,
+                                             message="Invalid data for delivered non-perishable inventory.",
+                                             status_code=status.HTTP_400_BAD_REQUEST)
+            return standard_response(
+                success=True,
+                message="Vendor invoice created successfully.",
+                data=invoice_serializer.data,
+                status_code=status.HTTP_201_CREATED)
+        return standard_response(success=False,
+                                 message=f"Invalid data for vendor invoice. {invoice_serializer.errors}",
+                                 status_code=status.HTTP_400_BAD_REQUEST)
 
 class DeliveredPerishablePurchaseInventoryListAPIView(APIView):
     """APIView for listing and creating perishable purchase SKUs """
@@ -493,7 +834,19 @@ class DeliveredPerishablePurchaseInventoryListAPIView(APIView):
     def get(self, request):
         queryset = DeliveredPerishableInventory.objects.all().order_by('-created_at')
         serializer = DeliveredPerishableInventorySerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        if not queryset.exists():
+            return standard_response(
+                success=False,
+                message="No delivered perishable purchase SKUs found.",
+                data=None,
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+        return standard_response(
+            success=True, 
+            message="Delivered perishable purchase SKUs found.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+        )
 
     
 class DeliveredPerishablePurchaseInventoryDetailAPIView(APIView):
@@ -506,11 +859,24 @@ class DeliveredPerishablePurchaseInventoryDetailAPIView(APIView):
     ]
 
     def get(self, request, pk):
-        perishable_purchase_sku = get_object_or_404(DeliveredPerishableInventory, pk=pk)
+        perishable_purchase_sku = DeliveredPerishableInventory.objects.get(pk=pk) if DeliveredPerishableInventory.objects.filter(pk=pk).exists() else None
+
+        if perishable_purchase_sku is None:
+            return standard_response(
+                success=False,
+                message="No such delivered perishable purchase SKU exists.",
+                data=None,
+                status_code=status.HTTP_404_NOT_FOUND
+            )
         serializer = DeliveredPerishableInventorySerializer(perishable_purchase_sku)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
-    
+        return standard_response(
+            success=True,
+            message="Delivered perishable purchase SKU found.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+        )
+
+
 class DeliveredNonPerishableInventoryListAPIView(APIView):
     """APIView for listing and creating non-perishable purchase SKUs """
     permission_classes = [RequiresRole]
@@ -523,8 +889,20 @@ class DeliveredNonPerishableInventoryListAPIView(APIView):
     def get(self, request):
         queryset = DeliveredNonPerishableInventory.objects.all().order_by('-created_at')
         serializer = DeliveredNonPerishableInventorySerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
+        if not queryset.exists():
+            return standard_response(
+                success=False,
+                message="No delivered non-perishable purchase SKUs found.",
+                data=None,
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+        
+        return standard_response(
+            success=True,
+            message="Delivered non-perishable purchase SKUs found.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+        )
 
 class DeliveredNonPerishableInventoryDetailAPIView(APIView):
     """APIView for retrieving, updating, and deleting a single non-perishable purchase SKU"""
@@ -536,6 +914,18 @@ class DeliveredNonPerishableInventoryDetailAPIView(APIView):
     ]
 
     def get(self, request, pk):
-        non_perishable_purchase_sku = get_object_or_404(DeliveredNonPerishableInventory, pk=pk)
+        non_perishable_purchase_sku = DeliveredNonPerishableInventory(pk=pk) if DeliveredNonPerishableInventory.objects.filter(pk=pk).exists() else None
+        if non_perishable_purchase_sku is None:
+            return standard_response(
+                success=False,
+                message="No such delivered non-perishable purchase SKU exists.",
+                data=None,
+                status_code=status.HTTP_404_NOT_FOUND
+            )
         serializer = DeliveredNonPerishableInventorySerializer(non_perishable_purchase_sku)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return standard_response(
+            success=True,
+            message="Delivered non-perishable purchase SKU found.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+        )

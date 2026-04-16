@@ -1,8 +1,13 @@
 from rest_framework import serializers
-from .models import MenuItem, MenuItemIngredient, DiningTable
+from .models import MenuItem, MenuItemIngredient, DiningTable, Discounts, Order, OrderMenuItem
+from django.utils.timezone import now
+from datetime import timedelta
 
 
 class MenuItemSerializer(serializers.ModelSerializer):
+
+    discount = serializers.SerializerMethodField()
+
     class Meta:
         model = MenuItem
         fields = [
@@ -11,11 +16,25 @@ class MenuItemSerializer(serializers.ModelSerializer):
             'price',
             'estimated_prep_time',
             'discount',
+            'is_veg',
+            'category',
             'created_at',
             'updated_at'
         ]
-
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def get_discount(self, obj):
+        discounts = obj.discounts_set.all().order_by('-created_at')
+
+        for discount in discounts:
+            # 🔥 VALIDITY CHECK
+            if now() <= discount.created_at + timedelta(days=discount.validity):
+                return discount.rate
+
+        return 0.0
+
+
+
 
 
 class MenuItemIngredientSerializer(serializers.ModelSerializer):
@@ -69,3 +88,196 @@ class DiningTableSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class DiscountsSerializer(serializers.ModelSerializer):
+
+    # 🔥 ADDED: menu item name for readability
+    menu_item_name = serializers.CharField(source='menu_item.name', read_only=True)
+
+    class Meta:
+        model = Discounts
+        fields = [
+            'id',
+            'menu_item',          # REQUIRED for linking
+            'menu_item_name',     # ADDED for display
+            'rate',
+            'validity',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    # ADDED: validate discount rate (max 0.45)
+    def validate_rate(self, value):
+        if value > 0.9:
+            raise serializers.ValidationError("Discount cannot exceed 90% (0.90).")
+        if value < 0:
+            raise serializers.ValidationError("Discount cannot be negative.")
+        return value
+
+    # ADDED: validate validity (>= 1 day)
+    def validate_validity(self, value):
+        if value < 1:
+            raise serializers.ValidationError("Validity must be at least 1 day.")
+        return value
+    
+
+class OrderMenuItemSerializer(serializers.ModelSerializer):
+
+    menu_item_name = serializers.CharField(source='menu_item.name', read_only=True)
+    chef_name = serializers.CharField(source='chef.full_name', read_only=True)
+    menu_item_status_display = serializers.CharField(
+        source='get_menu_item_status_display',
+        read_only=True
+    )
+
+    class Meta:
+        model = OrderMenuItem
+        fields = [
+            'id',
+            'order',
+            'menu_item',
+            'menu_item_name',
+            'chef',
+            'chef_name',
+            'menu_item_status',
+            'menu_item_status_display',
+            'price_at_time',
+            'special_instructions',
+            'created_at',
+            'updated_at'
+        ]
+        read_only_fields = fields
+
+
+class OrderMenuItemCreateSerializer(serializers.Serializer):
+    menu_item = serializers.IntegerField()
+    special_instructions = serializers.CharField(required=False, allow_blank=True)
+
+class OrderCreateSerializer(serializers.Serializer):
+    table = serializers.PrimaryKeyRelatedField(
+        queryset=DiningTable.objects.all()
+    )
+    dining_type = serializers.IntegerField()
+    packaging_cost = serializers.FloatField()
+    items = OrderMenuItemCreateSerializer(many=True)
+
+    def validate(self, data):
+        item_ids = [item['menu_item'] for item in data['items']]
+
+        # 🔥 Duplicate check
+        if len(item_ids) != len(set(item_ids)):
+            raise serializers.ValidationError(
+                "Duplicate menu items are not allowed in a single order."
+            )
+
+        # 🔥 Check existence
+        existing_items = set(
+            MenuItem.objects.filter(id__in=item_ids).values_list('id', flat=True)
+        )
+
+        invalid_items = [i for i in item_ids if i not in existing_items]
+
+        if invalid_items:
+            raise serializers.ValidationError(
+                f"Invalid menu_item IDs: {invalid_items}"
+            )
+
+        return data
+
+    def validate_table(self, value):
+        if not value.is_available:
+            raise serializers.ValidationError("Table is not available.")
+        return value
+
+class OrderReadSerializer(serializers.ModelSerializer):
+
+    # 🔥 THIS FIXES YOUR ERROR
+    items = OrderMenuItemSerializer(
+        source='ordermenuitem_set',  # since no related_name in model
+        many=True,
+        read_only=True
+    )
+
+    order_total = serializers.FloatField(read_only=True)
+
+    class Meta:
+        model = Order
+        fields = [
+            'id',
+            'table',
+            'status',
+            'dining_type',
+            'packaging_cost',
+            'final_total',
+            'order_total',
+            'items'
+        ]
+
+
+class OrderMenuItemStatusReadSerializer(serializers.ModelSerializer):
+    menu_item_name = serializers.CharField(source='menu_item.name', read_only=True)
+
+    class Meta:
+        model = OrderMenuItem
+        fields = [
+            'id',
+            'order',
+            'menu_item',
+            'menu_item_name',
+            'chef',
+            'menu_item_status',
+            'special_instructions',
+            'created_at',
+            'updated_at'
+        ]
+
+        read_only_fields = fields
+
+class UpdateOrderMenuItemStatusSerializer(serializers.Serializer):
+    menu_item_status = serializers.IntegerField()
+
+    # 🔥 READ ONLY OUTPUT FIELDS
+    menu_item_name = serializers.CharField(source='menu_item.name', read_only=True)
+    menu_item_status_display = serializers.CharField(
+        source='get_menu_item_status_display',
+        read_only=True
+    )
+
+    def validate_menu_item_status(self, value):
+        valid_statuses = [status.value for status in OrderMenuItem.StatusChoices]
+
+        if value not in valid_statuses:
+            raise serializers.ValidationError("Invalid menu_item_status value.")
+
+        return value
+
+
+class AddItemsToOrderSerializer(serializers.Serializer):
+    items = OrderMenuItemCreateSerializer(many=True)
+
+    def validate(self, data):
+        items = data.get('items', [])
+
+        item_ids = [item['menu_item'] for item in items]
+
+        # 🔥 Duplicate check (within request)
+        if len(item_ids) != len(set(item_ids)):
+            raise serializers.ValidationError(
+                "Duplicate menu items not allowed in same request."
+            )
+
+        # 🔥 Check all menu items exist
+        existing_items = set(
+            MenuItem.objects.filter(id__in=item_ids).values_list('id', flat=True)
+        )
+
+        invalid_items = [i for i in item_ids if i not in existing_items]
+
+        if invalid_items:
+            raise serializers.ValidationError(
+                f"Invalid menu_item IDs: {invalid_items}"
+            )
+
+        return data
