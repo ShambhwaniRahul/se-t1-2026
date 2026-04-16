@@ -5,10 +5,12 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from humanresources.models import EmployeeRole
 from core.permissions import RequiresRole
 from .models import Customer, CustomerPayment
-from .serializers import CustomerSerializer, CustomerPaymentSerializer
+from .serializers import CustomerSerializer,CustomerReadSerializer,CustomerPaymentSerializer
 from orders.models import Order, OrderMenuItem
 from utils.response import standard_response
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
+
 
 class CustomerListCreateAPIView(APIView):
     """
@@ -21,24 +23,18 @@ class CustomerListCreateAPIView(APIView):
 
     
     @extend_schema(
-        responses=CustomerSerializer
+        responses=CustomerReadSerializer
         )
     def get(self, request):
         min_loyalty_points = request.query_params.get("min_loyalty_points")
         queryset = Customer.objects.all().order_by("-created_at")
         if min_loyalty_points and min_loyalty_points.strip().isnumeric():
             queryset = queryset.filter(loyalty_points__gte=int(min_loyalty_points))
-        serializer = CustomerSerializer(queryset, many=True)
+        serializer = CustomerReadSerializer(queryset, many=True)
 
-        if not queryset.exists():
-            return standard_response(
-                success=False,
-                message="No customers found.",
-                status_code=status.HTTP_404_NOT_FOUND,
-            )
         return standard_response(
             success=True,
-            message="Customers retrieved successfully.",
+            message="Customers retrieved successfully." if len(queryset)>0 else "No customers found for the given Parameters.",
             data=serializer.data,
             status_code=status.HTTP_200_OK,
         )
@@ -128,36 +124,38 @@ class CustomerRegisterView(APIView):
         request=CustomerSerializer
     )
     def post(self, request):
-        # otp = request.data.get("OTP")
-        # if not otp:
-        #     return standard_response(
-        #         success=False,
-        #         message= "OTP field is strictly required.",
-        #         status_code=status.HTTP_400_BAD_REQUEST,
-        #     )
-        # if otp != "123456":
-        #     return standard_response(
-        #         success=False,
-        #         message= "Invalid OTP provided."
-        #         status_code=status.HTTP_400_BAD_REQUEST
-        #     )
-
-        serializer = CustomerSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-
+        """
+        Registers a new customer.
+        """
+        phone = request.data.get("phone_no")
+    
+        # 🔥 1. Basic validation
+        if not phone:
             return standard_response(
-                status_code=status.HTTP_201_CREATED,
+                success=False,
+                message="Phone number is required.",
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+    
+   
+        serializer = CustomerSerializer(data=request.data)
+    
+        if serializer.is_valid():
+            print(serializer.data)
+            serializer.save()
+    
+            return standard_response(
                 success=True,
                 message="Customer created successfully.",
                 data=serializer.data,
+                status_code=status.HTTP_201_CREATED
             )
-
+    
         return standard_response(
-            status_code=status.HTTP_400_BAD_REQUEST,
             success=False,
             message="Invalid data provided.",
             data=serializer.errors,
+            status_code=status.HTTP_400_BAD_REQUEST
         )
 
 
@@ -170,6 +168,21 @@ class CustomerPaymentListAPIView(APIView):
     permission_classes = [RequiresRole]
     required_roles = [EmployeeRole.RoleChoices.OWNER, EmployeeRole.RoleChoices.MANAGER]
 
+    @extend_schema(
+        responses=CustomerPaymentSerializer(many=True),
+        parameters=[
+            OpenApiParameter(
+                name="payment_mode",
+                type=OpenApiTypes.INT,
+                description="Filter by payment mode. Values are 0:CASH, 1:UPI, 2:CARD"
+            ),
+            OpenApiParameter(
+                name="usage_type",
+                type=OpenApiTypes.INT,
+                description="Filter by usage type. Values are -1:Invalid,1:Valid"
+            )
+        ]
+    )
     def get(self, request):
         payment_mode = request.query_params.get("payment_mode")
         usage_type = request.query_params.get("usage_type")
@@ -182,17 +195,12 @@ class CustomerPaymentListAPIView(APIView):
             payments = payments.filter(usage_type=int(usage_type.strip()))
 
         serializer = CustomerPaymentSerializer(payments, many=True)
+        print("Data: ", serializer.data)
 
-        if not payments.exists():
-            return standard_response(
-                success=False,
-                message="Invalid query parameters provided.",
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
 
         return standard_response(
             success=True,
-            message="Customer payments retrieved successfully.",
+            message="Customer payments retrieved successfully" if len(payments)>0 else "No customer payments found for the given parameters.",
             data=serializer.data,
             status_code=status.HTTP_200_OK,
         )
