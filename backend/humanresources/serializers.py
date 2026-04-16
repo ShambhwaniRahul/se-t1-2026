@@ -8,7 +8,8 @@ class EmployeeRoleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = EmployeeRole
-        fields = ['id', 'role', 'role_display']
+        fields = ['role_display'] # Passing just the role_display from here
+        # fields = ['id', 'role', 'role_display']
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
