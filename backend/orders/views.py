@@ -209,7 +209,7 @@ class MenuItemDetailAPIView(APIView):
         return standard_response(
             success=True, 
             message="Menu item deleted successfully.",
-            status=status.HTTP_204_NO_CONTENT
+            status_code=status.HTTP_204_NO_CONTENT
             )
     
 
