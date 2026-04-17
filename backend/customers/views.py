@@ -4,12 +4,14 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from humanresources.models import EmployeeRole
 from core.permissions import RequiresRole
-from .models import Customer, CustomerPayment
+from .models import Customer, CustomerPayment, CustomerPointsBank
 from .serializers import CustomerSerializer,CustomerReadSerializer,CustomerPaymentSerializer
 from orders.models import Order, OrderMenuItem
 from utils.response import standard_response
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
+from utils.loyalty_points import Converter, compute_adjusted_amount
+from django.db import transaction 
 
 
 class CustomerListCreateAPIView(APIView):
@@ -72,7 +74,7 @@ class CustomerDetailAPIView(APIView):
         return standard_response(
             success=True,
             message="Customer retrieved successfully.",
-            data=serializer.data,
+            data={serializer.data},
             status_code=status.HTTP_200_OK,
         )
     
@@ -141,8 +143,8 @@ class CustomerRegisterView(APIView):
         serializer = CustomerSerializer(data=request.data)
     
         if serializer.is_valid():
-            print(serializer.data)
             serializer.save()
+            # print(serializer.vadata)
     
             return standard_response(
                 success=True,
@@ -159,7 +161,44 @@ class CustomerRegisterView(APIView):
         )
 
 
-class CustomerPaymentListAPIView(APIView):
+class CustomerSearchAPIView(APIView):
+    """
+    Handles customer search operations.
+    Requires OWNER, MANAGER or WAITER role for access.
+    """
+
+    permission_classes = [RequiresRole]
+    required_roles = [
+        EmployeeRole.RoleChoices.OWNER,
+        EmployeeRole.RoleChoices.MANAGER,
+        EmployeeRole.RoleChoices.WAITER
+        ]
+
+    
+    def get(self, request):
+        phone_no = request.data.get("phone_no")
+        first_name = request.data.get("first_name")
+        last_name = request.data.get("last_name")
+
+        queryset = Customer.objects.all().order_by("-created_at")
+        if phone_no:
+            queryset = queryset.filter(phone_no=phone_no)
+        if first_name:
+            queryset = queryset.filter(first_name__icontains=first_name)
+        if last_name:
+            queryset = queryset.filter(last_name__icontains=last_name)
+
+        serializer = CustomerSerializer(queryset, many=True)
+
+        return standard_response(
+            success=True,
+            message="Customers retrieved successfully." if len(queryset)>0 else "No customers found for the given Parameters.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK,
+        )
+    
+
+class CustomerPaymentListCreateAPIView(APIView):
     """
     Lists all customer payments.
     Requires OWNER or MANAGER role for access.
@@ -206,12 +245,12 @@ class CustomerPaymentListAPIView(APIView):
         )
 
     
-    @extend_schema(
-        request=CustomerPaymentSerializer
-    )
+
+
+    @extend_schema(request=CustomerPaymentSerializer)
     def post(self, request):
         serializer = CustomerPaymentSerializer(data=request.data)
-
+    
         if not serializer.is_valid():
             return standard_response(
                 success=False,
@@ -219,21 +258,20 @@ class CustomerPaymentListAPIView(APIView):
                 data=serializer.errors,
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
-
+    
         validated_data = serializer.validated_data
         order = validated_data.get("order")
-
-        # 🔥 1. Check if order exists (already ensured by serializer FK)
-
-        # 🔥 2. Check if order already closed
+        customer = validated_data.get("customer")
+    
+        # 🔥 1. Check if order already closed
         if order.status == Order.StatusChoices.CLOSED:
             return standard_response(
                 success=False,
                 message="Order is already closed.",
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
-
-        # 🔥 3. Check pending/incomplete items
+    
+        # 🔥 2. Check pending/incomplete items
         invalid_items = order.ordermenuitem_set.filter(
             menu_item_status__in=[
                 OrderMenuItem.StatusChoices.PENDING,
@@ -241,32 +279,60 @@ class CustomerPaymentListAPIView(APIView):
                 OrderMenuItem.StatusChoices.READY_TO_SERVE,
             ]
         )
-
+    
         if invalid_items.exists():
             return standard_response(
                 success=False,
                 message="Cannot process payment. Some order items are not yet completed.",
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
+    
+        try:
+            with transaction.atomic():
+    
+                # 🔥 3. Compute adjusted amount using loyalty points
+                result = compute_adjusted_amount(
+                    final_total=order.final_total,
+                    customer_id=customer.id
+                )
+    
+                amt_paid = result["amt_paid"]
+                points_adjusted = result["points_used"] 
+    
+                # 🔥 4. Save payment with computed amt_paid
+                payment = serializer.save(amt_paid=amt_paid)
+    
+                # 🔥 5. Close order
+                order.status = Order.StatusChoices.CLOSED
+                order.save()
+                
+                # 6. Making an entry into the CustomerPointsBank table
+                CustomerPointsBank.objects.create(
+                    payment=payment,
+                    points=amt_paid * Converter.RUPEES_TO_POINTS.value
+                )
 
-        # 🔥 4. Save payment
-        payment = serializer.save()
-
-        # 🔥 5. Close order
-        order.status = Order.StatusChoices.CLOSED
-        order.save()
-
-        return standard_response(
-            success=True,
-            message="Payment successful. Order closed.",
-            data={
-                "payment_id": payment.id,
-                "order_id": order.id,
-                "final_total": order.final_total,
-            },
-            status_code=status.HTTP_201_CREATED,
-        )
-
+    
+            return standard_response(
+                success=True,
+                message="Payment successful. Order closed.",
+                data={
+                    "customer_name": customer.full_name,
+                    "order_total": order.final_total,
+                    "points_adjusted": points_adjusted,
+                    "gross_value": amt_paid,
+                    "points_to_rupees": Converter.POINTS_TO_RUPEES.value
+                },
+                status_code=status.HTTP_201_CREATED,
+            )
+    
+        except Exception as e:
+            return standard_response(
+                success=False,
+                message="Payment failed.",
+                data=str(e),
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 class CustomerPaymentDetailAPIView(APIView):
     """
