@@ -6,7 +6,7 @@ from humanresources.models import EmployeeRole
 from core.permissions import RequiresRole
 from .models import Customer, CustomerPayment, CustomerPointsBank
 from .serializers import CustomerSerializer,CustomerReadSerializer,CustomerPaymentSerializer
-from orders.models import Order, OrderMenuItem
+from orders.models import Order, OrderMenuItem, DiningTable
 from utils.response import standard_response
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
@@ -305,8 +305,11 @@ class CustomerPaymentListCreateAPIView(APIView):
                 # 🔥 5. Close order
                 order.status = Order.StatusChoices.CLOSED
                 order.save()
+
+                # 6. Toggling the status of the table
+                DiningTable.objects.filter(id=order.table.id).update(is_available=True)
                 
-                # 6. Making an entry into the CustomerPointsBank table
+                # 7. Making an entry into the CustomerPointsBank table
                 CustomerPointsBank.objects.create(
                     payment=payment,
                     points=amt_paid * Converter.RUPEES_TO_POINTS.value
