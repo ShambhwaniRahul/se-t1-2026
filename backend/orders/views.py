@@ -986,6 +986,9 @@ class OrderListCreateAPIView(APIView):
         # 🔥 Freeze total
         order.final_total = total
         order.save()
+
+        # Toggling the table availability
+        DiningTable.objects.filter(id=order.table.id).update(is_available=False)
     
         # 🔥 Response
         response_serializer = OrderReadSerializer(order)
