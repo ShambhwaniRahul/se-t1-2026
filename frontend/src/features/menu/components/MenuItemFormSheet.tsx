@@ -2,18 +2,12 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import {
-  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
-} from "@/components/ui/sheet";
-import {
-  Form, FormField, FormItem, FormLabel, FormControl, FormMessage,
-} from "@/components/ui/form";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from "@/components/ui/select";
 import { MENU_CATEGORIES, type MenuItem } from "../data/types";
 
 const schema = z.object({
@@ -24,7 +18,9 @@ const schema = z.object({
   isVeg: z.boolean(),
 });
 
-type FormValues = z.infer<typeof schema>;
+// type FormValues = z.infer<typeof schema>;
+type FormInput = z.input<typeof schema>;
+type FormValues = z.output<typeof schema>;
 
 interface Props {
   open: boolean;
@@ -34,17 +30,29 @@ interface Props {
 }
 
 export function MenuItemFormSheet({ open, onOpenChange, item, onSave }: Props) {
-  const form = useForm<FormValues>({
+
+  const form = useForm<FormInput, any, FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { name: "", categoryId: "", price: 0, estimatedPrepTime: 0, isVeg: true },
   });
 
   useEffect(() => {
     if (open) {
       form.reset(
         item
-          ? { name: item.name, categoryId: item.categoryId, price: item.price, estimatedPrepTime: item.estimatedPrepTime, isVeg: item.isVeg }
-          : { name: "", categoryId: "", price: 0, estimatedPrepTime: 0, isVeg: true }
+          ? {
+            name: item.name,
+            categoryId: String(item.categoryId),
+            price: item.price.toString(),
+            estimatedPrepTime: item.estimatedPrepTime.toString(),
+            isVeg: item.isVeg,
+          }
+          : {
+            name: "",
+            categoryId: "",
+            price: "",
+            estimatedPrepTime: "",
+            isVeg: true,
+          }
       );
     }
   }, [open, item, form]);
@@ -91,14 +99,28 @@ export function MenuItemFormSheet({ open, onOpenChange, item, onSave }: Props) {
             <FormField control={form.control} name="price" render={({ field }) => (
               <FormItem>
                 <FormLabel>Price (₹)</FormLabel>
-                <FormControl><Input type="number" min={0} step={1} {...field} /></FormControl>
+                <FormControl>
+                  {/* <Input type="number" min={0} step={1} {...field} /> */}
+                  <Input
+                    type="number"
+                    value={field.value?.toString?.() ?? ""}
+                    onChange={(e) => field.onChange(e.target.value)}
+                  />
+                </FormControl>
+
                 <FormMessage />
               </FormItem>
             )} />
             <FormField control={form.control} name="estimatedPrepTime" render={({ field }) => (
               <FormItem>
                 <FormLabel>Prep Time (mins)</FormLabel>
-                <FormControl><Input type="number" min={0} step={1} {...field} /></FormControl>
+                <FormControl>
+                  <Input
+                    type="number"
+                    value={field.value?.toString?.() ?? ""}
+                    onChange={(e) => field.onChange(e.target.value)}
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )} />
