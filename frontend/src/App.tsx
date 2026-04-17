@@ -64,7 +64,7 @@ const App = () => (
                   }
                 />
                 <Route
-                  path="/waiter/tables/:tableId"
+                  path="/pos/tables/:tableId"
                   element={
                     <ProtectedRoute allowedRoles={["Owner", "Manager", "Waiter"]}>
                       <PosPage />

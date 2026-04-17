@@ -1,10 +1,10 @@
 export interface MenuItem {
   id: string;
   name: string;
-  categoryId: string;
   price: number;
   estimatedPrepTime: number;
   isVeg: boolean;
+  categoryId: string;
 }
 
 export interface MenuCategory {
@@ -13,8 +13,8 @@ export interface MenuCategory {
 }
 
 export const MENU_CATEGORIES: MenuCategory[] = [
-  { id: "appetizers", label: "Appetizers" },
-  { id: "main-course", label: "Main Course" },
-  { id: "beverages", label: "Beverages" },
-  { id: "desserts", label: "Desserts" },
+  { id: "0", label: "Starter" },
+  { id: "1", label: "Main Course" },
+  { id: "2", label: "Dessert" },
+  { id: "3", label: "Beverage" },
 ];
