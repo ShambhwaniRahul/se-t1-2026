@@ -4,21 +4,14 @@ import { useAuth } from "@/features/auth/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/components/ui/card";
 import { toast } from "sonner";
 import { ROLE_HOME } from "@/config/types/role";
 
 export function LoginForm() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
-  const { login, role } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,11 +23,15 @@ export function LoginForm() {
     if (result.success) {
       toast.success(result.message ?? "Welcome back!");
 
-      console.log("User Role: ", role)
+      // read the role from result, context role update is delayed and hinders proper navigation
+      const role = result.data.employee.roles?.[0]?.role_display;
+      console.log(">>> ROLE from result: ", role);
+
       if (role && ROLE_HOME[role]) {
+        console.log(">>> ROLE HOME: ", ROLE_HOME[role]);
         navigate(ROLE_HOME[role]);
       } else {
-        navigate("/"); // fallback
+        navigate("/login"); // fallback
       }
     } else {
       toast.error(result.message ?? "Login failed");
