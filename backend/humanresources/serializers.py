@@ -107,7 +107,7 @@ class EmployeeLoginSerializer(serializers.Serializer):
 
     class Meta:
         model = Employee
-        fields = ['phone_no', 'password']
+        fields = ['phone_no', 'password']    
 
 class SalarySlipBreakdownSerializer(serializers.ModelSerializer):
     type_pay_display = serializers.CharField(source='get_type_pay_display', read_only=True)

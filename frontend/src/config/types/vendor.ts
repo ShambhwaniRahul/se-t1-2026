@@ -15,11 +15,15 @@ export type PurchaseOrderType = "Perishable" | "Non-Perishable";
 export type PurchaseOrderStatus = "Pending" | "Received" | "Cancelled";
 
 export interface VendorPurchaseOrder {
-  id: string;
-  vendorId: string;
-  poId: string;
-  date: string;
-  type: PurchaseOrderType;
+  id: number;
+  vendor: number;
+  vendor_name: string;
+  purchase_type: PurchaseOrderType;
+  purchase_date: string;
   status: PurchaseOrderStatus;
-  deliveryCost: number;
+  delivery_cost: number;
+  file_location: string;
+  created_at: string;
+  updated_at: string;
 }
+

@@ -7,15 +7,20 @@ import { DataTable, type Column } from "@/components/shared/DataTable";
 import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 import { VendorFormSheet } from "../components/VendorFormSheet";
 import { VendorDetailSheet } from "../components/VendorDetailSheet";
-import { mockVendors, mockVendorPurchaseOrders } from "../data/mockVendors";
+// import { mockVendorPurchaseOrders } from "../data/mockVendors";
 import api from "@/lib/api";
-import type { Vendor, VendorFormValues } from "../data/types";
+import type {
+  Vendor,
+  VendorFormValues,
+  VendorPurchaseOrder,
+} from "../../../config/types/vendor";
 import { toast } from "sonner";
 
 export default function VendorsPage() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [search, setSearch] = useState("");
-   const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+
   // Form sheet state
   const [formOpen, setFormOpen] = useState(false);
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
@@ -27,29 +32,57 @@ export default function VendorsPage() {
   // Delete dialog state
   const [deleteTarget, setDeleteTarget] = useState<Vendor | null>(null);
 
-  useEffect(()=>{
-    fetchVendors();
-  },[])
+  // For the Vendor's Purchase Orders
+  const [vendorOrders, setVendorOrders] = useState<
+    VendorPurchaseOrder[] | null
+  >(null);
+  const [ordersLoading, setOrdersLoading] = useState(false); // optional but good
 
-  const fetchVendors = async () => {    
+  useEffect(() => {
+    fetchVendors();
+  }, []);
+
+  const fetchVendors = async () => {
     try {
       // Simulate API call
-      const result = await api.get("/procurement/vendors") 
-      if (result.data.success){
+      const result = await api.get("/procurement/vendors");
+      if (result.data.success) {
         setVendors(result.data.data);
         toast.success(result.data.message || "Vendors fetched successfully");
-      }
-      else{
+      } else {
         toast.error(result.data.message || "Failed to fetch vendors");
       }
     } catch (error) {
       console.error("Error fetching vendors:", error);
       toast.error("Failed to fetch vendors");
-    }
-    finally{
+    } finally {
       setLoading(false);
     }
-  }
+  };
+
+  const fetchVendorOrders = async (vendorId: number) => {
+    setOrdersLoading(true);
+    try {
+      const result = await api.get(
+        `/procurement/vendors/${vendorId}/purchase-orders/`,
+      );
+      if (result.data.success) {
+        setVendorOrders(result.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching vendor purchase orders:", error);
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedVendor) {
+      fetchVendorOrders(selectedVendor.id);
+    } else {
+      setVendorOrders(null);
+    }
+  }, [selectedVendor]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -57,7 +90,7 @@ export default function VendorsPage() {
     return vendors.filter(
       (v) =>
         `${v.first_name} ${v.last_name}`.toLowerCase().includes(q) ||
-        v.email.toLowerCase().includes(q)
+        v.email.toLowerCase().includes(q),
     );
   }, [vendors, search]);
 
@@ -76,45 +109,42 @@ export default function VendorsPage() {
     setDetailOpen(true);
   };
 
-  const handleFormSubmit =  useCallback(
+  const handleFormSubmit = useCallback(
     async (values: VendorFormValues) => {
       if (editingVendor) {
         // Simulate API call
         try {
-            const result = await api.patch(`/procurement/vendors/${editingVendor.id}/`, values)
-            if (result.data.success){
-              toast.success(result.data.message || "Vendor updated successfully");
-            }
-            else{
-              toast.error(result.data.message || "Failed to update vendor");
-            }
-        }
-        catch (error){
+          const result = await api.patch(
+            `/procurement/vendors/${editingVendor.id}/`,
+            values,
+          );
+          if (result.data.success) {
+            toast.success(result.data.message || "Vendor updated successfully");
+          } else {
+            toast.error(result.data.message || "Failed to update vendor");
+          }
+        } catch (error) {
           toast.error("Failed to update vendor");
-        } 
-        finally{
+        } finally {
           fetchVendors();
         }
       } else {
-        // Simulate API call       
+        // Simulate API call
         try {
-          const result = await api.post("/procurement/vendors/", values)
-          if (result.data.success){
-             toast.success(result.data.message || "Vendor added successfully");
-          }
-          else{
-              toast.error(result.data.message || "Failed to add vendor");
+          const result = await api.post("/procurement/vendors/", values);
+          if (result.data.success) {
+            toast.success(result.data.message || "Vendor added successfully");
+          } else {
+            toast.error(result.data.message || "Failed to add vendor");
           }
         } catch (error) {
           toast.error("Failed to add vendor");
-        }
-        finally{
+        } finally {
           fetchVendors();
         }
-
       }
     },
-    [editingVendor]
+    [editingVendor],
   );
 
   const confirmDelete = async () => {
@@ -122,17 +152,17 @@ export default function VendorsPage() {
     setVendors((prev) => prev.filter((v) => v.id !== deleteTarget.id));
     toast.success("Vendor deleted");
     try {
-      const result = await api.delete(`/procurement/vendors/${deleteTarget.id}/`)
-       if (result.data.success){
-          toast.success(result.data.message || "Vendor deleted successfully");
-       }
-        else{
-            toast.error(result.data.message || "Failed to delete vendor");
-        }
+      const result = await api.delete(
+        `/procurement/vendors/${deleteTarget.id}/`,
+      );
+      if (result.data.success) {
+        toast.success(result.data.message || "Vendor deleted successfully");
+      } else {
+        toast.error(result.data.message || "Failed to delete vendor");
+      }
     } catch (error) {
       toast.error("Failed to delete vendor");
-    }
-    finally{
+    } finally {
       fetchVendors();
       setDeleteTarget(null);
     }
@@ -144,7 +174,9 @@ export default function VendorsPage() {
         key: "name",
         header: "Name",
         render: (row) => (
-          <span className="font-medium">{row.first_name} {row.last_name}</span>
+          <span className="font-medium">
+            {row.first_name} {row.last_name}
+          </span>
         ),
       },
       { key: "contact_no", header: "Contact No" },
@@ -152,7 +184,9 @@ export default function VendorsPage() {
       {
         key: "gst_no",
         header: "GST Number",
-        render: (row) => <span className="font-mono text-xs">{row.gst_no}</span>,
+        render: (row) => (
+          <span className="font-mono text-xs">{row.gst_no}</span>
+        ),
       },
       {
         key: "actions",
@@ -160,31 +194,57 @@ export default function VendorsPage() {
         className: "text-right",
         render: (row) => (
           <div className="flex items-center justify-end gap-1">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleViewDetail(row); }}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleViewDetail(row);
+              }}
+            >
               <Eye className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleEdit(row); }}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEdit(row);
+              }}
+            >
               <Pencil className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteTarget(row); }}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-destructive hover:text-destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                setDeleteTarget(row);
+              }}
+            >
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
         ),
       },
     ],
-    []
+    [],
   );
 
-  const vendorOrders = useMemo(
-    () => mockVendorPurchaseOrders.filter((po) => po.vendorId === String(selectedVendor?.id)),
-    [selectedVendor]
-  );
-  
+  // const vendorOrders = useMemo(
+  //   async () =>{
+
+  //   }
+  //     // Simulating API call to fetch purchase orders for the selected vendor
+  //   ),
+  //   [selectedVendor]
+  // );
+
   if (loading) {
-    return (
-      <div>Loading...</div>
-    )
+    return <div>Loading...</div>;
   }
 
   return (
@@ -212,7 +272,9 @@ export default function VendorsPage() {
         keyExtractor={(row) => row.id}
         onRowClick={handleViewDetail}
         emptyState={
-          <p className="text-center py-12 text-muted-foreground">No vendors found.</p>
+          <p className="text-center py-12 text-muted-foreground">
+            No vendors found.
+          </p>
         }
       />
 
