@@ -1,6 +1,6 @@
 import {
   ShoppingCart, ChefHat, Package, ClipboardList, Users, BarChart3, Store, ClipboardCheck,
-  LayoutDashboard, UserCog, CalendarCheck, CalendarClock, Wallet, UtensilsCrossed
+  LayoutDashboard, UserCog, CalendarCheck, CalendarClock, Wallet, UtensilsCrossed, UsersRound
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
@@ -43,6 +43,7 @@ const erpItems: NavItem[] = [
   { title: "Attendance", url: "/erp/attendance", icon: CalendarCheck, roles: ["Owner", "Manager"] },
   { title: "Shifts", url: "/erp/shifts", icon: CalendarClock, roles: ["Owner", "Manager"] },
   { title: "Payroll", url: "/erp/payroll", icon: Wallet, roles: ["Owner", "Manager"] },
+  { title: "Employees Pay", url: "/settings/employees", icon: UsersRound, roles: ["Owner", "Manager"] },
 ];
 
 // const systemItems: NavItem[] = [

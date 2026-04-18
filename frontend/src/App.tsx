@@ -10,7 +10,7 @@ import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
 
 
 import LoginPage from "@/features/auth/pages/LoginPage";
-// import EmployeeManagementPage from "@/features/employees/pages/EmployeesPage";
+import EmployeeManagementPage from "@/features/employees/pages/EmployeeManagementPage";
 import { WorkforceRosterPage } from "@/features/workforce-roster";
 import DashboardPage from "@/features/dashboard/pages/Dashboard";
 import UnauthorizedPage from "@/pages/Unauthorized";
@@ -104,14 +104,14 @@ const App = () => (
                     </ProtectedRoute>
                   }
                 />
-                {/* <Route
+                <Route
                   path="settings/employees"
                   element={
                     <ProtectedRoute allowedRoles={["Owner"]}>
                       <EmployeeManagementPage />
                     </ProtectedRoute>
                   }
-                /> */}
+                />
                 <Route path="erp/employees" element={<ErpRoute><EmployeesPage /></ErpRoute>} />
                 <Route path="erp/attendance" element={<ErpRoute><AttendancePage /></ErpRoute>} />
                 <Route path="erp/shifts" element={<ErpRoute><ShiftsPage /></ErpRoute>} />
