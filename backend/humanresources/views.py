@@ -84,6 +84,22 @@ class EmployeeRegisterView(APIView):
 
     def post(self, request):
         serializer = EmployeeSerializer(data=request.data)
+        confirm_password = request.data.get('confirm_password')
+        password = request.data.get('password')
+
+        if not confirm_password or not password:
+            return standard_response(
+                success=False,
+                message="Password and confirm password are required.",
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if password != confirm_password:
+            return standard_response(
+                    success=False,
+                    message="Password and confirm password do not match.",
+                    status_code=status.HTTP_400_BAD_REQUEST
+            ) 
         if serializer.is_valid():
             employee = serializer.save()
             return standard_response(
