@@ -38,12 +38,9 @@ const managementItems: NavItem[] = [
 ];
 
 const erpItems: NavItem[] = [
-  { title: "Employees", url: "/erp/employees", icon: UserCog, roles: ["Owner", "Manager"] },
   { title: "Daily Roster", url: "/workforce-roster", icon: ClipboardCheck, roles: ["Owner", "Manager"] },
-  { title: "Attendance", url: "/erp/attendance", icon: CalendarCheck, roles: ["Owner", "Manager"] },
-  { title: "Shifts", url: "/erp/shifts", icon: CalendarClock, roles: ["Owner", "Manager"] },
   { title: "Payroll", url: "/erp/payroll", icon: Wallet, roles: ["Owner", "Manager"] },
-  { title: "Employees Pay", url: "/settings/employees", icon: UsersRound, roles: ["Owner", "Manager"] },
+  { title: "Employees", url: "/settings/employees", icon: UsersRound, roles: ["Owner", "Manager"] },
 ];
 
 // const systemItems: NavItem[] = [

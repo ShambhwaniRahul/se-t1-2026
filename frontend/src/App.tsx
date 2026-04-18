@@ -19,8 +19,8 @@ import TablePage from "@/features/pos/pages/TablePage";
 import KitchenPage from "@/features/kitchen/pages/KitchenPage";
 import InventoryPage from "@/features/inventory/pages/InventoryPage";
 import CrmPage from "@/features/crm/pages/CrmPage";
-import { EmployeesPage, AttendancePage, ShiftsPage, PayrollPage } from "@/features/erp/pages";
 import PosPage from "./features/pos/pages/PosPage";
+import PayrollPage from "./features/erp/pages/PayrollPage";
 import PurchaseOrdersPage from "./features/purchase-orders/pages/PurchaseOrdersPage";
 import CreatePurchaseOrderPage from "./features/purchase-orders/pages/CreatePurchaseOrderPage";
 import PurchaseOrderDetailsPage from "./features/purchase-orders/pages/PurcahseOrderDetailsPage";
@@ -112,9 +112,6 @@ const App = () => (
                     </ProtectedRoute>
                   }
                 />
-                <Route path="erp/employees" element={<ErpRoute><EmployeesPage /></ErpRoute>} />
-                <Route path="erp/attendance" element={<ErpRoute><AttendancePage /></ErpRoute>} />
-                <Route path="erp/shifts" element={<ErpRoute><ShiftsPage /></ErpRoute>} />
                 <Route path="erp/payroll" element={<ErpRoute><PayrollPage /></ErpRoute>} />
                  <Route path="workforce-roster" element={<ErpRoute><WorkforceRosterPage /></ErpRoute>} />
                 <Route path="unauthorized" element={<UnauthorizedPage />} />
