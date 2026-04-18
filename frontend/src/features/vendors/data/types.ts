@@ -1,12 +1,13 @@
 export interface Vendor {
-  id: string;
-  firstName: string;
-  lastName: string;
+  id: number;
+  first_name: string;
+  last_name: string;
   email: string;
-  contactNo: string;
+  contact_no: string;
   address: string;
-  gstNumber: string;
+  gst_no: string;
 }
+
 
 export type VendorFormValues = Omit<Vendor, "id">;
 
