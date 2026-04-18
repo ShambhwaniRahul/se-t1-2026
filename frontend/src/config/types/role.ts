@@ -34,6 +34,7 @@ export const ROUTE_ACCESS: Record<string, AppRole[]> = {
   "/settings": [OWNER.value],
   "/vendors": [OWNER.value, MANAGER.value, INVENTORY_MANAGER.value],
   "/menu": [OWNER.value, MANAGER.value],
+  "/workforce-roster": [OWNER.value, MANAGER.value]
 };
 
 
