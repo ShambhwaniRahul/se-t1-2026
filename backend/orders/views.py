@@ -209,7 +209,7 @@ class MenuItemDetailAPIView(APIView):
         return standard_response(
             success=True, 
             message="Menu item deleted successfully.",
-            status_code=status.HTTP_204_NO_CONTENT
+            status_code=status.HTTP_200_OK
             )
     
 
@@ -360,7 +360,7 @@ class MenuItemIngredientDetailAPIView(APIView):
         return standard_response(
             success=True,
             message="Menu item ingredient deleted successfully.",
-            status_code=status.HTTP_204_NO_CONTENT
+            status_code=status.HTTP_200_OK
         )
 
 
@@ -533,13 +533,14 @@ class DiningTableDetailAPIView(APIView):
         if dining_table is None:
             return self.standard_error_response()
         if not dining_table.is_available:
+            table_number = dining_table.table_number
             return standard_response(
                 success=False,
                 message="Cannot delete a dining table that is currently occupied.",
                 status_code=status.HTTP_400_BAD_REQUEST
             )
         dining_table.delete()
-        return standard_response(success=True, message="Dining table deleted successfully.", status=status.HTTP_204_NO_CONTENT)
+        return standard_response(success=True, message=f"Table number {table_number} deleted successfully.", status=status.HTTP_200_OK)
     
 
 class ToggleDiningTableAvailabilityAPIView(APIView):
@@ -834,7 +835,7 @@ class DiscountsDetailAPIView(APIView):
         return standard_response(
             success=True,
             message="Discount deleted successfully.",
-            status_code=status.HTTP_204_NO_CONTENT
+            status_code=status.HTTP_200_OK
         )
     
 
@@ -1141,7 +1142,7 @@ class OrderDetailAPIView(APIView):
         return standard_response(
             success=True,
             message="Order deleted successfully.",
-            status_code=status.HTTP_204_NO_CONTENT
+            status_code=status.HTTP_200_OK
         )
 
 
@@ -1364,7 +1365,7 @@ class OrderMenuItemDetailAPIView(APIView):
         return standard_response(
             success=True,
             message="Order item deleted successfully.",
-            status_code=status.HTTP_204_NO_CONTENT
+            status_code=status.HTTP_200_OK
         )
 
 

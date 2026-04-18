@@ -129,7 +129,7 @@ class VendorDetailAPIView(APIView):
             success=True,
             message="Vendor deleted successfully.",
             data=None,
-            status_code=status.HTTP_204_NO_CONTENT
+            status_code=status.HTTP_200_OK
         )
 
 """ APIs for Purchase Orderss"""
@@ -352,7 +352,7 @@ class PurchaseOrderDetailAPIView(APIView):
             success=True,
             message="Purchase order deleted successfully.",
             data=None,
-            status_code=status.HTTP_204_NO_CONTENT
+            status_code=status.HTTP_200_OK
         )
 
 """ APIs for Ordered Perishable Purchase SKUs"""
@@ -513,7 +513,7 @@ class OrderedPerishablePurchaseSKUDetailAPIView(APIView):
         return standard_response(
             success=True,
             message="Perishable purchase SKU deleted successfully.",
-            status_code=status.HTTP_204_NO_CONTENT
+            status_code=status.HTTP_200_OK
         )
 
 
@@ -664,7 +664,7 @@ class OrderedNonPerishablePurchaseSKUDetailAPIView(APIView):
             success=True,
             message="Non-perishable purchase SKU deleted successfully.",
             data=None,
-            status_code=status.HTTP_204_NO_CONTENT
+            status_code=status.HTTP_200_OK
         )
 
 

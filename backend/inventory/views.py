@@ -200,7 +200,7 @@ class PerishableSKUDetailAPIView(APIView):
         return standard_response(
             success=True, 
             message="Perishable SKU deleted successfully.",
-            status_code=status.HTTP_204_NO_CONTENT)
+            status_code=status.HTTP_200_OK)
 
  
 
@@ -347,7 +347,7 @@ class PerishableInventoryDetailAPIView(APIView):
               return standard_response(
                   success=True,
                   message="Perishable Inventory deleted successfully.",
-                  status_code=status.HTTP_204_NO_CONTENT)
+                  status_code=status.HTTP_200_OK)
             return standard_response(
                 success=False,
                 message="Cannot delete an non-expired perishable inventory item.",
@@ -426,4 +426,4 @@ class NonPerishableInventoryDetailAPIView(APIView):
         return standard_response(
             success=True,
             message="Non-Perishable Inventory deleted successfully.",
-            status_code=status.HTTP_204_NO_CONTENT)
+            status_code=status.HTTP_200_OK)
