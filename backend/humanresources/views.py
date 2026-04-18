@@ -216,7 +216,7 @@ class EmployeeDetailView(APIView):
         return standard_response(
             success=True,
             message="Employee deleted successfully.",
-            status_code=status.HTTP_204_NO_CONTENT
+            status_code=status.HTTP_200_OK
         )
     
 class ChangeEmployeePasswordView(APIView):
@@ -451,7 +451,7 @@ class SalarySlipDetailAPIView(APIView):
         return standard_response(
             success=True,
             message="Salary slip deleted successfully.",
-            status_code=status.HTTP_204_NO_CONTENT
+            status_code=status.HTTP_200_OK
         )
     
 
@@ -594,7 +594,7 @@ class SalarySlipBreakdownDetailAPIView(APIView):
         return standard_response(
             success=True,
             message="Salary slip breakdown deleted successfully.",
-            status_code=status.HTTP_204_NO_CONTENT
+            status_code=status.HTTP_200_OK
         )
     
 
@@ -756,7 +756,7 @@ class ShiftDetailAPIView(APIView):
         return standard_response(
             success=True,
             message="Shift deleted successfully.",
-            status_code=status.HTTP_204_NO_CONTENT
+            status_code=status.HTTP_200_OK
         )
 
 
@@ -906,5 +906,5 @@ class AttendanceLogDetailAPIView(APIView):
         return standard_response(
             success=True,
             message="Attendance log deleted successfully.",
-            status_code=status.HTTP_204_NO_CONTENT
+            status_code=status.HTTP_200_OK
         )
