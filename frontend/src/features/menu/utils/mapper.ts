@@ -1,4 +1,4 @@
-import type { MenuItem } from "../data/types";
+import type { MenuItem } from "../../../config/types/order";
 
 // backend → frontend map
 export const mapToMenuItem = (item: any): MenuItem => ({

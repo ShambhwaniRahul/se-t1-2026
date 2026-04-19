@@ -117,7 +117,7 @@ class Order(TimeStampedModel):
     # customer = models.ForeignKey(Customer, on_delete=models.CASCADE, db_column="customer_id")
     table = models.ForeignKey(DiningTable, on_delete=models.CASCADE, db_column="table_id")
     status = models.IntegerField(choices=StatusChoices.choices, default=StatusChoices.OPEN, db_column="status")
-    dining_type = models.IntegerField(choices=DiningTypeChoices.choices, db_column="dining_type")
+    dining_type = models.IntegerField(choices=DiningTypeChoices.choices, default=DiningTypeChoices.DINE_IN, db_column="dining_type")
     packaging_cost = models.IntegerField(default=0, db_column="packaging_cost")
     # Newly Added: final_total to freeze bill amount
     final_total = models.FloatField(null=True, blank=True, db_column="final_total")    

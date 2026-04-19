@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MenuItemFormSheet } from "../components/MenuItemFormSheet";
-import { MENU_CATEGORIES, type MenuItem } from "../data/types";
+import { MENU_CATEGORIES, type MenuItem } from "../../../config/types/order";
 import { toast } from "sonner";
 import { mapToMenuItem, mapToApiPayload } from "../utils/mapper";
 import api from "@/lib/api";

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from "@/components/ui/select";
-import { MENU_CATEGORIES, type MenuItem } from "../data/types";
+import { MENU_CATEGORIES, type MenuItem } from "../../../config/types/order";
 
 const schema = z.object({
   name: z.string().trim().min(1, "Name is required"),

@@ -1,4 +1,4 @@
-import type { MenuItem } from "./types";
+import type { MenuItem } from "../../../config/types/order";
 
 export const initialMenuItems: MenuItem[] = [
   { id: "mi-001", name: "Spring Rolls", categoryId: "appetizers", price: 180, estimatedPrepTime: 12, isVeg: true },

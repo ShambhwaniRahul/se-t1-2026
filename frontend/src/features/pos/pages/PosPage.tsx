@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { POS_CATEGORIES, POS_PRODUCTS } from "../data/posData";
+import { MENU_CATEGORIES, type MenuCategory, type MenuItem } from "@/config/types/order";
 import { useCart } from "../hooks/useCart";
 import { ItemCategoryBar } from "../components/items/ItemCategoryBar";
 import { ItemGrid } from "../components/items/ItemGrid";
@@ -8,25 +8,47 @@ import { CheckoutBar } from "../components/CheckoutBar";
 import { PaymentModal } from "../components/PaymentModal";
 import { toast } from "sonner";
 import { useParams } from "react-router-dom";
+import api from "@/lib/api";
 
 export default function PosPage() {
-  const [activeCategory, setActiveCategory] = useState("all"); // menuItem category filter
-  const [paymentOpen, setPaymentOpen] = useState(false); // payment modal open state
-
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [activeCategory, setActiveCategory] = useState<MenuCategory["id"]>(-1);
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { tableId } = useParams();
   
   if (!tableId) {
     return <div> Invalid table </div>;
   }
 
-  const cart = useCart(tableId!);
+  useEffect(() => {
+    fetchMenu();
+  }, []);
 
+  async function fetchMenu() {
+    try {
+        const result = await api.get("/pos/menuitems/");
+        if (result.data.success) {
+            setMenuItems(result.data.data ?? []);
+            toast.success(result.data.message || "Menu items loaded successfully!");
+        } else {
+            toast.error(result.data.message || "Failed to load menu items!");
+        }
+    } catch (err) {
+        console.error("Failed to load menu items", err);
+        toast.error("Failed to load menu items!");
+    } finally {
+        setLoading(false);
+    }
+  }
+
+  const cart = useCart(tableId!);
   const filteredProducts = useMemo(
     () =>
-      activeCategory === "all"
-        ? POS_PRODUCTS
-        : POS_PRODUCTS.filter((p) => p.category === activeCategory),
-    [activeCategory]
+      activeCategory === -1
+        ? menuItems
+        : menuItems.filter((p) => p.category === activeCategory),
+    [activeCategory, menuItems]
   );
 
   const handlePay = useCallback(() => {
@@ -40,53 +62,13 @@ export default function PosPage() {
     toast.success("Order completed!");
   }, [cart]);
 
-  // Keyboard shortcuts
-  // useEffect(() => {
-  //   const handler = (e: KeyboardEvent) => {
-  //     // Ignore when typing in inputs
-  //     if (
-  //       e.target instanceof HTMLInputElement ||
-  //       e.target instanceof HTMLTextAreaElement
-  //     )
-  //       return;
-
-  //     // Enter = pay
-  //     if (e.key === "Enter" && !paymentOpen) {
-  //       e.preventDefault();
-  //       handlePay();
-  //       return;
-  //     }
-
-  //     // Escape = clear cart or close modal
-  //     if (e.key === "Escape") {
-  //       if (paymentOpen) {
-  //         setPaymentOpen(false);
-  //       } else {
-  //         cart.clearDraft();
-  //         toast("Cart cleared");
-  //       }
-  //       return;
-  //     }
-
-  //     // Number keys = quick add products with shortcuts
-  //     const product = POS_PRODUCTS.find((p) => p.shortcut === e.key);
-  //     if (product) {
-  //       cart.addItem(product);
-  //       toast(`Added ${product.name}`);
-  //     }
-  //   };
-
-  //   window.addEventListener("keydown", handler);
-  //   return () => window.removeEventListener("keydown", handler);
-  // }, [handlePay, paymentOpen, cart]);
-
   return (
     <div className="-m-4 md:-m-6 flex h-[calc(100svh-3.5rem)] flex-col">
       <div className="flex flex-1 overflow-hidden">
         <div className="flex flex-1 flex-col overflow-hidden">
           <div className="border-b bg-card px-4 py-3">
             <ItemCategoryBar
-              categories={POS_CATEGORIES}
+              categories={MENU_CATEGORIES}
               activeId={activeCategory}
               onSelect={setActiveCategory}
             />
