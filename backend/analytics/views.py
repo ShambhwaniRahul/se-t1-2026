@@ -248,8 +248,14 @@ class TopSellingItemsView(APIView):
                 sales_count=Count('id')
             ).order_by('-sales_count')[:top_n]
 
-            data = [(item['menu_item__name'], item['sales_count']) for item in items]
-            
+            data = [
+                {
+                    'name': item['menu_item__name'],
+                    'sales_count': item['sales_count']
+                }
+                for item in items
+            ]
+
             return standard_response(
                 success=True,
                 message="Top selling items retrieved successfully.",
