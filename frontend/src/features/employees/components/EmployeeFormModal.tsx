@@ -1,118 +1,168 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ROLES, type AppRole, type Employee } from "@/config/types/role";
+import { ROLE_LABELS } from "@/types/roles";
+import type { Employee } from "@/config/types/role";
 import { toast } from "sonner";
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   employee?: Employee | null;
-  onSave: (data: EmployeeFormData) => void;
+  onSave: (data: Partial<Employee> & { password?: string }) => void;
 }
-
-type EmployeeFormData = {
-  id?: number;
-  full_name: string;
-  email: string;
-  phone_no: string;
-  roles: { role_display: AppRole }[];
-  is_working: boolean;
-};
 
 export function EmployeeFormModal({ open, onOpenChange, employee, onSave }: Props) {
   const isEdit = !!employee;
-  const [full_name, setName] = useState(employee?.full_name ?? "");
-  const [email, setEmail] = useState(employee?.email ?? "");
-  const [phone_no, setPhone] = useState(employee?.phone_no ?? "");
-  const [role, setRole] = useState<AppRole>(employee?.roles?.[0]?.role_display ?? "other");
-  const [is_working, setStatus] = useState<boolean>(employee?.is_working ?? true);
+  
+  const [first_name, setFirstName] = useState("");
+  const [last_name, setLastName] = useState("");
+  const [phone_no, setPhoneNo] = useState("");
+  const [monthly_salary, setMonthlySalary] = useState<number | "">("");
+  const [roleStr, setRoleStr] = useState<string>("pos");
+  const [is_working, setIsWorking] = useState<boolean>(true);
+  
+  // Password state (Only used for Creation)
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      setFirstName(employee?.first_name ?? "");
+      setLastName(employee?.last_name ?? "");
+      setPhoneNo(employee?.phone_no ?? "");
+      setMonthlySalary(employee?.monthly_salary ?? "");
+      setIsWorking(employee?.is_working ?? true);
+      setRoleStr(employee?.roles?.[0]?.role_display ?? "pos");
+      
+      // Reset passwords on open
+      setPassword("");
+      setConfirmPassword("");
+    }
+  }, [open, employee]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!full_name || !email) {
-      toast.error("Name and email are required");
+    
+    if (!first_name || !last_name) {
+      toast.error("First Name and Last Name are required");
       return;
     }
+
+    // Strict validation for New Employees
+    if (!isEdit) {
+      if (!password) {
+        toast.error("Password is required for new employees");
+        return;
+      }
+      if (password !== confirmPassword) {
+        toast.error("Passwords do not match!");
+        return;
+      }
+    }
+
     onSave({
       ...(employee ? { id: employee.id } : {}),
-      full_name,
-      email,
+      first_name,
+      last_name,
       phone_no,
-      roles: [{ role_display: role }],
+      monthly_salary: Number(monthly_salary) || 0,
       is_working,
+      roles: [{ role_display: roleStr as any }],
+      ...( !isEdit ? { password } : {} ), // Only attach password if creating
     });
+    
     onOpenChange(false);
-    toast.success(isEdit ? "Employee updated" : "Employee created");
+    toast.success(isEdit ? "Employee updated successfully" : "Employee created successfully");
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit Employee" : "Add Employee"}</DialogTitle>
+          <DialogTitle>{isEdit ? "Edit Employee Details" : "Add New Employee"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label>Name</Label>
-            <Input value={full_name} onChange={(e) => setName(e.target.value)} required />
-          </div>
+          
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>Email</Label>
-              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <Label>First Name</Label>
+              <Input value={first_name} onChange={(e) => setFirstName(e.target.value)} required />
             </div>
             <div className="space-y-2">
-              <Label>Phone</Label>
-              <Input value={phone_no} onChange={(e) => setPhone(e.target.value)} />
+              <Label>Last Name</Label>
+              <Input value={last_name} onChange={(e) => setLastName(e.target.value)} required />
             </div>
           </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Phone Number</Label>
+              <Input value={phone_no} onChange={(e) => setPhoneNo(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Monthly Salary ($)</Label>
+              <Input 
+                type="number" 
+                value={monthly_salary} 
+                onChange={(e) => setMonthlySalary(Number(e.target.value))} 
+                required 
+              />
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Role</Label>
-              <Select value={role} onValueChange={(v) => setRole(v as AppRole)}>
+              <Select value={roleStr} onValueChange={setRoleStr}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {Object.values(ROLES).map((r) => (
-                    <SelectItem key={r.value} value={r.value}>
-                      {r.label}
-                    </SelectItem>
+                  {Object.entries(ROLE_LABELS).map(([val, label]) => (
+                    <SelectItem key={val} value={val}>{label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {/* <div className="space-y-2">
-              <Label>{isEdit ? "New Password (leave blank to keep)" : "Password"}</Label>
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required={!isEdit}
-                placeholder={isEdit ? "Unchanged" : ""}
-              />
-            </div> */}
             <div className="space-y-2">
               <Label>Status</Label>
-              <Select
-                value={is_working ? "active" : "disabled"}
-                onValueChange={(v) => setStatus(v === "active")}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+              <Select value={is_working ? "true" : "false"} onValueChange={(v) => setIsWorking(v === "true")}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="disabled">Disabled</SelectItem>
+                  <SelectItem value="true">Active</SelectItem>
+                  <SelectItem value="false">Disabled</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
-          <DialogFooter>
+
+          {/* PASSWORD FIELDS - ONLY VISIBLE DURING CREATION */}
+          {!isEdit && (
+            <div className="grid grid-cols-2 gap-3 pt-2 border-t mt-2">
+              <div className="space-y-2">
+                <Label>Account Password</Label>
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required={!isEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Confirm Password</Label>
+                <Input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required={!isEdit}
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button type="submit">{isEdit ? "Save Changes" : "Create Employee"}</Button>
           </DialogFooter>

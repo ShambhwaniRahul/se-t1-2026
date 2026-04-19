@@ -1,25 +1,26 @@
-// handles all the cart logic for the PoS page
 import { useCallback, useState, useEffect, useMemo } from "react";
-import { type DraftCartItem, type MenuItem, type OrderCartItem, ORDERED_ITEMS } from "../data/posData";
-// import { clear } from "console";
+import { type DraftCartItem, type MenuItem, type OrderMenuItem} from "@/config/types/order";
+import api from "@/lib/api";
+import { toast } from "sonner";
+
 
 export function useCart(tableId: string) {
-  const [orderedItems, setOrderedItems] = useState<OrderCartItem[]>([]); // server state - ordered
-  const [draftItems, setDraftItems] = useState<DraftCartItem[]>([]); // client state - draft
+  const [orderedItems, setOrderedItems] = useState<OrderMenuItem[]>([]);
+  const [draftItems, setDraftItems] = useState<DraftCartItem[]>([]);
   const [discountPercent, setDiscountPercent] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // fetch current order
-  useEffect(() => {
-    if (!tableId) return;
-    setLoading(true);
-    const tableOrders: OrderCartItem[] = ORDERED_ITEMS.filter(
-      (item) => item.table_id === tableId
-    );
+  // fetch current order by table numner
+  // useEffect(() => {
+  //   if (!tableId) return;
+  //   setLoading(true);
+  //   const tableOrders: OrderCartItem[] = ORDERED_ITEMS.filter(
+  //     (item) => item.table_id === tableId
+  //   );
 
-    setOrderedItems(tableOrders);
-    setLoading(false);
-  }, [tableId]);
+  //   setOrderedItems(tableOrders);
+  //   setLoading(false);
+  // }, [tableId]);
       
   // useEffect(() => {
   //   async function fetchOrder() {
@@ -38,66 +39,117 @@ export function useCart(tableId: string) {
   //   fetchOrder();
   // }, [tableId]);
 
-  // add items to draft cart
+  useEffect(() => {
+    fetchOrder();
+  }, [tableId]);
+
+  async function fetchOrder() {
+    setLoading(true);
+    try {
+      // const res = await api.get(`/pos/tables/${tableId}/current-order/`);
+      const data = res.data;
+      if (data.success) {
+        setOrderedItems(data.data.items ?? []);
+      } else {
+        toast.error(data.message || "Failed to load current order!");
+        console.log("Failed to load current order", data.message);
+      }
+    } catch (err) {
+      toast.error("Failed to load current order!");
+      console.error("Failed to load current order", err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const addItem = useCallback((product: MenuItem) => {
     setDraftItems((prev) => {
-      const existing = prev.find((i) => i.product.id === product.id);
+      const existing = prev.find((i) => i.menu_item.id == product.id);
       if (existing) {
         return prev.map((i) =>
-          i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i
+          i.menu_item.id === product.id ? { ...i, quantity: i.quantity + 1 } : i
         );
       }
-      return [...prev, { product, quantity: 1 }];
+      return [...prev, { menu_item: product, quantity: 1 }];
     });
   }, []);
 
-  // remove from draft cart
-  const removeItem = useCallback((productId: string) => {
-    setDraftItems((prev) => prev.filter((i) => i.product.id !== productId));
+  const removeItem = useCallback((productId: number) => {
+    setDraftItems((prev) => prev.filter((i) => i.menu_item.id !== productId));
   }, []);
 
-  // update quantity in draft cart
-  const updateQuantity = useCallback((productId: string, delta: number) => {
+  const updateQuantity = useCallback((productId: number, delta: number) => {
     setDraftItems((prev) =>
       prev
         .map((i) =>
-          i.product.id === productId ? { ...i, quantity: i.quantity + delta } : i
+          i.menu_item.id === productId ? { ...i, quantity: i.quantity + delta } : i
         )
         .filter((i) => i.quantity > 0)
     );
   }, []);
 
-  // send draft items to ordered items
   const submitDraft = useCallback(async () => {
     if (draftItems.length === 0) return;
 
     try {
-      // await fetch(`/tables/${tableId}/order-items`, {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({ items: draftItems })
-      // });
-      // setOrderedItems(prev => [...prev, ...draftItems]);
-      setDraftItems([]);
+      const items = draftItems.flatMap(item =>
+        Array.from({ length: item.quantity }, 
+          () => ({ 
+            menu_item: item.menu_item.id, 
+            special_instructions: "" 
+          }))
+      );
+      
+      const payload = {
+        table: parseInt(tableId),
+        dining_type: 0,
+        packaging_cost: 0,
+        items: items
+      }
+      
+      console.log("Submitting draft items:", payload);
+
+      let result = null
+      if (orderedItems.length == 0) {
+        result = await api.post("/pos/orders/", payload)
+      }
+
+      else {
+        const active_order_id = orderedItems[0].order;
+        result = await api.post(`/pos/orders/${active_order_id}/add-items/`, {items: payload.items});
+      }
+
+      if(result.data.success) {
+        toast.success(result.data.message || "Order submitted successfully!");
+        const order_id = result.data.data.id;
+        const ordered_items = await api.get(`/pos/orders/${order_id}/menuitems/`);
+        setOrderedItems(prev => [...prev, ...ordered_items.data.data]);
+      } else {
+        toast.error(result.data.message || "Failed to submit order items!");
+        console.log("Failed to submit order items", result.data.message);
+      }
+      
     } catch (err) {
-      console.error("Failed to submit order items", err);
+      toast.error("Failed to submit order items!");
+      console.log("Failed to submit order items", err);
+      console.log(">>> Errors", draftItems);
+
+    } finally{
+      setDraftItems([]);
     }
   }, [draftItems, tableId]);
 
-  // clear draft cart
   const clearDraft = useCallback(() => {
     setDraftItems([]);
   }, []);
 
-  // clears ordered cart when payment is complete
   const clearOrdered = useCallback(() => {
     setOrderedItems([]);
   }, []);
 
-  // subtotal from ordered items
   const subtotal = useMemo(() => {
     return orderedItems.reduce(
-      (sum, i) => sum + i.price,
+      (sum, i) => sum + i.price_at_time,
       0
     );
   }, [orderedItems]);
@@ -112,7 +164,6 @@ export function useCart(tableId: string) {
     [subtotal, discountAmount]
   );
 
-  // only ordered items count towards item count, not draft items
   const draftItemCount = useMemo(
     () => draftItems.reduce((sum, i) => sum + i.quantity, 0),
     [draftItems]

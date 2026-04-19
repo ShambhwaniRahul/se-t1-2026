@@ -117,7 +117,7 @@ class Order(TimeStampedModel):
     # customer = models.ForeignKey(Customer, on_delete=models.CASCADE, db_column="customer_id")
     table = models.ForeignKey(DiningTable, on_delete=models.CASCADE, db_column="table_id")
     status = models.IntegerField(choices=StatusChoices.choices, default=StatusChoices.OPEN, db_column="status")
-    dining_type = models.IntegerField(choices=DiningTypeChoices.choices, db_column="dining_type")
+    dining_type = models.IntegerField(choices=DiningTypeChoices.choices, default=DiningTypeChoices.DINE_IN, db_column="dining_type")
     packaging_cost = models.IntegerField(default=0, db_column="packaging_cost")
     # Newly Added: final_total to freeze bill amount
     final_total = models.FloatField(null=True, blank=True, db_column="final_total")    
@@ -166,6 +166,18 @@ class OrderMenuItem(TimeStampedModel):
     @property
     def item_total(self):
         return self.price_at_time
+    
+    @property
+    def order_total(self):
+        valid_items = self.items.exclude(
+            menu_item_status__in=[
+                OrderMenuItem.StatusChoices.CANCELLED,
+                OrderMenuItem.StatusChoices.REJECTED
+            ]
+        )
+    
+        return sum(item.item_total for item in valid_items) + self.packaging_cost
+
 
     class Meta:
         verbose_name = 'Order Menu Item'

@@ -6,6 +6,7 @@ from .views import (
     MenuItemIngredientListCreateAPIView, MenuItemIngredientDetailAPIView,
     DiningTableListCreateAPIView, DiningTableDetailAPIView, ToggleDiningTableAvailabilityAPIView,
     DiscountsListCreateAPIView,DiscountsDetailAPIView,
+    GetOrdersByDiningTableAPIView,
     OrderListCreateAPIView, OrderDetailAPIView, AddItemsToOrderAPIView,
     OrderMenuItemListAPIView,OrderMenuItemDetailAPIView,
     UpdateOrderMenuItemStatusAPIView
@@ -26,6 +27,7 @@ urlpatterns = [
     path("discounts/<int:pk>/", DiscountsDetailAPIView.as_view(), name='discounts-detail'),
     path("orders/", OrderListCreateAPIView.as_view(), name='order-list-create'),
     path("orders/<int:pk>/", OrderDetailAPIView.as_view(), name='order-detail'),
+    path("orders/dining-table/<int:table_id>/", GetOrdersByDiningTableAPIView.as_view(), name='order-by-dining-table'),
     path("orders/<int:pk>/add-items/", AddItemsToOrderAPIView.as_view(), name='order-add-items'),
     path("orders/<int:pk>/menuitems/", OrderMenuItemListAPIView.as_view(), name='order-menuitem-list'),
     path("orders/<int:order_id>/items/<int:item_id>/", OrderMenuItemDetailAPIView.as_view(), name='order-menuitem-detail'),

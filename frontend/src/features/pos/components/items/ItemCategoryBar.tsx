@@ -1,10 +1,10 @@
 import { cn } from "@/lib/utils";
-import type { MenuItemCategory } from "../../data/posData";
+import { type MenuCategory, CATEGORY_EMOJI_MAP } from "@/config/types/order";
 
 interface ItemCategoryBarProps {
-  categories: MenuItemCategory[];
-  activeId: string;
-  onSelect: (id: string) => void;
+  categories: MenuCategory[];
+  activeId: number;
+  onSelect: (id: number) => void;
 }
 
 export function ItemCategoryBar({ categories, activeId, onSelect }: ItemCategoryBarProps) {
@@ -22,8 +22,8 @@ export function ItemCategoryBar({ categories, activeId, onSelect }: ItemCategory
               : "bg-secondary text-secondary-foreground hover:bg-accent"
           )}
         >
-          <span className="text-base">{cat.emoji}</span>
-          <span>{cat.name}</span>
+          <span className="text-base">{CATEGORY_EMOJI_MAP[cat.id]}</span>
+          <span>{cat.label}</span>
         </button>
       ))}
     </div>

@@ -2,12 +2,12 @@ import { Minus, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import type { DraftCartItem } from "../../data/posData";
+import type { DraftCartItem } from "@/config/types/order";
 
 interface DraftCartProps {
   draftItems: DraftCartItem[];
-  onUpdateQuantity: (productId: string, delta: number) => void;
-  onRemove: (productId: string) => void;
+  onUpdateQuantity: (productId: number, delta: number) => void;
+  onRemove: (productId: number) => void;
 }
 
 export function DraftCart({
@@ -41,17 +41,17 @@ export function DraftCart({
             {draftItems.map((item) => (
 
               <div
-                key={item.product.id}
+                key={item.menu_item.id}
                 className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent/50"
               >
 
                 <div className="flex-1 min-w-0">
                   <p className="truncate text-sm font-medium">
-                    {item.product.name}
+                    {item.menu_item.name}
                   </p>
 
                   <p className="text-xs text-muted-foreground">
-                    ${item.product.price.toFixed(2)} ea
+                    ${item.menu_item.price.toFixed(2)} ea
                   </p>
                 </div>
 
@@ -61,7 +61,7 @@ export function DraftCart({
                     variant="outline"
                     size="icon"
                     className="h-7 w-7"
-                    onClick={() => onUpdateQuantity(item.product.id, -1)}
+                    onClick={() => onUpdateQuantity(item.menu_item.id, -1)}
                   >
                     <Minus className="h-3 w-3" />
                   </Button>
@@ -74,7 +74,7 @@ export function DraftCart({
                     variant="outline"
                     size="icon"
                     className="h-7 w-7"
-                    onClick={() => onUpdateQuantity(item.product.id, 1)}
+                    onClick={() => onUpdateQuantity(item.menu_item.id, 1)}
                   >
                     <Plus className="h-3 w-3" />
                   </Button>
@@ -82,14 +82,14 @@ export function DraftCart({
                 </div>
 
                 <span className="w-16 text-right text-sm font-semibold">
-                  ${(item.product.price * item.quantity).toFixed(2)}
+                  ${(item.menu_item.price * item.quantity).toFixed(2)}
                 </span>
 
                 <Button
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                  onClick={() => onRemove(item.product.id)}
+                  onClick={() => onRemove(item.menu_item.id)}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>

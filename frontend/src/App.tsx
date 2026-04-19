@@ -10,7 +10,8 @@ import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
 
 
 import LoginPage from "@/features/auth/pages/LoginPage";
-// import EmployeeManagementPage from "@/features/employees/pages/EmployeesPage";
+import EmployeeManagementPage from "@/features/employees/pages/EmployeeManagementPage";
+import { WorkforceRosterPage } from "@/features/workforce-roster";
 import DashboardPage from "@/features/dashboard/pages/Dashboard";
 import UnauthorizedPage from "@/pages/Unauthorized";
 import NotFound from "@/pages/NotFound";
@@ -18,8 +19,8 @@ import TablePage from "@/features/pos/pages/TablePage";
 import KitchenPage from "@/features/kitchen/pages/KitchenPage";
 import InventoryPage from "@/features/inventory/pages/InventoryPage";
 import CrmPage from "@/features/crm/pages/CrmPage";
-import { EmployeesPage, AttendancePage, ShiftsPage, PayrollPage } from "@/features/erp/pages";
 import PosPage from "./features/pos/pages/PosPage";
+import PayrollPage from "./features/erp/pages/PayrollPage";
 import PurchaseOrdersPage from "./features/purchase-orders/pages/PurchaseOrdersPage";
 import CreatePurchaseOrderPage from "./features/purchase-orders/pages/CreatePurchaseOrderPage";
 import PurchaseOrderDetailsPage from "./features/purchase-orders/pages/PurcahseOrderDetailsPage";
@@ -64,7 +65,7 @@ const App = () => (
                   }
                 />
                 <Route
-                  path="/waiter/tables/:tableId"
+                  path="/pos/tables/:tableId"
                   element={
                     <ProtectedRoute allowedRoles={["Owner", "Manager", "Waiter"]}>
                       <PosPage />
@@ -103,18 +104,16 @@ const App = () => (
                     </ProtectedRoute>
                   }
                 />
-                {/* <Route
+                <Route
                   path="settings/employees"
                   element={
                     <ProtectedRoute allowedRoles={["Owner"]}>
                       <EmployeeManagementPage />
                     </ProtectedRoute>
                   }
-                /> */}
-                <Route path="erp/employees" element={<ErpRoute><EmployeesPage /></ErpRoute>} />
-                <Route path="erp/attendance" element={<ErpRoute><AttendancePage /></ErpRoute>} />
-                <Route path="erp/shifts" element={<ErpRoute><ShiftsPage /></ErpRoute>} />
+                />
                 <Route path="erp/payroll" element={<ErpRoute><PayrollPage /></ErpRoute>} />
+                 <Route path="workforce-roster" element={<ErpRoute><WorkforceRosterPage /></ErpRoute>} />
                 <Route path="unauthorized" element={<UnauthorizedPage />} />
 
                 <Route path="purchase-orders" element={<ProtectedRoute allowedRoles={["Owner", "Manager", "Inventory Manager"]}><PurchaseOrdersPage /></ProtectedRoute>} />

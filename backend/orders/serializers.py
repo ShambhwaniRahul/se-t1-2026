@@ -166,12 +166,6 @@ class OrderCreateSerializer(serializers.Serializer):
     def validate(self, data):
         item_ids = [item['menu_item'] for item in data['items']]
 
-        # 🔥 Duplicate check
-        if len(item_ids) != len(set(item_ids)):
-            raise serializers.ValidationError(
-                "Duplicate menu items are not allowed in a single order."
-            )
-
         # 🔥 Check existence
         existing_items = set(
             MenuItem.objects.filter(id__in=item_ids).values_list('id', flat=True)
@@ -186,16 +180,15 @@ class OrderCreateSerializer(serializers.Serializer):
 
         return data
 
-    def validate_table(self, value):
-        if not value.is_available:
-            raise serializers.ValidationError("Table is not available.")
-        return value
+    # def validate_table(self, value):
+    #     if not value.is_available:
+    #         raise serializers.ValidationError("Table is not available.")
+    #     return value
 
 class OrderReadSerializer(serializers.ModelSerializer):
 
     # 🔥 THIS FIXES YOUR ERROR
     items = OrderMenuItemSerializer(
-        source='ordermenuitem_set',  # since no related_name in model
         many=True,
         read_only=True
     )
@@ -262,11 +255,11 @@ class AddItemsToOrderSerializer(serializers.Serializer):
 
         item_ids = [item['menu_item'] for item in items]
 
-        # 🔥 Duplicate check (within request)
-        if len(item_ids) != len(set(item_ids)):
-            raise serializers.ValidationError(
-                "Duplicate menu items not allowed in same request."
-            )
+        # # 🔥 Duplicate check (within request)
+        # if len(item_ids) != len(set(item_ids)):
+        #     raise serializers.ValidationError(
+        #         "Duplicate menu items not allowed in same request."
+        #     )
 
         # 🔥 Check all menu items exist
         existing_items = set(

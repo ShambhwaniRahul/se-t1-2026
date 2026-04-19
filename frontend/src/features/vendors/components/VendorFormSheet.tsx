@@ -11,15 +11,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import type { Vendor, VendorFormValues } from "../data/types";
+import type { Vendor, VendorFormValues } from "../../../config/types/vendor";
 
 const vendorSchema = z.object({
-  firstName: z.string().trim().min(1, "First name is required").max(50),
-  lastName: z.string().trim().min(1, "Last name is required").max(50),
+  first_name: z.string().trim().min(1, "First name is required").max(50),
+  last_name: z.string().trim().min(1, "Last name is required").max(50),
   email: z.string().trim().email("Invalid email address"),
-  contactNo: z.string().trim().min(1, "Contact number is required").max(20),
+  contact_no: z.string().trim().min(1, "Contact number is required").max(20),
   address: z.string().trim().min(1, "Address is required").max(300),
-  gstNumber: z
+  gst_no: z
     .string()
     .trim()
     .min(1, "GST number is required")
@@ -40,33 +40,33 @@ export function VendorFormSheet({ open, onOpenChange, vendor, onSubmit }: Vendor
   const form = useForm<VendorFormValues>({
     resolver: zodResolver(vendorSchema),
     defaultValues: {
-      firstName: "",
-      lastName: "",
+      first_name: "",
+      last_name: "",
       email: "",
-      contactNo: "",
+      contact_no: "",
       address: "",
-      gstNumber: "",
+      gst_no: "",
     },
   });
 
   useEffect(() => {
     if (vendor) {
       form.reset({
-        firstName: vendor.firstName,
-        lastName: vendor.lastName,
+        first_name: vendor.first_name,
+        last_name: vendor.last_name,
         email: vendor.email,
-        contactNo: vendor.contactNo,
+        contact_no: vendor.contact_no,
         address: vendor.address,
-        gstNumber: vendor.gstNumber,
+        gst_no: vendor.gst_no,
       });
     } else {
       form.reset({
-        firstName: "",
-        lastName: "",
+        first_name: "",
+        last_name: "",
         email: "",
-        contactNo: "",
+        contact_no: "",
         address: "",
-        gstNumber: "",
+        gst_no: "",
       });
     }
   }, [vendor, open, form]);
@@ -91,7 +91,7 @@ export function VendorFormSheet({ open, onOpenChange, vendor, onSubmit }: Vendor
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="firstName"
+                name="first_name"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>First Name</FormLabel>
@@ -102,7 +102,7 @@ export function VendorFormSheet({ open, onOpenChange, vendor, onSubmit }: Vendor
               />
               <FormField
                 control={form.control}
-                name="lastName"
+                name="last_name"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Last Name</FormLabel>
@@ -127,7 +127,7 @@ export function VendorFormSheet({ open, onOpenChange, vendor, onSubmit }: Vendor
 
             <FormField
               control={form.control}
-              name="contactNo"
+              name="contact_no"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Contact No</FormLabel>
@@ -151,11 +151,11 @@ export function VendorFormSheet({ open, onOpenChange, vendor, onSubmit }: Vendor
 
             <FormField
               control={form.control}
-              name="gstNumber"
+              name="gst_no"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>GST Number</FormLabel>
-                  <FormControl><Input placeholder="GSTIN1234567890" maxLength={15} {...field} /></FormControl>
+                  <FormControl><Input placeholder="Ex: GSTIN1234567890" maxLength={15} {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}

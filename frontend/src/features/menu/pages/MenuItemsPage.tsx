@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SearchInput } from "@/components/shared/SearchInput";
@@ -8,12 +8,19 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MenuItemFormSheet } from "../components/MenuItemFormSheet";
-import { initialMenuItems } from "../data/mockMenuItems";
-import { MENU_CATEGORIES, type MenuItem } from "../data/types";
+import { MENU_CATEGORIES, type MenuItem } from "../../../config/types/order";
 import { toast } from "sonner";
+import { mapToMenuItem, mapToApiPayload } from "../utils/mapper";
+import api from "@/lib/api";
 
 export default function MenuItemsPage() {
-  const [items, setItems] = useState<MenuItem[]>(initialMenuItems);
+
+  useEffect(() => {
+    fetchItems();
+  }, []);
+
+  const [items, setItems] = useState<MenuItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("all");
   const [dietFilter, setDietFilter] = useState("all");
@@ -68,23 +75,49 @@ export default function MenuItemsPage() {
     },
   ];
 
-  const handleSave = (data: Omit<MenuItem, "id">) => {
-    if (editing) {
-      setItems((prev) => prev.map((i) => (i.id === editing.id ? { ...i, ...data } : i)));
-      toast.success("Menu item updated");
-    } else {
-      const newItem: MenuItem = { ...data, id: `mi-${Date.now()}` };
-      setItems((prev) => [newItem, ...prev]);
-      toast.success("Menu item created");
+  const fetchItems = async () => {
+    try {
+      const res = await api.get("/pos/menuitems/");
+      const mapped = res.data.data.map(mapToMenuItem);
+      setItems(mapped);
+    } catch (err) {
+      toast.error("Failed to load menu items");
+    } finally {
+      setLoading(false);
     }
-    setEditing(null);
   };
 
-  const handleDelete = () => {
+  const handleSave = async (data: Omit<MenuItem, "id">) => {
+    try {
+      const payload = mapToApiPayload(data);
+      
+      if (editing) {
+        await api.patch(`/pos/menuitems/${editing.id}/`, payload);
+        toast.success("Menu item updated");
+      } else {
+        await api.post("/pos/menuitems/", payload);
+        toast.success("Menu item created");
+      }
+
+      await fetchItems();
+      setEditing(null);
+    } catch (err) {
+      toast.error("Something went wrong");
+    }
+  };
+
+  const handleDelete = async () => {
     if (!deleteTarget) return;
-    setItems((prev) => prev.filter((i) => i.id !== deleteTarget.id));
-    toast.error("Menu item deleted");
-    setDeleteTarget(null);
+
+    try {
+      await api.delete(`/pos/menuitems/${deleteTarget.id}/`);
+      toast.success("Menu item deleted");
+
+      await fetchItems(); // 🔥 refresh data
+      setDeleteTarget(null);
+    } catch (err) {
+      toast.error("Failed to delete item");
+    }
   };
 
   return (

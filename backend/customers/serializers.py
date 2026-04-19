@@ -1,7 +1,7 @@
 from rest_framework import serializers
-from .models import Customer, CustomerPayment
+from .models import Customer, CustomerPayment, CustomerPointsBank
 from django.db.models import Sum
-
+from orders.models import Order
 
 class CustomerSerializer(serializers.ModelSerializer):
     """
@@ -60,16 +60,16 @@ class CustomerPaymentSerializer(serializers.ModelSerializer):
         source="get_payment_mode_display", read_only=True
     )
 
-    usage_type_display = serializers.CharField(
-        source="get_usage_type_display", read_only=True
+    customer_name = serializers.CharField(
+        source="customer.full_name", read_only=True
     )
 
-    customer_name = serializers.CharField(source="customer.full_name", read_only=True)
+    order_id = serializers.IntegerField(
+        source="order.id", read_only=True
+    )
 
-    order_id = serializers.IntegerField(source="order.id", read_only=True)
-
-    # 🔥 Make loyalty points read-only
-    earned_loyalty_points = serializers.IntegerField(read_only=True)
+    # 🔥 amt_paid should be read-only (calculated in backend)
+    amt_paid = serializers.FloatField(read_only=True)
 
     class Meta:
         model = CustomerPayment
@@ -81,22 +81,46 @@ class CustomerPaymentSerializer(serializers.ModelSerializer):
             "order_id",
             "customer",
             "customer_name",
-            "earned_loyalty_points",  # 🔥 now auto-calculated
-            "usage_type",
-            "usage_type_display",
+            "amt_paid",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "created_at", "updated_at", "earned_loyalty_points"]
+        read_only_fields = [
+            "id",
+            "created_at",
+            "updated_at",
+            "amt_paid",
+        ]
 
-    # 🔥 AUTO CALCULATION
-    def create(self, validated_data):
-        order = validated_data.get("order")
+    def validate(self, attrs):
+        """
+        Optional: Add custom validations if needed
+        """
+        order = attrs.get("order")
 
-        # 🔥 Calculate loyalty points (6% of final_total)
-        final_total = order.final_total or 0
-        loyalty_points = int(final_total * 0.06)
+        if order and order.status == Order.StatusChoices.CLOSED:
+            raise serializers.ValidationError("Order is already closed.")
 
-        validated_data["earned_loyalty_points"] = loyalty_points
+        return attrs
 
-        return super().create(validated_data)
+
+
+class CustomerPointsBankSerializer(serializers.ModelSerializer):
+    payment_id = serializers.PrimaryKeyRelatedField(
+        queryset=CustomerPayment.objects.all(),
+        source='payment'
+    )
+    customer_name = serializers.CharField(
+        source='payment.customer.full_name',
+        read_only=True
+    )
+
+    class Meta:
+        model = CustomerPointsBank
+        fields = ['id', 'payment_id', 'customer_name', 'points', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'customer_name', 'created_at', 'updated_at']
+
+    def validate_points(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Points cannot be negative.")
+        return value

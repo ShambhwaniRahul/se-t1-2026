@@ -2,6 +2,7 @@ from django.urls import path
 from .views import (
     VendorListCreateAPIView, VendorDetailAPIView,
     PurchaseOrderListCreateAPIView, PurchaseOrderDetailAPIView,
+    VendorPurchaseOrderListAPIView,
     OrderedPerishablePurchaseSKUListCreateAPIView, OrderedPerishablePurchaseSKUDetailAPIView,
     OrderedNonPerishablePurchaseSKUListCreateAPIView, OrderedNonPerishablePurchaseSKUDetailAPIView,
     DeliveredPerishablePurchaseInventoryListAPIView, DeliveredPerishablePurchaseInventoryDetailAPIView,
@@ -15,6 +16,7 @@ urlpatterns =[
     path('vendors/<int:pk>/', VendorDetailAPIView.as_view(), name='vendor-detail'),
     path('purchase-orders/', PurchaseOrderListCreateAPIView.as_view(),name='purchaseorder-list-create'),
     path('purchase-orders/<int:pk>/', PurchaseOrderDetailAPIView.as_view(), name='purchaseorder-detail'),
+    path('vendors/<int:vendor_id>/purchase-orders/', VendorPurchaseOrderListAPIView.as_view(), name='vendor-purchase-orders'),
     path('ordered-perishable-purchase-skus/', OrderedPerishablePurchaseSKUListCreateAPIView.as_view(), name='ordered-perishable-purchase-sku-list-create'),
     path('ordered-perishable-purchase-skus/<int:pk>/', OrderedPerishablePurchaseSKUDetailAPIView.as_view(), name='ordered-perishable-purchase-sku-detail'),
     path('ordered-nonperishable-purchase-skus/', OrderedNonPerishablePurchaseSKUListCreateAPIView.as_view(), name='ordered-nonperishable-purchase-sku-list-create'),

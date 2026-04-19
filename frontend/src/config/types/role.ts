@@ -34,6 +34,7 @@ export const ROUTE_ACCESS: Record<string, AppRole[]> = {
   "/settings": [OWNER.value],
   "/vendors": [OWNER.value, MANAGER.value, INVENTORY_MANAGER.value],
   "/menu": [OWNER.value, MANAGER.value],
+  "/workforce-roster": [OWNER.value, MANAGER.value]
 };
 
 
@@ -74,8 +75,7 @@ export interface Employee {
   is_working: boolean;
   is_staff: boolean;
 
-  roles: {"role_display": AppRole}[];
-
+  roles: {"role": number; "role_display": AppRole}[];
   created_at: string; // ISO datetime
   updated_at: string; // ISO datetime
 }
