@@ -1,27 +1,42 @@
-export interface DailyRevenue {
+export interface RevenueKPIs {
+  total_revenue: number;
+  total_orders: number;
+  average_revenue_per_order: number;
+}
+
+export interface ActiveTables {
+  total_tables: string;
+  active_tables: number;
+  inactive_tables: number;
+}
+
+export interface RevenueTrend {
   date: string;
-  revenue: number;
-  orders: number;
+  total_revenue: number;
+  total_orders: number;
+  average_revenue: number;
 }
 
-export interface TopItem {
-  name: string;
-  quantity: number;
-  revenue: number;
-}
-
-export interface CategoryBreakdown {
+export interface SalesByCategory {
   category: string;
-  value: number;
-  fill: string;
+  total: number;
 }
 
-export interface ActivityItem {
-  id: string;
-  type: "order" | "refund" | "reservation";
-  description: string;
-  amount: number;
-  time: string;
+export interface TopSellingItems {
+  name: string;
+  sales_count: number;
+  total_revenue: number;
+}
+
+export interface RecentOrders {
+  order_id: number;
+  table_number: number;
+  status: string;
+  dining_type: string;
+  total_items: number;
+  total_amount: number;
+  created_at: string;
+  timedelta_since_order: number;
 }
 
 export const REVENUE_TREND: DailyRevenue[] = [
