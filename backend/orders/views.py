@@ -1151,6 +1151,12 @@ class AddItemsToOrderAPIView(APIView):
     """
     Add more items to an existing OPEN order.
     """
+    permission_classes = [RequiresRole]
+    required_roles = [
+        EmployeeRole.RoleChoices.OWNER,
+        EmployeeRole.RoleChoices.MANAGER,
+        EmployeeRole.RoleChoices.WAITER
+    ]
 
     @extend_schema(
         request=AddItemsToOrderSerializer,
@@ -1194,19 +1200,19 @@ class AddItemsToOrderAPIView(APIView):
 
         item_ids = [item['menu_item'] for item in validated_items]
 
-        # 🔥 Prevent duplicates already in order
-        existing_order_items = set(
-            order.items.values_list('menu_item_id', flat=True)
-        )
+        # # 🔥 Prevent duplicates already in order
+        # existing_order_items = set(
+        #     order.items.values_list('menu_item_id', flat=True)
+        # )
 
-        duplicates_in_order = [i for i in item_ids if i in existing_order_items]
+        # duplicates_in_order = [i for i in item_ids if i in existing_order_items]
 
-        if duplicates_in_order:
-            return standard_response(
-                success=False,
-                message=f"Items already exist in order: {duplicates_in_order}",
-                status_code=status.HTTP_400_BAD_REQUEST
-            )
+        # if duplicates_in_order:
+        #     return standard_response(
+        #         success=False,
+        #         message=f"Items already exist in order: {duplicates_in_order}",
+        #         status_code=status.HTTP_400_BAD_REQUEST
+        #     )
 
         # 🔥 Fetch all menu items in one query (optimization 🚀)
         menu_items_map = {
@@ -1237,7 +1243,7 @@ class AddItemsToOrderAPIView(APIView):
         OrderMenuItem.objects.bulk_create(order_items_to_create)
 
         # 🔥 Update total
-        order.final_total = (order.final_total or 0) + added_total
+        order.final_total = order.order_total
         order.save()
 
         # 🔥 Response
@@ -1250,6 +1256,41 @@ class AddItemsToOrderAPIView(APIView):
             status_code=status.HTTP_200_OK
         )
 
+
+class GetOrdersByDiningTableAPIView(APIView):
+    """To get all orders for a particular dining table."""
+    permission_classes = [RequiresRole]
+
+    required_roles = [
+        EmployeeRole.RoleChoices.OWNER,
+        EmployeeRole.RoleChoices.MANAGER,
+        EmployeeRole.RoleChoices.WAITER,
+    ]
+
+    @extend_schema(responses=OrderReadSerializer(many=True))
+    def get(self, request,table_id):
+        """Get all orders for a particular dining table."""
+
+        Table = DiningTable.objects.filter(id=table_id).first()
+
+        if Table is None:
+            return standard_response(
+                success=False,
+                message="No such dining table exists.",
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+        
+        orders = Order.objects.filter(table_id=table_id, status__in=[Order.StatusChoices.OPEN]).order_by('-created_at')
+        serializer = OrderReadSerializer(orders, many=True)
+
+        return standard_response(
+            success=True,
+            message="Orders retrieved successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+        )
+
+     
 
 
 class OrderMenuItemListAPIView(APIView):

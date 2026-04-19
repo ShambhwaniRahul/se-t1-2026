@@ -262,11 +262,11 @@ class AddItemsToOrderSerializer(serializers.Serializer):
 
         item_ids = [item['menu_item'] for item in items]
 
-        # 🔥 Duplicate check (within request)
-        if len(item_ids) != len(set(item_ids)):
-            raise serializers.ValidationError(
-                "Duplicate menu items not allowed in same request."
-            )
+        # # 🔥 Duplicate check (within request)
+        # if len(item_ids) != len(set(item_ids)):
+        #     raise serializers.ValidationError(
+        #         "Duplicate menu items not allowed in same request."
+        #     )
 
         # 🔥 Check all menu items exist
         existing_items = set(
