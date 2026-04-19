@@ -245,13 +245,15 @@ class TopSellingItemsView(APIView):
                 filters["order__created_at__date__lte"] = end_date
 
             items = OrderMenuItem.objects.filter(**filters).values('menu_item__name').annotate(
-                sales_count=Count('id')
+                sales_count=Count('id'),
+                revenue_total = Sum('price_at_time')
             ).order_by('-sales_count')[:top_n]
 
             data = [
                 {
                     'name': item['menu_item__name'],
-                    'sales_count': item['sales_count']
+                    'sales_count': item['sales_count'],
+                    'revenue_total': float(item['revenue_total'])
                 }
                 for item in items
             ]
