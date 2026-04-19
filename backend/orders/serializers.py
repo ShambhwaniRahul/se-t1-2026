@@ -195,7 +195,6 @@ class OrderReadSerializer(serializers.ModelSerializer):
 
     # 🔥 THIS FIXES YOUR ERROR
     items = OrderMenuItemSerializer(
-        source='ordermenuitem_set',  # since no related_name in model
         many=True,
         read_only=True
     )
