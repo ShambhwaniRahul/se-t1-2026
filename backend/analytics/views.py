@@ -246,14 +246,14 @@ class TopSellingItemsView(APIView):
 
             items = OrderMenuItem.objects.filter(**filters).values('menu_item__name').annotate(
                 sales_count=Count('id'),
-                revenue_total = Sum('price_at_time')
+                total_revenue = Sum('price_at_time')
             ).order_by('-sales_count')[:top_n]
 
             data = [
                 {
                     'name': item['menu_item__name'],
                     'sales_count': item['sales_count'],
-                    'revenue_total': float(item['revenue_total'])
+                    'total_revenue': float(item['total_revenue'])
                 }
                 for item in items
             ]
