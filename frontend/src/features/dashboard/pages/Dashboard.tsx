@@ -14,15 +14,12 @@ import {
   type SalesByCategory,
   type TopSellingItems,
   type RecentOrders,
-  REVENUE_TREND,
-  TOP_ITEMS,
-  CATEGORY_BREAKDOWN,
-  ACTIVITY_FEED,
 } from "@/features/dashboard/data/dashboardData";
 import { DollarSign, ShoppingCart, Receipt, UtensilsCrossed } from "lucide-react";
 
 export default function DashboardPage() {
   const [revenueKPIs, setRevenueKPIs] = useState<RevenueKPIs | null>(null);
+  const [revenueKPIsYesterday, setRevenueKPIsYesterday] = useState<RevenueKPIs | null>(null);
   const [activeTables, setActiveTables] = useState<ActiveTables | null>(null);
   const [revenueTrend, setRevenueTrend] = useState<RevenueTrend[]>([]);
   const [categoryBreakdown, setCategoryBreakdown] = useState<SalesByCategory[]>([]);
@@ -41,8 +38,12 @@ export default function DashboardPage() {
   const fetchRevenueKPIs = async () => {
     try {
         const result = await api.get("/analytics/revenue-kpis?start_date=2026-04-19&end_date=2026-04-19");
+        const resultYesterday = await api.get("/analytics/revenue-kpis?start_date=2026-04-18&end_date=2026-04-18");
         if (result.data.success) {
             setRevenueKPIs(result.data.data);
+        }
+        if (resultYesterday.data.success) {
+            setRevenueKPIsYesterday(resultYesterday.data.data);
         }
     } catch (err) {
         console.error("Failed to fetch revenue KPIs", err);
@@ -118,19 +119,19 @@ export default function DashboardPage() {
           title="Today's Revenue"
           value={`$${revenueKPIs?.total_revenue.toLocaleString()}`}
           icon={DollarSign}
-          trend={{ value: 0, label: "vs last week" }}
+          trend={{ value: revenueKPIsYesterday?.total_revenue ? (revenueKPIs?.total_revenue / revenueKPIsYesterday?.total_revenue - 1) * 100 : 0, label: "vs yesterday" }}
         />
         <StatsCard
           title="Orders Today"
           value={revenueKPIs?.total_orders}
           icon={ShoppingCart}
-          trend={{ value: 0, label: "vs last week" }}
+          trend={{ value: revenueKPIsYesterday?.total_orders ? (revenueKPIs?.total_orders / revenueKPIsYesterday?.total_orders - 1) * 100 : 0, label: "vs yesterday" }}
         />
         <StatsCard
           title="Avg Ticket"
           value={`$${revenueKPIs?.average_revenue_per_order.toFixed(2)}`}
           icon={Receipt}
-          trend={{ value: 0, label: "vs last week" }}
+          trend={{ value: revenueKPIsYesterday?.average_revenue_per_order ? (revenueKPIs?.average_revenue_per_order / revenueKPIsYesterday?.average_revenue_per_order - 1) * 100 : 0, label: "vs yesterday" }}
         />
         <StatsCard
           title="Active Tables"
