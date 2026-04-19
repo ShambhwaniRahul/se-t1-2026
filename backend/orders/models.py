@@ -166,6 +166,18 @@ class OrderMenuItem(TimeStampedModel):
     @property
     def item_total(self):
         return self.price_at_time
+    
+    @property
+    def order_total(self):
+        valid_items = self.items.exclude(
+            menu_item_status__in=[
+                OrderMenuItem.StatusChoices.CANCELLED,
+                OrderMenuItem.StatusChoices.REJECTED
+            ]
+        )
+    
+        return sum(item.item_total for item in valid_items) + self.packaging_cost
+
 
     class Meta:
         verbose_name = 'Order Menu Item'
