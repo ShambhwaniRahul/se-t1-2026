@@ -450,8 +450,8 @@ class OrderVersusRevenueView(APIView):
 
             order_revenue_data = Order.objects.filter(**filters).values('created_at__date').annotate(
                 total_revenue=Sum('final_total'),
-                total_orders=Count('id')
-            )
+                total_orders=Count('id'),
+            ).order_by('created_at__date')
 
             data = [
                 {
