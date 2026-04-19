@@ -145,16 +145,18 @@ class RevenueByDateView(APIView):
                 total_orders=Count('id')
             ).order_by('created_at__date')
 
-            data = {}
+            data = []
             for entry in revenue_data:
                 date_str = entry['created_at__date'].isoformat()
                 rev = entry['total_revenue'] or 0
                 count = entry['total_orders'] or 0
-                data[date_str] = {
+                payload = {
+                    "date": date_str,
                     "total_revenue": rev,
                     "total_orders": count,
                     "average_revenue": round(rev / count, 2) if count > 0 else 0
                 }
+                data.append(payload)
 
             return standard_response(
                 success=True,
