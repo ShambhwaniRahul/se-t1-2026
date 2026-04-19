@@ -1,7 +1,7 @@
-export interface DailyRevenue {
-  date: string;
-  revenue: number;
-  orders: number;
+export interface RevenueKPIs {
+  total_revenue: number;
+  total_orders: number;
+  average_revenue_per_order: number;
 }
 
 export interface ForecastPoint {
