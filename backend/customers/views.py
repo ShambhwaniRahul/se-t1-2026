@@ -180,6 +180,13 @@ class CustomerSearchAPIView(APIView):
         first_name = request.data.get("first_name")
         last_name = request.data.get("last_name")
 
+        if not phone_no and not first_name and not last_name:
+            return standard_response(
+                success=False,
+                message="At least one search parameter (phone_no, first_name, last_name) is required.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
         queryset = Customer.objects.all().order_by("-created_at")
         if phone_no:
             queryset = queryset.filter(phone_no=phone_no)
