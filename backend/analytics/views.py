@@ -43,7 +43,9 @@ class RevenueKPIsView(APIView):
     def get(self, request):
         try:
             start_date = request.query_params.get('start_date')
+            start_time = request.query_params.get('start_time')
             end_date = request.query_params.get('end_date')
+            end_time = request.query_params.get('end_time')
 
             validation_error = validate_date_params(start_date, end_date)
             if validation_error:
@@ -56,9 +58,17 @@ class RevenueKPIsView(APIView):
 
             filters = {"status": Order.StatusChoices.CLOSED}
             if start_date:
-                filters["created_at__date__gte"] = start_date
+                if start_time:
+                    start_datetime = datetime.combine(datetime.strptime(start_date, '%Y-%m-%d').date(), datetime.strptime(start_time, '%H:%M:%S').time())
+                    filters["created_at__gte"] = start_datetime
+                else:
+                    filters["created_at__date__gte"] = start_date
             if end_date:
-                filters["created_at__date__lte"] = end_date
+                if end_time:
+                    end_datetime = datetime.combine(datetime.strptime(end_date, '%Y-%m-%d').date(), datetime.strptime(end_time, '%H:%M:%S').time())
+                    filters["created_at__lte"] = end_datetime
+                else:
+                    filters["created_at__date__lte"] = end_date
 
             metrics = Order.objects.filter(**filters).aggregate(
                 total_revenue=Sum('final_total'),
