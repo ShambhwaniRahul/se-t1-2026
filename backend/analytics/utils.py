@@ -64,17 +64,17 @@ def apply_dynamic_ewma(df, start_date=None, end_date=None, span=1, alpha=0.3):
     
     if start_date:
         start_date_obj = pd.to_datetime(start_date).date()
-        filtered_df = filtered_df[filtered_df['Date'] >= start_date_obj]
+        filtered_df = filtered_df[filtered_df['date'] >= start_date_obj]
         
     if end_date:
         end_date_obj = pd.to_datetime(end_date).date()
-        filtered_df = filtered_df[filtered_df['Date'] <= end_date_obj]
+        filtered_df = filtered_df[filtered_df['date'] <= end_date_obj]
         
     if filtered_df.empty:
         return filtered_df
         
-    filtered_df['Date'] = pd.to_datetime(filtered_df['Date'])
-    filtered_df.set_index('Date', inplace=True)
+    filtered_df['date'] = pd.to_datetime(filtered_df['date'])
+    filtered_df.set_index('date', inplace=True)
     
     resample_rule = f'{span}D'
     
@@ -91,7 +91,7 @@ def apply_dynamic_ewma(df, start_date=None, end_date=None, span=1, alpha=0.3):
     
     aggregated_df = aggregated_df.round(2)
     aggregated_df.reset_index(inplace=True)
-    aggregated_df['Date'] = aggregated_df['Date'].dt.date
+    aggregated_df['date'] = aggregated_df['date'].dt.date
     
     return aggregated_df
 
