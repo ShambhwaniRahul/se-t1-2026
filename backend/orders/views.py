@@ -1328,6 +1328,35 @@ class OrderMenuItemListAPIView(APIView):
         )
 
 
+class AllOrdersMenuItemsListAPIView(APIView):
+    """To list all items across all orders which are open."""
+    permission_classes = [RequiresRole]
+
+    required_roles = [
+        EmployeeRole.RoleChoices.OWNER,
+        EmployeeRole.RoleChoices.MANAGER,
+        EmployeeRole.RoleChoices.WAITER
+    ]
+
+    @extend_schema(responses=OrderMenuItemSerializer(many=True))
+    def get(self, request):
+        """List all items across all open orders."""
+
+        # 🔥 Fetch all open orders
+        open_orders = Order.objects.filter(status=Order.StatusChoices.OPEN)
+
+        # 🔥 Fetch all items from these orders
+        order_items = OrderMenuItem.objects.filter(order__in=open_orders)
+
+        # 🔥 Serialize the data
+        serializer = OrderMenuItemSerializer(order_items, many=True)
+
+        return standard_response(
+            success=True,
+            message="Order items retrieved successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+        )
 
 class OrderMenuItemDetailAPIView(APIView):
     """Retrieve, update or delete a specific item in an order."""

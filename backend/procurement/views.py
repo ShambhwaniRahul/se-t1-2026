@@ -13,7 +13,7 @@ from .serializers import (
     VendorSerializer, PurchaseOrderSerializer,
      OrderedPerishablePurchaseSKUSerializer, OrderedNonPerishablePurchaseSKUSerializer,
      DeliveredPerishableInventorySerializer, DeliveredNonPerishableInventorySerializer,
-     VendorInvoiceSerializer
+     VendorInvoiceSerializer,PurchaseOrderDetailSerializer
 )
 from inventory.serializers import PerishableInventorySerializer, NonPerishableInventorySerializer
 from inventory.models import PerishableSKU, NonPerishableInventory
@@ -144,7 +144,8 @@ class PurchaseOrderListCreateAPIView(APIView):
         EmployeeRole.RoleChoices.MANAGER,
         EmployeeRole.RoleChoices.INVENTORY_MANAGER
     ]
-
+    
+    @extend_schema(responses=PurchaseOrderSerializer(many=True))
     def get(self, request):
         """
         These will be ordered by most recent purchase orders first by default.
@@ -182,7 +183,7 @@ class PurchaseOrderListCreateAPIView(APIView):
         serializer = PurchaseOrderSerializer(queryset, many=True)
         return standard_response(
             success=True,
-            message="Pruchase Orders retrieved successfully.",
+            message="Purchase Orders retrieved successfully.",
             data=serializer.data,
             status_code=status.HTTP_200_OK
         )
@@ -276,7 +277,8 @@ class PurchaseOrderDetailAPIView(APIView):
             message=message,
             status_code=status.HTTP_404_NOT_FOUND
         )
-
+    
+    @extend_schema(responses=PurchaseOrderSerializer)
     def get(self, request, pk):
         purchase_order = self.get_object(pk)
 
@@ -355,6 +357,113 @@ class PurchaseOrderDetailAPIView(APIView):
             data=None,
             status_code=status.HTTP_200_OK
         )
+
+class PurchaseOrderItemsView(APIView):
+
+
+    permission_classes = [RequiresRole]
+    required_roles = [
+        EmployeeRole.RoleChoices.OWNER,
+        EmployeeRole.RoleChoices.MANAGER,
+        EmployeeRole.RoleChoices.INVENTORY_MANAGER
+    ]
+    
+    def get_po(self, pk):
+        try:
+            return PurchaseOrder.objects.get(pk=pk)
+        except PurchaseOrder.DoesNotExist:
+            return None
+        
+    @extend_schema(responses=PurchaseOrderDetailSerializer(many=True))    
+    def get(self, request, pk):
+        po = self.get_po(pk)
+
+        if po is None:
+            return standard_response(
+                success=False,
+                message="Purchase order not found.",
+                data=None,
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+
+        
+        return standard_response(
+            success=True,
+            message="Purchase order items retrieved successfully.",
+            data=po.get_all_items(),
+            status_code=status.HTTP_200_OK
+        )
+
+class PurchaseOrderReceiveAPIView(APIView):
+    permission_classes = [RequiresRole]
+    required_roles = [
+        EmployeeRole.RoleChoices.OWNER,
+        EmployeeRole.RoleChoices.MANAGER,
+        EmployeeRole.RoleChoices.INVENTORY_MANAGER
+    ]
+
+    def post(self, request, pk):
+        try:
+            po = PurchaseOrder.objects.get(pk=pk)
+        except PurchaseOrder.DoesNotExist:
+            return standard_response(
+                success=False,
+                message="Purchase order not found.",
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+
+        if po.status == PurchaseOrder.StatusChoices.CANCELLED:
+            return standard_response(
+                success=False,
+                message="Cancelled order cannot be received.",
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+
+        po.status = PurchaseOrder.StatusChoices.RECEIVED
+        po.save()
+
+        return standard_response(
+            success=True,
+            message="Purchase order marked as received.",
+            data=PurchaseOrderSerializer(po).data,
+            status_code=status.HTTP_200_OK
+        )
+
+
+class PurchaseOrderCancelAPIView(APIView):
+    permission_classes = [RequiresRole]
+    required_roles = [
+        EmployeeRole.RoleChoices.OWNER,
+        EmployeeRole.RoleChoices.MANAGER
+    ]
+
+    def post(self, request, pk):
+        try:
+            po = PurchaseOrder.objects.get(pk=pk)
+        except PurchaseOrder.DoesNotExist:
+            return standard_response(
+                success=False,
+                message="Purchase order not found.",
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+
+        if po.status == PurchaseOrder.StatusChoices.RECEIVED:
+            return standard_response(
+                success=False,
+                message="Received order cannot be cancelled.",
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+
+        po.status = PurchaseOrder.StatusChoices.CANCELLED
+        po.save()
+
+        return standard_response(
+            success=True,
+            message="Purchase order cancelled successfully.",
+            data=PurchaseOrderSerializer(po).data,
+            status_code=status.HTTP_200_OK
+        )
+
     
 class VendorPurchaseOrderListAPIView(APIView):
     """ Lists all purchase orders for a specific vendor."""

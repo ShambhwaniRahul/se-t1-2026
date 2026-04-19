@@ -31,7 +31,11 @@ class VendorSerializer(serializers.ModelSerializer):
 
 class PurchaseOrderSerializer(serializers.ModelSerializer):
     vendor_name = serializers.CharField(source='vendor.full_name', read_only=True)
-    # total_cost = serializers.SerializerMethodField()
+
+    # 🔥 ADD THESE
+    items_total = serializers.SerializerMethodField()
+    grand_total = serializers.SerializerMethodField()
+
     def validate_purchase_date(self, value):
         if value > date.today():
             raise serializers.ValidationError("Purchase date cannot be in the future.")
@@ -41,23 +45,65 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         model = PurchaseOrder
         fields = [
             'id',
-            'vendor',          # write (ID)
-            'vendor_name',     # read (extra info)
+            'vendor',
+            'vendor_name',
             'purchase_type',
             'purchase_date',
             'status',
             'delivery_cost',
             'file_location',
+            'items_total',     # 🔥 added
+            'grand_total',     # 🔥 added
             'created_at',
             'updated_at'
         ]
-        read_only_fields = [
-            'id',
-            'file_location',
-            'created_at',
-            'updated_at',
-            # 'total_cost'
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def get_items_total(self, obj):
+        purchase_set = obj.purchase_set()
+    
+        return sum(
+            item.quantity * item.unit_price
+            for item in purchase_set
+        )
+    
+    def get_grand_total(self, obj):
+        return obj.delivery_cost + self.get_items_total(obj)
+
+
+class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
+    vendor_name = serializers.CharField(source='vendor.full_name', read_only=True)
+    vendor_email = serializers.CharField(source='vendor.email', read_only=True)
+    vendor_phone = serializers.CharField(source='vendor.contact_no', read_only=True)
+
+    items = serializers.SerializerMethodField()
+    total_amount = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PurchaseOrder
+        fields = [
+            "id",
+            "vendor",
+            "vendor_name",
+            "vendor_email",
+            "vendor_phone",
+            "purchase_type",
+            "purchase_date",
+            "status",
+            "delivery_cost",
+            "items",
+            "total_amount",
+            "created_at",
+            "updated_at",
         ]
+
+    def get_items(self, obj):
+        return obj.get_all_items()
+
+    def get_total_amount(self, obj):
+        return obj.total_cost()
+
+    
 
 
 class VendorInvoiceSerializer(serializers.ModelSerializer):
