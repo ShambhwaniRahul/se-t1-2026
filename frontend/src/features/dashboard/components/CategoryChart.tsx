@@ -1,7 +1,7 @@
 // import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 // import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 // import { Cell, Pie, PieChart } from "recharts";
-// import type { CategoryBreakdown } from "./dashboardData";
+// import type { SalesByCategory } from "./dashboardData";
 
 // const chartConfig = {
 //   Mains: { label: "Mains", color: "hsl(var(--primary))" },
@@ -11,7 +11,7 @@
 // };
 
 // interface CategoryChartProps {
-//   data: CategoryBreakdown[];
+//   data: SalesByCategory[];
 // }
 
 // export function CategoryChart({ data }: CategoryChartProps) {
@@ -72,20 +72,25 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Cell, Pie, PieChart } from "recharts";
-import type { CategoryBreakdown } from "../data/dashboardData";
+import type { SalesByCategory } from "../data/dashboardData";
 
 const chartConfig = {
-  Mains: { label: "Mains", color: "hsl(var(--chart-1))" },
-  Appetizers: { label: "Appetizers", color: "hsl(var(--chart-2))" },
-  Drinks: { label: "Drinks", color: "hsl(var(--chart-3))" },
-  Desserts: { label: "Desserts", color: "hsl(var(--chart-4))" },
+  Starter: { label: "Starter", color: "hsl(var(--chart-1))" },
+  "Main Course": { label: "Main Course", color: "hsl(var(--chart-2))" },
+  Dessert: { label: "Dessert", color: "hsl(var(--chart-3))" },
+  Beverage: { label: "Beverage", color: "hsl(var(--chart-4))" },
 };
 
 interface CategoryChartProps {
-  data: CategoryBreakdown[];
+  data: SalesByCategory[];
 }
 
 export function CategoryChart({ data }: CategoryChartProps) {
+  const chartData = data.map((item) => ({
+    category: item.category,
+    total_percent: Number(((item.total / data.reduce((sum, i) => sum + i.total, 0)) * 100).toFixed(0)),
+  }));
+
   return (
     <Card>
       <CardHeader>
@@ -103,16 +108,16 @@ export function CategoryChart({ data }: CategoryChartProps) {
             <ChartTooltip
               content={
                 <ChartTooltipContent
-                  formatter={(value) => (
-                    <span className="font-mono tabular-nums">{value}%</span>
+                  formatter={(total_percent) => (
+                    <span className="font-mono tabular-nums">{total_percent}%</span>
                   )}
                 />
               }
             />
 
             <Pie
-              data={data}
-              dataKey="value"
+              data={chartData}
+              dataKey="total_percent"
               nameKey="category"
               cx="50%"
               cy="50%"
@@ -121,7 +126,7 @@ export function CategoryChart({ data }: CategoryChartProps) {
               strokeWidth={2}
               stroke="hsl(var(--background))"
             >
-              {data.map((entry) => (
+              {chartData.map((entry) => (
                 <Cell
                   key={entry.category}
                   fill={
@@ -137,7 +142,7 @@ export function CategoryChart({ data }: CategoryChartProps) {
 
         {/* Legend */}
         <div className="mt-4 grid grid-cols-2 gap-2">
-          {data.map((item) => (
+          {chartData.map((item) => (
             <div
               key={item.category}
               className="flex items-center gap-2 text-sm"
@@ -155,7 +160,7 @@ export function CategoryChart({ data }: CategoryChartProps) {
                 {item.category}
               </span>
               <span className="ml-auto font-medium tabular-nums">
-                {item.value}%
+                {item.total_percent} %
               </span>
             </div>
           ))}
