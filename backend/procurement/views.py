@@ -35,6 +35,7 @@ class VendorListCreateAPIView(APIView):
         EmployeeRole.RoleChoices.MANAGER
     ]
 
+    @extend_schema(responses=VendorSerializer)
     def get(self, request):
         vendors = Vendor.objects.all()
         serializer = VendorSerializer(vendors, many=True)
@@ -352,6 +353,45 @@ class PurchaseOrderDetailAPIView(APIView):
             success=True,
             message="Purchase order deleted successfully.",
             data=None,
+            status_code=status.HTTP_200_OK
+        )
+    
+class VendorPurchaseOrderListAPIView(APIView):
+    """ Lists all purchase orders for a specific vendor."""
+
+    permission_classes = [RequiresRole]
+    required_roles = [
+        EmployeeRole.RoleChoices.OWNER,
+        EmployeeRole.RoleChoices.MANAGER,
+        EmployeeRole.RoleChoices.INVENTORY_MANAGER
+    ]
+
+    def get_vendor(self, vendor_id):
+        try:
+            return Vendor.objects.get(pk=vendor_id)
+        except Vendor.DoesNotExist:
+            return None
+
+    @extend_schema(responses=PurchaseOrderSerializer(many=True))
+    def get(self, request, vendor_id):
+        vendor = self.get_vendor(vendor_id)
+
+        if vendor is None:
+            return standard_response(
+                success=False,
+                message="No such vendor exists.",
+                data=None,
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+
+        purchase_orders = PurchaseOrder.objects.filter(vendor_id=vendor_id).order_by('-created_at')
+        serializer = PurchaseOrderSerializer(purchase_orders, many=True)
+
+        
+        return standard_response(
+            success=True,
+            message="Purchase orders for vendor retrieved successfully." if len(serializer.data) > 0 else "No purchase orders found for this vendor.",
+            data=serializer.data,
             status_code=status.HTTP_200_OK
         )
 

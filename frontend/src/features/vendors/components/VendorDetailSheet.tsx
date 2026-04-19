@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { Mail, Phone, MapPin, FileText } from "lucide-react";
-import type { Vendor, VendorPurchaseOrder, PurchaseOrderStatus } from "../data/types";
+import type { Vendor, VendorPurchaseOrder, PurchaseOrderStatus } from "../../../config/types/vendor";
+import { Download } from "lucide-react";
 
 const statusVariant: Record<PurchaseOrderStatus, string> = {
   Pending: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800",
@@ -14,9 +15,9 @@ const statusVariant: Record<PurchaseOrderStatus, string> = {
 };
 
 const poColumns: Column<VendorPurchaseOrder>[] = [
-  { key: "poId", header: "PO ID" },
-  { key: "date", header: "Date" },
-  { key: "type", header: "Type" },
+  { key: "id", header: "PO ID" },
+  { key: "purchase_date", header: "Date" },
+  { key: "purchase_type", header: "Type" },
   {
     key: "status",
     header: "Status",
@@ -27,17 +28,28 @@ const poColumns: Column<VendorPurchaseOrder>[] = [
     ),
   },
   {
-    key: "deliveryCost",
+    key: "delivery_cost",
     header: "Delivery Cost",
-    render: (row) => `₹${row.deliveryCost.toLocaleString("en-IN")}`,
+    render: (row) => `₹${row.delivery_cost.toLocaleString("en-IN")}`,
   },
+  {
+    key: "file_location",
+    header: "",
+    render: (row) => (
+      <button
+      className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 hover:bg-gray-100 transition hover:cursor-pointer"
+    >
+      <Download className="h-4 w-4" />
+    </button>
+    )
+  }
 ];
 
 interface VendorDetailSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   vendor: Vendor | null;
-  purchaseOrders: VendorPurchaseOrder[];
+  purchaseOrders: VendorPurchaseOrder[] | null;
 }
 
 export function VendorDetailSheet({ open, onOpenChange, vendor, purchaseOrders }: VendorDetailSheetProps) {
@@ -47,7 +59,7 @@ export function VendorDetailSheet({ open, onOpenChange, vendor, purchaseOrders }
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-2xl overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>{vendor.firstName} {vendor.lastName}</SheetTitle>
+          <SheetTitle>{vendor.first_name} {vendor.last_name}</SheetTitle>
           <SheetDescription>Vendor profile and purchase history</SheetDescription>
         </SheetHeader>
 
@@ -59,7 +71,7 @@ export function VendorDetailSheet({ open, onOpenChange, vendor, purchaseOrders }
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <Phone className="h-4 w-4 shrink-0" />
-              <span className="text-foreground">{vendor.contactNo}</span>
+              <span className="text-foreground">{vendor.contact_no}</span>
             </div>
             <div className="flex items-start gap-2 text-muted-foreground sm:col-span-2">
               <MapPin className="h-4 w-4 shrink-0 mt-0.5" />
@@ -67,7 +79,7 @@ export function VendorDetailSheet({ open, onOpenChange, vendor, purchaseOrders }
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <FileText className="h-4 w-4 shrink-0" />
-              <span className="font-mono text-foreground">{vendor.gstNumber}</span>
+              <span className="font-mono text-foreground">{vendor.gst_no}</span>
             </div>
           </div>
 
@@ -77,7 +89,7 @@ export function VendorDetailSheet({ open, onOpenChange, vendor, purchaseOrders }
             <h3 className="text-sm font-semibold mb-3">Purchase History</h3>
             <DataTable
               columns={poColumns}
-              data={purchaseOrders}
+              data={purchaseOrders ?? []}
               keyExtractor={(row) => row.id}
               emptyState={
                 <p className="text-center py-8 text-sm text-muted-foreground">No purchase orders found for this vendor.</p>

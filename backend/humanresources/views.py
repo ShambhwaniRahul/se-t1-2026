@@ -80,8 +80,7 @@ class EmployeeRegisterView(APIView):
     @extend_schema(
         request=EmployeeSerializer,
         responses=EmployeeSerializer
-    )
-
+    )    
     def post(self, request):
         serializer = EmployeeSerializer(data=request.data)
         confirm_password = request.data.get('confirm_password')

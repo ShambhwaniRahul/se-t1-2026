@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import type { Vendor, VendorFormValues } from "../data/types";
+import type { Vendor, VendorFormValues } from "../../../config/types/vendor";
 
 const vendorSchema = z.object({
   first_name: z.string().trim().min(1, "First name is required").max(50),
