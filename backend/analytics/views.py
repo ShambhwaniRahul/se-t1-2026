@@ -200,11 +200,13 @@ class SalesByCategoryView(APIView):
             
             category_choices = dict(MenuItem._meta.get_field('category').choices)
 
-            data = {
-                category_choices.get(item['menu_item__category'], item['menu_item__category']): float(item['total']) 
+            data = [
+                {
+                    'category': category_choices.get(item['menu_item__category'], item['menu_item__category']), 
+                    'total': float(item['total'])
+                }
                 for item in sales
-            }
-            
+            ]
             return standard_response(
                 success=True,
                 message="Sales by category retrieved successfully.",
