@@ -17,12 +17,13 @@ class EmployeeSerializer(serializers.ModelSerializer):
     gender_display = serializers.CharField(source='get_gender_display', read_only=True)
     id = serializers.ReadOnlyField()
     roles = EmployeeRoleSerializer(source='employeerole_set', many=True, read_only=True)
-    role_ids = serializers.ListField(
-        child=serializers.IntegerField(),
-        write_only=True,
-        required=False,
-        allow_empty=True
-    )
+    # role_ids = serializers.ListField(
+    #     child=serializers.IntegerField(),
+    #     required=False,
+    #     allow_empty=True
+    # )
+    role_ids = serializers.SerializerMethodField()
+
 
     password = serializers.CharField(write_only=True, required=False, style={'input_type': 'password'})
 
@@ -99,6 +100,12 @@ class EmployeeSerializer(serializers.ModelSerializer):
                 EmployeeRole.objects.create(employee=instance, role=role)
 
         return instance
+    
+    def get_role_ids(self, obj):
+        return list(
+            obj.employeerole_set.values_list('role', flat=True)
+        )
+
     
 
 class EmployeeLoginSerializer(serializers.Serializer):
