@@ -17,6 +17,7 @@ import {
 } from "@/features/dashboard/data/dashboardData";
 import { DollarSign, ShoppingCart, Receipt, UtensilsCrossed } from "lucide-react";
 
+
 export default function DashboardPage() {
   const [revenueKPIs, setRevenueKPIs] = useState<RevenueKPIs | null>(null);
   const [revenueKPIsYesterday, setRevenueKPIsYesterday] = useState<RevenueKPIs | null>(null);
@@ -26,6 +27,36 @@ export default function DashboardPage() {
   const [topItems, setTopItems] = useState<TopSellingItems[]>([]);
   const [recentOrders, setRecentOrders] = useState<RecentOrders[]>([]);
   
+  const now = new Date();
+
+  // 1) Current date in IST (YYYY-MM-DD)
+  const istDate = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+  }).format(now);
+
+  // 2) Current time in IST (HH:MM:SS)
+  const istTime = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Kolkata",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).format(now);
+
+  // 3) N days back date in IST (YYYY-MM-DD)
+  const yesterday = new Date(now);
+  const twoWeeksBack = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  twoWeeksBack.setDate(twoWeeksBack.getDate() - 14);
+
+  const istYesterday = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+  }).format(yesterday);
+
+  const istTwoWeeksBack = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+  }).format(twoWeeksBack);
+
   useEffect(() => {
     fetchRevenueKPIs();
     fetchActiveTables();
@@ -37,8 +68,8 @@ export default function DashboardPage() {
 
   const fetchRevenueKPIs = async () => {
     try {
-        const result = await api.get("/analytics/revenue-kpis?start_date=2026-04-19&end_date=2026-04-19");
-        const resultYesterday = await api.get("/analytics/revenue-kpis?start_date=2026-04-18&end_date=2026-04-18");
+        const result = await api.get(`/analytics/revenue-kpis?start_date=${istDate}&end_date=${istDate}&end_time=${istTime}`);
+        const resultYesterday = await api.get(`/analytics/revenue-kpis?start_date=${istYesterday}&end_date=${istYesterday}&end_time=${istTime}`);
         if (result.data.success) {
             setRevenueKPIs(result.data.data);
         }
@@ -63,7 +94,7 @@ export default function DashboardPage() {
 
   const fetchRevenueTrend = async () => {
     try {
-        const result = await api.get("/analytics/revenue-by-date?start_date=2026-04-01&end_date=2026-04-14");
+        const result = await api.get(`/analytics/revenue-by-date?start_date=${istTwoWeeksBack}&end_date=${istDate}`);
         if (result.data.success) {
             setRevenueTrend(result.data.data);
         }
@@ -74,7 +105,7 @@ export default function DashboardPage() {
 
   const fetchSalesByCategory = async () => {
     try {
-        const result = await api.get("/analytics/sales-by-category?start_date=2026-04-01&end_date=2026-04-14");
+        const result = await api.get(`/analytics/sales-by-category?start_date=${istDate}&end_date=${istDate}`);
         if (result.data.success) {
             setCategoryBreakdown(result.data.data);
         }
@@ -85,7 +116,7 @@ export default function DashboardPage() {
 
   const fetchTopItems = async () => {
     try {
-        const result = await api.get("/analytics/top-selling-items?start_date=2026-04-01&end_date=2026-04-14");
+        const result = await api.get(`/analytics/top-selling-items?start_date=${istDate}&end_date=${istDate}`);
         if (result.data.success) {
             setTopItems(result.data.data);
         }
@@ -110,7 +141,7 @@ export default function DashboardPage() {
     <PageLayout>
       <PageHeader
         title="Dashboard"
-        description="Today's snapshot — Mar 14, 2026"
+        description={`Today's snapshot — ${istDate} ${istTime} IST`}
       />
 
       {/* Stats row */}
@@ -119,19 +150,19 @@ export default function DashboardPage() {
           title="Today's Revenue"
           value={`$${revenueKPIs?.total_revenue.toLocaleString()}`}
           icon={DollarSign}
-          trend={{ value: revenueKPIsYesterday?.total_revenue ? (revenueKPIs?.total_revenue / revenueKPIsYesterday?.total_revenue - 1) * 100 : 0, label: "vs yesterday" }}
+          trend={{ value: (revenueKPIs?.total_revenue / revenueKPIsYesterday?.total_revenue - 1) * 100, label: "vs yesterday" }}
         />
         <StatsCard
           title="Orders Today"
           value={revenueKPIs?.total_orders}
           icon={ShoppingCart}
-          trend={{ value: revenueKPIsYesterday?.total_orders ? (revenueKPIs?.total_orders / revenueKPIsYesterday?.total_orders - 1) * 100 : 0, label: "vs yesterday" }}
+          trend={{ value: (revenueKPIs?.total_orders / revenueKPIsYesterday?.total_orders - 1) * 100, label: "vs yesterday" }}
         />
         <StatsCard
           title="Avg Ticket"
           value={`$${revenueKPIs?.average_revenue_per_order.toFixed(2)}`}
           icon={Receipt}
-          trend={{ value: revenueKPIsYesterday?.average_revenue_per_order ? (revenueKPIs?.average_revenue_per_order / revenueKPIsYesterday?.average_revenue_per_order - 1) * 100 : 0, label: "vs yesterday" }}
+          trend={{ value: (revenueKPIs?.average_revenue_per_order / revenueKPIsYesterday?.average_revenue_per_order - 1) * 100, label: "vs yesterday" }}
         />
         <StatsCard
           title="Active Tables"
