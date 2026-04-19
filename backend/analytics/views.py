@@ -403,7 +403,7 @@ class RevenueOverTimeView(APIView):
 
             revenue_df.rename(columns={'created_at__date': 'date'}, inplace=True)
             
-            span = int(request.query_params.get('span', 7))
+            span = int(request.query_params.get('span', 30))
             alpha = float(request.query_params.get('alpha', 0.3))
             
             ewma_df = apply_dynamic_ewma(revenue_df, span=span, alpha=alpha)
@@ -453,14 +453,15 @@ class OrderVersusRevenueView(APIView):
                 total_orders=Count('id')
             )
 
-            data = {
-                item['created_at__date'].isoformat(): {
+            data = [
+                {
+                    "date": item['created_at__date'].isoformat(),
                     "index": i,
                     "date": item['created_at__date'].isoformat(),
                     "total_revenue": item['total_revenue'],
                     "total_orders": item['total_orders']
                 } for i, item in enumerate(order_revenue_data)
-            }
+            ]
             
             return standard_response(
                 success=True,
