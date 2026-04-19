@@ -8,7 +8,7 @@ class EmployeeRoleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = EmployeeRole
-        fields = ['role_display'] # Passing just the role_display from here
+        fields = ['role', 'role_display'] # Passing just the role_display from here
         # fields = ['id', 'role', 'role_display']
 
 
@@ -17,13 +17,17 @@ class EmployeeSerializer(serializers.ModelSerializer):
     gender_display = serializers.CharField(source='get_gender_display', read_only=True)
     id = serializers.ReadOnlyField()
     roles = EmployeeRoleSerializer(source='employeerole_set', many=True, read_only=True)
-    # role_ids = serializers.ListField(
-    #     child=serializers.IntegerField(),
-    #     required=False,
-    #     allow_empty=True
-    # )
-    role_ids = serializers.SerializerMethodField()
 
+    # 🔥 Changed here from ListField to support both read + write
+    role_ids = serializers.ListField(   # Changed here from SerializerMethodField to ListField
+        child=serializers.IntegerField(),
+        required=False,
+        allow_empty=True,
+        write_only=True                 # add this (so input ke liye use ho)
+    )
+
+    # 🔥 Added this for output
+    # role_ids_display = serializers.SerializerMethodField()   # add this
 
     password = serializers.CharField(write_only=True, required=False, style={'input_type': 'password'})
 
@@ -45,7 +49,8 @@ class EmployeeSerializer(serializers.ModelSerializer):
             'is_staff',
 
             'roles',
-            'role_ids',
+            'role_ids',          # write-only
+            # 'role_ids_display',  # add this (read-only)
 
             'password',
             'created_at',
@@ -100,11 +105,12 @@ class EmployeeSerializer(serializers.ModelSerializer):
                 EmployeeRole.objects.create(employee=instance, role=role)
 
         return instance
-    
-    def get_role_ids(self, obj):
-        return list(
-            obj.employeerole_set.values_list('role', flat=True)
-        )
+
+    # # 🔥 Added this method for output
+    # def get_role_ids_display(self, obj):   # add this
+    #     return list(
+    #         obj.employeerole_set.values_list('role', flat=True)
+    # )
 
     
 

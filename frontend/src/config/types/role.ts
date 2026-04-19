@@ -75,8 +75,7 @@ export interface Employee {
   is_working: boolean;
   is_staff: boolean;
 
-  roles: {"role_display": AppRole}[];
-
+  roles: {"role": number; "role_display": AppRole}[];
   created_at: string; // ISO datetime
   updated_at: string; // ISO datetime
 }
