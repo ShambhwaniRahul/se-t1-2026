@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import type { MenuItem } from "../../data/posData";
+import type { MenuItem } from "@/config/types/order";
 
 interface ItemGridProps {
   products: MenuItem[];
@@ -24,11 +24,6 @@ export function ItemGrid({ products, onSelect }: ItemGridProps) {
             <span className="text-base font-bold text-primary">
               ${product.price.toFixed(2)}
             </span>
-            {product.shortcut && (
-              <kbd className="hidden rounded border bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground lg:inline-block">
-                {product.shortcut}
-              </kbd>
-            )}
           </div>
         </button>
       ))}

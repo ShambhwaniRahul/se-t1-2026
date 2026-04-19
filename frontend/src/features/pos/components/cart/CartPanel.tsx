@@ -1,17 +1,17 @@
 import { DraftCart } from "./DraftCart";
 import { OrderedCart } from "./OrderedCart";
 import { CartSummary } from "./CartSummary";
-import type { DraftCartItem, OrderCartItem } from "../../data/posData";
+import type { DraftCartItem, OrderMenuItem } from "@/config/types/order";
 
 interface CartPanelProps {
-  orderedItems: OrderCartItem[];
+  orderedItems: OrderMenuItem[];
   draftItems: DraftCartItem[];
   subtotal: number;
   discountPercent: number;
   discountAmount: number;
   total: number;
-  onUpdateQuantity: (productId: string, delta: number) => void;
-  onRemove: (productId: string) => void;
+  onUpdateQuantity: (productId: number, delta: number) => void;
+  onRemove: (productId: number) => void;
   onApplyDiscount: (percent: number) => void;
 }
 
