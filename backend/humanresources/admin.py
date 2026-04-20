@@ -17,9 +17,9 @@ class EmployeeRoleAdmin(admin.ModelAdmin):
 
 @admin.register(SalarySlip)
 class SalarySlipAdmin(admin.ModelAdmin):
-    list_display = ['employee', 'date_paid', 'total_amount', 'transaction_no']
-    search_fields = ['employee__name', 'transaction_no']
-    list_filter = ['date_paid','total_amount',]
+    list_display = ('employee', 'month', 'net_pay', 'is_paid', 'created_at')
+    list_filter = ('month', 'is_paid')
+    search_fields = ('employee__first_name', 'employee__last_name', 'month')
     # sortable_by = ['total_amount', 'date_paid']
 
 @admin.register(SalarySlipBreakdown)

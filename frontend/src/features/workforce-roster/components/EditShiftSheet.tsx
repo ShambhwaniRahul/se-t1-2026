@@ -1,80 +1,116 @@
-import { useEffect, useState } from "react";
-import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useState, useEffect } from "react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import type { RosterEntry } from "../data/types";
+import { createShift, updateShift, deleteShift } from "../api/rosterApi";
+import { format } from "date-fns";
 
-interface EditShiftSheetProps {
+interface Props {
   open: boolean;
+  onOpenChange: (open: boolean) => void;
   entry: RosterEntry | null;
-  onClose: () => void;
-  onSave: (entryId: string, shiftStart: string, shiftEnd: string) => void;
+  currentDate: Date;
+  onSaved: () => void;
 }
 
-export function EditShiftSheet({ open, entry, onClose, onSave }: EditShiftSheetProps) {
+// Helper to extract "HH:MM" from an ISO string or time string
+const getHHMM = (timeString?: string | null) => {
+  if (!timeString) return "";
+  // If it's an ISO string (contains T)
+  if (timeString.includes('T')) {
+    const d = new Date(timeString);
+    return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+  }
+  // If it's already HH:MM:SS from backend
+  return timeString.substring(0, 5); 
+};
+
+export function EditShiftSheet({ open, onOpenChange, entry, currentDate, onSaved }: Props) {
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (entry) {
-      setStart(entry.shiftStart ?? "09:00");
-      setEnd(entry.shiftEnd ?? "17:00");
-      setError(null);
+    if (open && entry) {
+      setStart(getHHMM(entry.shift?.start_time) || "09:00");
+      setEnd(getHHMM(entry.shift?.end_time) || "17:00");
     }
-  }, [entry]);
+  }, [open, entry]);
 
-  const handleSubmit = () => {
-    if (!start || !end) {
-      setError("Both start and end times are required.");
-      return;
-    }
-    if (start >= end) {
-      setError("End time must be after start time.");
-      return;
-    }
-    if (entry) {
-      onSave(entry.id, start, end);
-      onClose();
+  const handleSave = async () => {
+    if (!entry) return;
+    setIsSubmitting(true);
+    
+    try {
+      // FIX: Backend 'Shifts' uses TimeField, so we just append ":00" for seconds
+      const startTimeStr = `${start}:00`;
+      const endTimeStr = `${end}:00`;
+
+      if (entry.shift?.id) {
+        await updateShift(entry.shift.id, startTimeStr, endTimeStr);
+        toast.success("Shift updated.");
+      } else {
+        await createShift(entry.employee_id, startTimeStr, endTimeStr);
+        toast.success("Shift assigned.");
+      }
+      onSaved();
+      onOpenChange(false);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to save shift.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  const handleClear = async () => {
+    if (!entry?.shift?.id) return;
+    setIsSubmitting(true);
+    try {
+      await deleteShift(entry.shift.id);
+      toast.success("Shift cleared.");
+      onSaved();
+      onOpenChange(false);
+    } catch (error) {
+      toast.error("Failed to clear shift. Check if attendance exists.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!entry) return null;
+
   return (
-    <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent side="right" className="w-full sm:max-w-md">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent>
         <SheetHeader>
           <SheetTitle>Edit Shift</SheetTitle>
           <SheetDescription>
-            {entry ? `Update shift times for ${entry.employeeName}.` : ""}
+            {entry.first_name} {entry.last_name} • {format(currentDate, "PPP")}
           </SheetDescription>
         </SheetHeader>
 
-        <div className="mt-6 space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="shift-start">Start Time</Label>
-            <Input
-              id="shift-start"
-              type="time"
-              value={start}
-              onChange={(e) => setStart(e.target.value)}
-            />
+        <div className="grid gap-6 py-6">
+          <div className="grid gap-2">
+            <Label>Start Time</Label>
+            <Input type="time" value={start} onChange={(e) => setStart(e.target.value)} disabled={isSubmitting} />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="shift-end">End Time</Label>
-            <Input
-              id="shift-end"
-              type="time"
-              value={end}
-              onChange={(e) => setEnd(e.target.value)}
-            />
+          <div className="grid gap-2">
+            <Label>End Time</Label>
+            <Input type="time" value={end} onChange={(e) => setEnd(e.target.value)} disabled={isSubmitting} />
           </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
 
-        <SheetFooter className="mt-6">
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit}>Save Shift</Button>
+        <SheetFooter className="mt-6 flex sm:justify-between">
+          <Button variant="destructive" onClick={handleClear} disabled={!entry.shift || isSubmitting}>
+            Clear Shift
+          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>Cancel</Button>
+            <Button onClick={handleSave} disabled={isSubmitting}>Save Shift</Button>
+          </div>
         </SheetFooter>
       </SheetContent>
     </Sheet>

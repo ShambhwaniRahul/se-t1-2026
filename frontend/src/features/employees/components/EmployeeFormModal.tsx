@@ -4,15 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ROLE_LABELS } from "@/types/roles";
-import type { Employee } from "@/config/types/role";
+import { ROLES, type Employee, type AppRole } from "@/config/types/role";
 import { toast } from "sonner";
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   employee?: Employee | null;
-  onSave: (data: Partial<Employee> & { password?: string }) => void;
+  // Add confirm_password to the type
+  onSave: (data: Partial<Employee> & { password?: string; confirm_password?: string }) => void; 
 }
 
 export function EmployeeFormModal({ open, onOpenChange, employee, onSave }: Props) {
@@ -20,9 +20,10 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSave }: Prop
   
   const [first_name, setFirstName] = useState("");
   const [last_name, setLastName] = useState("");
+  const [email, setEmail] = useState("");
   const [phone_no, setPhoneNo] = useState("");
   const [monthly_salary, setMonthlySalary] = useState<number | "">("");
-  const [roleStr, setRoleStr] = useState<string>("pos");
+  const [roleStr, setRoleStr] = useState<string>(ROLES.WAITER.value);
   const [is_working, setIsWorking] = useState<boolean>(true);
   
   // Password state (Only used for Creation)
@@ -33,10 +34,14 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSave }: Prop
     if (open) {
       setFirstName(employee?.first_name ?? "");
       setLastName(employee?.last_name ?? "");
+      setEmail(employee?.email ?? "");
       setPhoneNo(employee?.phone_no ?? "");
       setMonthlySalary(employee?.monthly_salary ?? "");
       setIsWorking(employee?.is_working ?? true);
-      setRoleStr(employee?.roles?.[0]?.role_display ?? "pos");
+      
+      // Map existing role directly since Django get_role_display() matches AppRole strings
+      const existingRole = employee?.roles?.[0]?.role_display ?? ROLES.WAITER.value;
+      setRoleStr(existingRole);
       
       // Reset passwords on open
       setPassword("");
@@ -49,6 +54,11 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSave }: Prop
     
     if (!first_name || !last_name) {
       toast.error("First Name and Last Name are required");
+      return;
+    }
+
+    if (!email) {
+      toast.error("Email is required");
       return;
     }
 
@@ -68,15 +78,14 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSave }: Prop
       ...(employee ? { id: employee.id } : {}),
       first_name,
       last_name,
+      email,
       phone_no,
       monthly_salary: Number(monthly_salary) || 0,
       is_working,
-      roles: [{ role_display: roleStr as any }],
-      ...( !isEdit ? { password } : {} ), // Only attach password if creating
+      roles: [{ role: 0, role_display: roleStr as AppRole }],
+      // Send BOTH passwords to the backend
+      ...( !isEdit ? { password, confirm_password: confirmPassword } : {} ),
     });
-    
-    onOpenChange(false);
-    toast.success(isEdit ? "Employee updated successfully" : "Employee created successfully");
   };
 
   return (
@@ -98,10 +107,20 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSave }: Prop
             </div>
           </div>
 
+          <div className="space-y-2">
+            <Label>Email Address</Label>
+            <Input 
+              type="email" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              required 
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Phone Number</Label>
-              <Input value={phone_no} onChange={(e) => setPhoneNo(e.target.value)} />
+              <Input value={phone_no} onChange={(e) => setPhoneNo(e.target.value)} required />
             </div>
             <div className="space-y-2">
               <Label>Monthly Salary ($)</Label>
@@ -120,8 +139,8 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSave }: Prop
               <Select value={roleStr} onValueChange={setRoleStr}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {Object.entries(ROLE_LABELS).map(([val, label]) => (
-                    <SelectItem key={val} value={val}>{label}</SelectItem>
+                  {Object.values(ROLES).map((r) => (
+                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

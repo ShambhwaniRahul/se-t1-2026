@@ -107,7 +107,7 @@ const App = () => (
                 <Route
                   path="settings/employees"
                   element={
-                    <ProtectedRoute allowedRoles={["Owner"]}>
+                    <ProtectedRoute allowedRoles={["Owner", "Manager"]}>
                       <EmployeeManagementPage />
                     </ProtectedRoute>
                   }
