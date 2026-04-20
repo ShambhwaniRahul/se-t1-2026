@@ -3,41 +3,12 @@ import { type DraftCartItem, type MenuItem, type OrderMenuItem} from "@/config/t
 import api from "@/lib/api";
 import { toast } from "sonner";
 
-
 export function useCart(tableId: string) {
+  const [orderId, setOrderId] = useState<number | null>(null);
   const [orderedItems, setOrderedItems] = useState<OrderMenuItem[]>([]);
   const [draftItems, setDraftItems] = useState<DraftCartItem[]>([]);
   const [discountPercent, setDiscountPercent] = useState(0);
   const [loading, setLoading] = useState(true);
-
-  // fetch current order by table numner
-  // useEffect(() => {
-  //   if (!tableId) return;
-  //   setLoading(true);
-  //   const tableOrders: OrderCartItem[] = ORDERED_ITEMS.filter(
-  //     (item) => item.table_id === tableId
-  //   );
-
-  //   setOrderedItems(tableOrders);
-  //   setLoading(false);
-  // }, [tableId]);
-      
-  // useEffect(() => {
-  //   async function fetchOrder() {
-  //     setLoading(true);
-  //     try {
-  //       const res = await fetch(`/tables/${tableId}/current-order`);
-  //       const data = await res.json();
-  //       setOrderedItems(data.items ?? []);
-  //     } catch (err) {
-  //       console.error("Failed to load order", err);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   }
-  
-  //   fetchOrder();
-  // }, [tableId]);
 
   useEffect(() => {
     fetchOrder();
@@ -46,13 +17,23 @@ export function useCart(tableId: string) {
   async function fetchOrder() {
     setLoading(true);
     try {
-      // const res = await api.get(`/pos/tables/${tableId}/current-order/`);
-      const data = res.data;
-      if (data.success) {
-        setOrderedItems(data.data.items ?? []);
+      const result = await api.get(`/pos/orders/dining-table/${tableId}/`);
+      if (result.data.success) {
+
+        const currentOrderId = result.data.data[0].id;
+        console.log("Current order for table", tableId, ":", currentOrderId);
+        setOrderId(currentOrderId);
+
+        const orderDetails = await api.get(`/pos/orders/${currentOrderId}/menuitems/`);
+        if (orderDetails.data.success) {
+          setOrderedItems(orderDetails.data.data ?? []);
+        } else {
+          toast.error("Failed to load order items!");
+        }
+       
       } else {
-        toast.error(data.message || "Failed to load current order!");
-        console.log("Failed to load current order", data.message);
+        toast.error(result.data.message || "Failed to load current order!");
+        console.log("Failed to load current order", result.data.message);
       }
     } catch (err) {
       toast.error("Failed to load current order!");
@@ -110,20 +91,17 @@ export function useCart(tableId: string) {
       console.log("Submitting draft items:", payload);
 
       let result = null
-      if (orderedItems.length == 0) {
+      if (!orderId) {
         result = await api.post("/pos/orders/", payload)
       }
 
       else {
-        const active_order_id = orderedItems[0].order;
-        result = await api.post(`/pos/orders/${active_order_id}/add-items/`, {items: payload.items});
+        result = await api.post(`/pos/orders/${orderId}/add-items/`, {items: payload.items});
       }
 
       if(result.data.success) {
         toast.success(result.data.message || "Order submitted successfully!");
-        const order_id = result.data.data.id;
-        const ordered_items = await api.get(`/pos/orders/${order_id}/menuitems/`);
-        setOrderedItems(prev => [...prev, ...ordered_items.data.data]);
+        await fetchOrder();
       } else {
         toast.error(result.data.message || "Failed to submit order items!");
         console.log("Failed to submit order items", result.data.message);
@@ -137,7 +115,7 @@ export function useCart(tableId: string) {
     } finally{
       setDraftItems([]);
     }
-  }, [draftItems, tableId]);
+  }, [draftItems, tableId, orderedItems, orderId]);
 
   const clearDraft = useCallback(() => {
     setDraftItems([]);

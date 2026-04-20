@@ -91,15 +91,45 @@ class PurchaseOrder(TimeStampedModel):
         )
 
     def total_cost(self):
-        """
-        Calculate total cost of the purchase by summing up the cost of each item
-        """
-        purchase_set = self.purchase_set()
-
         return self.delivery_cost + sum(
-            item.quantity * item.unit_price
-            for item in purchase_set
+            item["total"] for item in self.get_all_items()
         )
+
+    
+    def get_all_items(self):
+        """
+        Returns unified list of all items (perishable + non-perishable)
+        """
+    
+        items = []
+    
+        # 🔵 Perishable items
+        perishable_qs = self.orderedperishablepurchasesku_set.select_related("sku")
+    
+        for item in perishable_qs:
+            items.append({
+                "id": item.id,
+                "name": item.sku.name,
+                "quantity": item.quantity,
+                "unit_price": item.unit_price,
+                "total": item.quantity * item.unit_price,
+                "sku_type": "Perishable",
+            })
+    
+        # 🟠 Non-perishable items
+        non_perishable_qs = self.orderednonperishablepurchasesku_set.select_related("sku")
+    
+        for item in non_perishable_qs:
+            items.append({
+                "id": item.id,
+                "name": item.sku.name,
+                "quantity": item.quantity,
+                "unit_price": item.unit_price,
+                "total": item.quantity * item.unit_price,
+                "sku_type": "Non-Perishable",
+            })
+    
+        return items
 
 
 class OrderedPerishablePurchaseSKU(TimeStampedModel):

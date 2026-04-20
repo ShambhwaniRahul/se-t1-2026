@@ -1,5 +1,5 @@
 import api from "@/lib/api";
-import TableCard from "../components/TableCard";
+import { TableCard } from "../components/TableCard";
 import { useEffect, useState } from "react";
 import type { Table } from "@/config/types/order";
 import { toast } from "sonner";

@@ -23,7 +23,32 @@ export interface VendorPurchaseOrder {
   status: PurchaseOrderStatus;
   delivery_cost: number;
   file_location: string;
+  items_total: number;
   created_at: string;
   updated_at: string;
 }
 
+export type POStatus = "Pending" | "Received" | "Cancelled";
+
+export interface POLineItem {
+  id: string;
+  name: string;
+  sku: string;
+  quantity: number;
+  unit_price: number;
+  total: number;
+}
+
+
+export interface PurchaseOrder {
+  id: string;
+  poNumber: string;
+  vendor: Vendor;
+  orderDate: string;
+  expectedDelivery: string;
+  items: POLineItem[];
+  totalAmount: number;
+  status: POStatus;
+  notes?: string;
+  timeline: { date: string; status: POStatus; note: string }[];
+}

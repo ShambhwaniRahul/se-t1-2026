@@ -1,1 +1,1 @@
-export { default as WorkforceRosterPage } from "./pages/WorkforceRosterPage";
+export { WorkforceRosterPage } from "./pages/WorkforceRosterPage";
