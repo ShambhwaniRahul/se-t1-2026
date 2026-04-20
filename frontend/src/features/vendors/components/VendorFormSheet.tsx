@@ -3,15 +3,26 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
-  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
 } from "@/components/ui/sheet";
 import {
-  Form, FormField, FormItem, FormLabel, FormControl, FormMessage,
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import type { Vendor, VendorFormValues } from "../../../config/types/vendor";
+import api from "@/lib/api";
+import { toast } from "sonner";
 
 const vendorSchema = z.object({
   first_name: z.string().trim().min(1, "First name is required").max(50),
@@ -23,8 +34,12 @@ const vendorSchema = z.object({
     .string()
     .trim()
     .min(1, "GST number is required")
-    .refine((val) => val.startsWith("GSTIN"), { message: "Must start with 'GSTIN'" })
-    .refine((val) => val.length === 15, { message: "Must be exactly 15 characters (e.g. GSTIN1234567890)" }),
+    .refine((val) => val.startsWith("GSTIN"), {
+      message: "Must start with 'GSTIN'",
+    })
+    .refine((val) => val.length === 15, {
+      message: "Must be exactly 15 characters (e.g. GSTIN1234567890)",
+    }),
 });
 
 interface VendorFormSheetProps {
@@ -34,7 +49,12 @@ interface VendorFormSheetProps {
   onSubmit: (values: VendorFormValues) => void;
 }
 
-export function VendorFormSheet({ open, onOpenChange, vendor, onSubmit }: VendorFormSheetProps) {
+export function VendorFormSheet({
+  open,
+  onOpenChange,
+  vendor,
+  onSubmit,
+}: VendorFormSheetProps) {
   const isEditing = !!vendor;
 
   const form = useForm<VendorFormValues>({
@@ -71,10 +91,50 @@ export function VendorFormSheet({ open, onOpenChange, vendor, onSubmit }: Vendor
     }
   }, [vendor, open, form]);
 
-  const handleSubmit = (values: VendorFormValues) => {
-    onSubmit(values);
-    onOpenChange(false);
-  };
+
+
+  const handleVendorSubmit = async (values: VendorFormValues) => {
+  try {
+    let res;
+
+    if (isEditing && vendor?.id) {
+      // 🔥 UPDATE (PATCH)
+      res = await api.patch(`/procurement/vendors/${vendor.id}/`, values);
+    } else {
+      // 🔥 CREATE (POST)
+      res = await api.post("/procurement/vendors/", values);
+    }
+
+    if (res.data.success) {
+      toast.success(
+        isEditing
+          ? "Vendor updated successfully"
+          : "Vendor added successfully"
+      );
+
+      // 🔥 parent refresh
+      onSubmit(values);
+
+      // 🔥 close sheet
+      onOpenChange(false);
+
+      // 🔥 reset form
+      form.reset();
+    } else {
+      toast.error(res.data.message);
+    }
+  } catch (err: any) {
+    console.error(err);
+
+    if (err.response) {
+      toast.error(err.response.data?.message || "Operation failed");
+    } else {
+      toast.error("Network error");
+    }
+  }
+};
+
+
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -82,12 +142,17 @@ export function VendorFormSheet({ open, onOpenChange, vendor, onSubmit }: Vendor
         <SheetHeader>
           <SheetTitle>{isEditing ? "Edit Vendor" : "Add Vendor"}</SheetTitle>
           <SheetDescription>
-            {isEditing ? "Update vendor information below." : "Fill in the details to add a new vendor."}
+            {isEditing
+              ? "Update vendor information below."
+              : "Fill in the details to add a new vendor."}
           </SheetDescription>
         </SheetHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="mt-6 space-y-4">
+          <form
+            onSubmit={form.handleSubmit(handleVendorSubmit)}
+            className="mt-6 space-y-4"
+          >
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -95,7 +160,9 @@ export function VendorFormSheet({ open, onOpenChange, vendor, onSubmit }: Vendor
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>First Name</FormLabel>
-                    <FormControl><Input placeholder="Rajesh" {...field} /></FormControl>
+                    <FormControl>
+                      <Input placeholder="Rajesh" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -106,7 +173,9 @@ export function VendorFormSheet({ open, onOpenChange, vendor, onSubmit }: Vendor
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Last Name</FormLabel>
-                    <FormControl><Input placeholder="Kumar" {...field} /></FormControl>
+                    <FormControl>
+                      <Input placeholder="Kumar" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -119,7 +188,13 @@ export function VendorFormSheet({ open, onOpenChange, vendor, onSubmit }: Vendor
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Email</FormLabel>
-                  <FormControl><Input type="email" placeholder="vendor@example.com" {...field} /></FormControl>
+                  <FormControl>
+                    <Input
+                      type="email"
+                      placeholder="vendor@example.com"
+                      {...field}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -131,7 +206,9 @@ export function VendorFormSheet({ open, onOpenChange, vendor, onSubmit }: Vendor
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Contact No</FormLabel>
-                  <FormControl><Input placeholder="+91 98765 43210" {...field} /></FormControl>
+                  <FormControl>
+                    <Input placeholder="+91 98765 43210" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -143,7 +220,9 @@ export function VendorFormSheet({ open, onOpenChange, vendor, onSubmit }: Vendor
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Address</FormLabel>
-                  <FormControl><Textarea placeholder="Full address…" rows={3} {...field} /></FormControl>
+                  <FormControl>
+                    <Textarea placeholder="Full address…" rows={3} {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -155,17 +234,29 @@ export function VendorFormSheet({ open, onOpenChange, vendor, onSubmit }: Vendor
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>GST Number</FormLabel>
-                  <FormControl><Input placeholder="Ex: GSTIN1234567890" maxLength={15} {...field} /></FormControl>
+                  <FormControl>
+                    <Input
+                      placeholder="Ex: GSTIN1234567890"
+                      maxLength={15}
+                      {...field}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
             <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
                 Cancel
               </Button>
-              <Button type="submit">{isEditing ? "Update Vendor" : "Add Vendor"}</Button>
+              <Button type="submit">
+                {isEditing ? "Update Vendor" : "Add Vendor"}
+              </Button>
             </div>
           </form>
         </Form>

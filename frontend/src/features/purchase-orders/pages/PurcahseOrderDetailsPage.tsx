@@ -2,38 +2,112 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Package, Truck, XCircle, CheckCircle2 } from "lucide-react";
 import { PageLayout } from "@/components/shared/PageLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { StatusBadge, type StatusBadgeVariant } from "@/components/shared/StatusBadge";
+import {
+  StatusBadge,
+  type StatusBadgeVariant,
+} from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { MOCK_PURCHASE_ORDERS } from "../data/mockPurchaseOrders";
 import { PurchaseOrderItemsTable } from "../components/PurchaseOrderItemsTable";
-import type { POStatus } from "../data/types";
+import type { POStatus } from "@/config/types/vendor";
+import api from "@/lib/api";
+import { useState, useEffect } from "react";
+import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 
 const STATUS_VARIANT: Record<POStatus, StatusBadgeVariant> = {
-  draft: "muted",
-  ordered: "info",
-  delivered: "success",
-  cancelled: "destructive",
+  Pending: "warning",
+  Received: "success", // (Delivered UI name ho sakta hai, but backend = Received)
+  Cancelled: "destructive",
 };
 
 const STATUS_LABEL: Record<POStatus, string> = {
-  draft: "Draft",
-  ordered: "Ordered",
-  delivered: "Delivered",
-  cancelled: "Cancelled",
+  Pending: "Pending",
+  Received: "Delivered", // UI friendly label
+  Cancelled: "Cancelled",
 };
 
 export default function PurchaseOrderDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const po = MOCK_PURCHASE_ORDERS.find((p) => p.id === id);
 
-  if (!po) {
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [receiveOpen, setReceiveOpen] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
+
+  const [status, setStatus] = useState<POStatus>("Pending");
+
+  const markAsReceived = async () => {
+    try {
+      const res = await api.post(`/procurement/purchase-orders/${id}/receive/`);
+
+      if (res.data.success) {
+        toast.success(res.data.message || "Order marked as received");
+      } else {
+        toast.error(res.data.message || "Failed to mark as received");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to mark as received");
+    } finally {
+      fetchPurchaseOrder();
+      setReceiveOpen(false);
+    }
+  };
+
+  const cancelOrder = async () => {
+    try {
+      const res = await api.post(`/procurement/purchase-orders/${id}/cancel/`);
+
+      if (res.data.success) {
+        toast.success(res.data.message || "Order cancelled");
+      } else {
+        toast.error(res.data.message || "Failed to cancel order");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to cancel order");
+    } finally {
+      fetchPurchaseOrder();
+      setCancelOpen(false);
+    }
+  };
+
+  const fetchPurchaseOrder = async () => {
+    try {
+      setLoading(true);
+
+      const res = await api.get(`/procurement/purchase-orders/${id}/items`);
+
+      if (res.data.success) {
+        setItems(res.data.data.items);
+        setStatus(res.data.data.status);
+        toast.success(res.data.message);
+      } else {
+        toast.error(res.data.message);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPurchaseOrder();
+  }, [id]);
+
+  if (!items || items.length === 0) {
     return (
       <PageLayout>
-        <PageHeader title="Not Found" description="This purchase order does not exist" />
+        <PageHeader
+          title="Not Found"
+          description="This purchase order does not exist"
+        />
         <Button variant="outline" onClick={() => navigate("/purchase-orders")}>
           <ArrowLeft className="h-4 w-4 mr-1" /> Back
         </Button>
@@ -41,22 +115,32 @@ export default function PurchaseOrderDetailsPage() {
     );
   }
 
+  const totalAmount = items.reduce((sum, i) => sum + i.total, 0);
+
   const action = (label: string) => () => {
     toast.success(`Order ${label.toLowerCase()}`);
     navigate("/purchase-orders");
   };
 
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <PageLayout>
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/purchase-orders")}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate("/purchase-orders")}
+        >
           <ArrowLeft className="h-4 w-4" />
         </Button>
+
         <div className="flex-1">
           <PageHeader
-            title={po.poNumber}
-            description={`Order to ${po.vendor.name}`}
-            actions={<StatusBadge variant={STATUS_VARIANT[po.status]}>{STATUS_LABEL[po.status]}</StatusBadge>}
+            title={`PO Items (${id})`}
+            description={`Total items: ${items.length}`}
           />
         </div>
       </div>
@@ -65,79 +149,119 @@ export default function PurchaseOrderDetailsPage() {
         <div className="lg:col-span-2 space-y-6">
           {/* Items */}
           <Card>
-            <CardHeader><CardTitle>Items Ordered</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle>Items Ordered</CardTitle>
+            </CardHeader>
             <CardContent>
-              <PurchaseOrderItemsTable items={po.items} />
+              <PurchaseOrderItemsTable items={items} />
             </CardContent>
           </Card>
 
-          {/* Timeline */}
+          {/* Simple Summary instead of timeline */}
           <Card>
-            <CardHeader><CardTitle>Order Timeline</CardTitle></CardHeader>
-            <CardContent>
-              <ol className="relative border-l border-border ml-3 space-y-4">
-                {po.timeline.map((entry, i) => (
-                  <li key={i} className="ml-6">
-                    <span className="absolute -left-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary ring-4 ring-background" />
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1">
-                      <span className="text-sm font-medium">{STATUS_LABEL[entry.status]}</span>
-                      <span className="text-xs text-muted-foreground">— {entry.date}</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{entry.note}</p>
-                  </li>
-                ))}
-              </ol>
+            <CardHeader>
+              <CardTitle>Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Total Items</span>
+                <span>{items.length}</span>
+              </div>
+
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Total Amount</span>
+                <span>₹{totalAmount.toFixed(2)}</span>
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Sidebar info */}
+        {/* Sidebar */}
         <div className="space-y-6">
           <Card>
-            <CardHeader><CardTitle>Vendor</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle>Item Breakdown</CardTitle>
+            </CardHeader>
+
             <CardContent className="space-y-2 text-sm">
-              <p className="font-medium">{po.vendor.name}</p>
-              <p className="text-muted-foreground">{po.vendor.contact}</p>
-              <p className="text-muted-foreground">{po.vendor.email}</p>
-              <p className="text-muted-foreground">{po.vendor.phone}</p>
+              {items.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex justify-between border-b pb-1"
+                >
+                  <span>{item.name}</span>
+                  <span>₹{item.total}</span>
+                </div>
+              ))}
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader><CardTitle>Order Info</CardTitle></CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Order Date</span><span>{po.orderDate}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Expected Delivery</span><span>{po.expectedDelivery}</span></div>
-              <Separator />
-              <div className="flex justify-between font-semibold"><span>Total</span><span>${po.totalAmount.toLocaleString()}</span></div>
-            </CardContent>
-          </Card>
+          {/* <div className="flex flex-col gap-2">
+            {items?.length > 0 && (
+              <>
+                <Button onClick={()=>{setReceiveOpen(true)}} className="cursor-pointer">
+                  <Package className="h-4 w-4 mr-1" />
+                  Mark as Received
+                </Button>
 
-          {/* Action buttons based on status */}
+                <Button variant="destructive" onClick={()=>{setCancelOpen(true)}} className="cursor-pointer">
+                  <XCircle className="h-4 w-4 mr-1" />
+                  Cancel Order
+                </Button>
+              </>
+            )}
+          </div> */}
           <div className="flex flex-col gap-2">
-            {po.status === "draft" && (
-              <Button onClick={action("Submitted")}>
-                <Package className="h-4 w-4 mr-1" /> Mark as Ordered
+            {status === "Pending" && (
+              <>
+                <Button onClick={() => setReceiveOpen(true)}>
+                  <Package className="h-4 w-4 mr-1" />
+                  Mark as Received
+                </Button>
+
+                <Button
+                  variant="destructive"
+                  onClick={() => setCancelOpen(true)}
+                >
+                  <XCircle className="h-4 w-4 mr-1" />
+                  Cancel Order
+                </Button>
+              </>
+            )}
+
+            {status === "Received" && (
+              <Button>
+                <CheckCircle2 className="h-4 w-4 mr-1" />
+                Download Receipt
               </Button>
             )}
-            {po.status === "ordered" && (
-              <Button onClick={action("Delivered")} variant="default">
-                <Truck className="h-4 w-4 mr-1" /> Mark as Delivered
-              </Button>
-            )}
-            {(po.status === "draft" || po.status === "ordered") && (
-              <Button variant="destructive" onClick={action("Cancelled")}>
-                <XCircle className="h-4 w-4 mr-1" /> Cancel Order
-              </Button>
-            )}
-            {po.status === "delivered" && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <CheckCircle2 className="h-4 w-4 text-success" /> Order complete
+
+            {status === "Cancelled" && (
+              <div className="text-sm text-destructive font-medium">
+                Order has been cancelled
               </div>
             )}
           </div>
         </div>
       </div>
+      <ConfirmationDialog
+        open={!!receiveOpen}
+        onOpenChange={(o) => !o && setReceiveOpen(false)}
+        title="Mark as Received"
+        description={`Are you sure you want to mark this order as received?`}
+        confirmLabel="Mark as Received"
+        variant="default"
+        onConfirm={markAsReceived}
+      />
+      <ConfirmationDialog
+        open={!!cancelOpen}
+        onOpenChange={(o) => !o && setCancelOpen(false)}
+        title="Cancel Order"
+        description={`Are you sure you want to cancel this order ?`}
+        confirmLabel="Cancel Order"
+        variant="destructive"
+        onConfirm={cancelOrder}
+      />
     </PageLayout>
   );
 }
