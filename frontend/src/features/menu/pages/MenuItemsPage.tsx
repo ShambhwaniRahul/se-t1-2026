@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, ScanSearch } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { DataTable, type Column } from "@/components/shared/DataTable";
@@ -13,14 +13,17 @@ import { toast } from "sonner";
 import { mapToMenuItem, mapToApiPayload } from "../utils/mapper";
 import api from "@/lib/api";
 
+// Sequential messages displayed during the 20s data synchronization phase
+const PROCESSING_STEPS = [
+  "Fetching menu catalogue...",
+  "Syncing item categories...",
+  "Updating pricing models...",
+  "Resolving dietary tags...",
+  "Finalizing menu data..."
+];
+
 export default function MenuItemsPage() {
-
-  useEffect(() => {
-    fetchItems();
-  }, []);
-
   const [items, setItems] = useState<MenuItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("all");
   const [dietFilter, setDietFilter] = useState("all");
@@ -29,6 +32,28 @@ export default function MenuItemsPage() {
   const [editing, setEditing] = useState<MenuItem | null>(null);
 
   const [deleteTarget, setDeleteTarget] = useState<MenuItem | null>(null);
+
+  // States for handling the extended AI/data processing UI
+  const [isProcessing, setIsProcessing] = useState(true);
+  const [processStep, setProcessStep] = useState(0);
+
+  // Cycles through processing messages every 4 seconds to cover the long response time
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isProcessing) {
+      setProcessStep(0);
+      interval = setInterval(() => {
+        setProcessStep((prev) => 
+          prev < PROCESSING_STEPS.length - 1 ? prev + 1 : prev
+        );
+      }, 4000);
+    }
+    return () => clearInterval(interval);
+  }, [isProcessing]);
+
+  useEffect(() => {
+    fetchItems();
+  }, []);
 
   const filtered = useMemo(() => {
     let result = items;
@@ -77,13 +102,14 @@ export default function MenuItemsPage() {
 
   const fetchItems = async () => {
     try {
+      setIsProcessing(true);
       const res = await api.get("/pos/menuitems/");
       const mapped = res.data.data.map(mapToMenuItem);
       setItems(mapped);
     } catch (err) {
       toast.error("Failed to load menu items");
     } finally {
-      setLoading(false);
+      setIsProcessing(false);
     }
   };
 
@@ -122,6 +148,19 @@ export default function MenuItemsPage() {
 
   return (
     <div className="space-y-6 p-6">
+      {/* Full-screen blocking overlay active during long data synchronization */}
+      {isProcessing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center p-8 bg-card rounded-xl shadow-2xl border text-center max-w-sm w-full mx-4">
+            <ScanSearch className="h-12 w-12 text-primary animate-pulse mb-6" />
+            <h3 className="text-xl font-semibold mb-2">Loading Menu</h3>
+            <p className="text-sm text-muted-foreground animate-pulse h-6">
+              {PROCESSING_STEPS[processStep]}
+            </p>
+          </div>
+        </div>
+      )}
+
       <PageHeader
         title="Menu Items"
         description="Manage your restaurant menu catalogue."
