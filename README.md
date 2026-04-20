@@ -105,3 +105,4 @@ If you wish to test the AI capabilities (like scanning vendor invoices), you mus
    ```bash
    python main.py
    ```
+5. To test the OCR service upload a vendor invoice pdf in an open purchase order to mark as closed. Visit http://localhost:5173/purchase-orders/16.
