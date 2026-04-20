@@ -19,6 +19,7 @@ import {
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { UpdateQuantityModal } from "../components/UpdateQuantityModal";
+import { PerishableSkuModal } from "../components/PerishableSkuModal";
 
 const STOCK_STATUS_MAP: Record<
   string,
@@ -44,6 +45,7 @@ export default function InventoryPage() {
   const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Ingredient | null>(null);
   const [updateTarget, setUpdateTarget] = useState<Ingredient | null>(null);
+  const [skuModalOpen, setSkuModalOpen] = useState(false);
 
   // 🔥 FETCH BASED ON TYPE
   const fetchInventory = async (selectedType = type) => {
@@ -154,6 +156,26 @@ export default function InventoryPage() {
     return base;
   }, [type]);
 
+  const handleCreateSKU = async (data: any) => {
+    try {
+      const res = await api.post("/inventory/perishable-skus/", data);
+
+      if (res.data.success) {
+        console.log("Data: ",res.data);
+        
+        toast.success(res.data.message || "SKU created successfully");
+        // optionally refresh SKU list
+      } else {
+        console.log("Data: ",res.data.message)
+        toast.error(res.data.message || "Failed to create SKU");
+      }
+    } catch {
+      console.log("✅✅✅Reached bloody here!");
+      
+      toast.error("Something went wrong");
+    }
+  };
+
   // 🖊 EDIT
   const handleUpdateQuantity = async (quantity: number) => {
     if (!updateTarget) return;
@@ -172,7 +194,7 @@ export default function InventoryPage() {
           { quantity },
         );
       }
-      console.log("✅✅Res: ",res.data);
+      // console.log("✅✅Res: ", res.data);
       if (res.data.success) {
         toast.success(res.data.message || "Quantity updated");
 
@@ -180,7 +202,7 @@ export default function InventoryPage() {
       } else {
         toast.error(res.data.message || "Update failed");
       }
-    } catch { 
+    } catch {
       toast.error("Failed to update");
     } finally {
       setUpdateTarget(null);
@@ -230,9 +252,9 @@ export default function InventoryPage() {
         title="Inventory"
         description={`${ingredients.length} items`}
         actions={
-          <Button>
+          <Button onClick={() => setSkuModalOpen(true)}>
             <Plus className="mr-1 h-4 w-4" />
-            Add
+            SKU
           </Button>
         }
       />
@@ -283,6 +305,14 @@ export default function InventoryPage() {
         item={updateTarget}
         onSubmit={handleUpdateQuantity}
       />
+    <PerishableSkuModal
+  open={skuModalOpen}
+  onOpenChange={setSkuModalOpen}
+  onSubmit={handleCreateSKU}
+/>
+
     </PageLayout>
+
+    
   );
 }
