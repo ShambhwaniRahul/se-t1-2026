@@ -15,3 +15,16 @@ export interface Vendor {
   email: string;
   phone: string;
 }
+
+export interface PurchaseOrder {
+  id: string;
+  poNumber: string;
+  vendor: Vendor;
+  orderDate: string;
+  expectedDelivery: string;
+  items: POLineItem[];
+  totalAmount: number;
+  status: POStatus;
+  notes?: string;
+  timeline: { date: string; status: POStatus; note: string }[];
+}

@@ -7,11 +7,11 @@ const statusBadgeVariants = cva(
     variants: {
       variant: {
         default: "bg-secondary text-secondary-foreground",
-        success: "bg-success/15 text-success",
-        warning: "bg-warning/15 text-warning",
+        success:  "bg-green-100 text-green-700",
+        warning: "bg-yellow-100 text-yellow-800",
         destructive: "bg-destructive/15 text-destructive",
-        info: "bg-info/15 text-info",
-        muted: "bg-muted text-muted-foreground",
+        info: "bg-blue-100 text-blue-700",
+        muted: "bg-gray-50 text-gray-500",
       },
     },
     defaultVariants: {

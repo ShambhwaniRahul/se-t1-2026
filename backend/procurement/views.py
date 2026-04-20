@@ -390,7 +390,7 @@ class PurchaseOrderItemsView(APIView):
         return standard_response(
             success=True,
             message="Purchase order items retrieved successfully.",
-            data=po.get_all_items(),
+            data={"status": po.status,"items": po.get_all_items()},
             status_code=status.HTTP_200_OK
         )
 
