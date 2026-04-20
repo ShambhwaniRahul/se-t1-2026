@@ -3,7 +3,7 @@ import { PageLayout } from "@/components/shared/PageLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatsCard } from "@/components/shared/StatsCard";
 import { DataTable, type Column } from "@/components/shared/DataTable";
-import { DollarSign, Clock, TrendingUp, Loader2 } from "lucide-react";
+import { DollarSign, Clock, TrendingUp, ScanSearch } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 // Ensure this path correctly points to your API file based on your folder structure
@@ -69,6 +69,15 @@ export default function PayrollPage() {
 
   return (
     <PageLayout>
+      {isLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center p-8 bg-card rounded-xl shadow-2xl border text-center max-w-sm w-full mx-4">
+            <ScanSearch className="h-12 w-12 text-primary animate-pulse mb-6" />
+            <h3 className="text-xl font-semibold">Loading Payroll</h3>
+          </div>
+        </div>
+      )}
+
       <PageHeader 
         title="Payroll History" 
         description={`${month} payroll summary`}
@@ -92,17 +101,11 @@ export default function PayrollPage() {
       </div>
 
       <div className="rounded-md border bg-card">
-        {isLoading ? (
-          <div className="flex justify-center items-center p-12">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : (
-          <DataTable 
-            columns={columns} 
-            data={history} 
-            keyExtractor={(r) => r.id.toString()} 
-          />
-        )}
+        <DataTable 
+          columns={columns} 
+          data={history} 
+          keyExtractor={(r) => r.id.toString()} 
+        />
       </div>
     </PageLayout>
   );

@@ -15,8 +15,7 @@ import {
   type TopSellingItems,
   type RecentOrders,
 } from "@/features/dashboard/data/dashboardData";
-import { DollarSign, ShoppingCart, Receipt, UtensilsCrossed, IndianRupee, IndianRupeeIcon } from "lucide-react";
-
+import { DollarSign, ShoppingCart, Receipt, UtensilsCrossed, IndianRupee, IndianRupeeIcon, ScanSearch } from "lucide-react";
 
 export default function DashboardPage() {
   const [revenueKPIs, setRevenueKPIs] = useState<RevenueKPIs | null>(null);
@@ -27,6 +26,9 @@ export default function DashboardPage() {
   const [topItems, setTopItems] = useState<TopSellingItems[]>([]);
   const [recentOrders, setRecentOrders] = useState<RecentOrders[]>([]);
   
+  // State for handling the static AI processing UI
+  const [isProcessing, setIsProcessing] = useState(true);
+
   const now = new Date();
 
   // 1) Current date in IST (YYYY-MM-DD)
@@ -58,12 +60,20 @@ export default function DashboardPage() {
   }).format(twoWeeksBack);
 
   useEffect(() => {
-    fetchRevenueKPIs();
-    fetchActiveTables();
-    fetchRevenueTrend();
-    fetchSalesByCategory();
-    fetchTopItems();
-    fetchRecentOrders();
+    const fetchAllData = async () => {
+      setIsProcessing(true);
+      await Promise.all([
+        fetchRevenueKPIs(),
+        fetchActiveTables(),
+        fetchRevenueTrend(),
+        fetchSalesByCategory(),
+        fetchTopItems(),
+        fetchRecentOrders()
+      ]);
+      setIsProcessing(false);
+    };
+
+    fetchAllData();
   }, []);
 
   const fetchRevenueKPIs = async () => {
@@ -139,6 +149,19 @@ export default function DashboardPage() {
 
   return (
     <PageLayout>
+      {/* Full-screen blocking overlay active during data fetch/processing */}
+      {isProcessing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center p-8 bg-card rounded-xl shadow-2xl border text-center max-w-sm w-full mx-4">
+            <ScanSearch className="h-12 w-12 text-primary animate-pulse mb-6" />
+            <h3 className="text-xl font-semibold mb-2">Loading Dashboard</h3>
+            <p className="text-sm text-muted-foreground animate-pulse h-6">
+              Analyzing insights
+            </p>
+          </div>
+        </div>
+      )}
+
       <PageHeader
         title="Dashboard"
         description={`Today's snapshot — ${istDate} ${istTime} IST`}
@@ -148,27 +171,27 @@ export default function DashboardPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="Today's Revenue"
-          value={`₹ ${revenueKPIs?.total_revenue.toLocaleString()}`}
+          value={`₹ ${revenueKPIs?.total_revenue?.toLocaleString() || 0}`}
           icon={IndianRupee}
           trend={{ value: (revenueKPIs?.total_revenue / revenueKPIsYesterday?.total_revenue - 1) * 100, label: "vs yesterday" }}
         />
         <StatsCard
           title="Orders Today"
-          value={revenueKPIs?.total_orders}
+          value={revenueKPIs?.total_orders || 0}
           icon={ShoppingCart}
           trend={{ value: (revenueKPIs?.total_orders / revenueKPIsYesterday?.total_orders - 1) * 100, label: "vs yesterday" }}
         />
         <StatsCard
           title="Avg Ticket"
-          value={`₹ ${revenueKPIs?.average_revenue_per_order.toFixed(0)}`}
+          value={`₹ ${revenueKPIs?.average_revenue_per_order?.toFixed(0) || 0}`}
           icon={IndianRupee}
           trend={{ value: (revenueKPIs?.average_revenue_per_order / revenueKPIsYesterday?.average_revenue_per_order - 1) * 100, label: "vs yesterday" }}
         />
         <StatsCard
           title="Active Tables"
-          value={`${activeTables?.active_tables} / ${activeTables?.total_tables}`}
+          value={`${activeTables?.active_tables || 0} / ${activeTables?.total_tables || 0}`}
           icon={UtensilsCrossed}
-          description={`${Math.round((activeTables?.active_tables / activeTables?.total_tables) * 100)}% occupancy`}
+          description={`${Math.round(((activeTables?.active_tables || 0) / (activeTables?.total_tables || 1)) * 100)}% occupancy`}
         />
       </div>
 
