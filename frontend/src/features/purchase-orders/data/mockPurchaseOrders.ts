@@ -1,18 +1,42 @@
-import type { PurchaseOrder, Vendor } from "./types";
+import type { VendorPurchaseOrder } from "@/config/types/vendor";
+import type { Vendor } from "@/config/types/vendor";
+
 
 export const VENDORS: Vendor[] = [
-  { id: "v1", name: "FreshFarms Co.", contact: "Sarah Lin", email: "sarah@freshfarms.co", phone: "+1 555-0101" },
-  { id: "v2", name: "Metro Supplies", contact: "James Park", email: "james@metrosupplies.com", phone: "+1 555-0202" },
-  { id: "v3", name: "Ocean Catch Ltd.", contact: "Maria Santos", email: "maria@oceancatch.com", phone: "+1 555-0303" },
-  { id: "v4", name: "Baker's Best", contact: "Tom Hughes", email: "tom@bakersbest.com", phone: "+1 555-0404" },
-  { id: "v5", name: "SpiceWorld Inc.", contact: "Priya Sharma", email: "priya@spiceworld.com", phone: "+1 555-0505" },
+  { id: 1, first_name: "FreshFarms Co.", last_name: "sjcd", email: "sarah@freshfarms.co", contact_no: "+1 555-0101",address: "123 Long Farm", gst_no: "GST123456" },
+  { id: 2, first_name: "Metro Supplies", last_name: "", email: "james@metrosupplies.com", contact_no: "+1 555-0202", address: "456 Business Ave", gst_no: "GST789012" },
+  { id: 3, first_name: "Ocean Catch Ltd.", last_name: "", email: "maria@oceancatch.com", contact_no: "+1 555-0303", address: "789 Seafood Blvd", gst_no: "GST345678" },
+  { id: 4, first_name: "Baker's Best", last_name: "", email: "tom@bakersbest.com", contact_no: "+1 555-0404", address: "321 Bakery St", gst_no: "GST901234" },
+  { id: 5, first_name: "SpiceWorld Inc.", last_name: "", email: "priya@spiceworld.com", contact_no: "+1 555-0505", address: "654 Spice Rd", gst_no: "GST567890" },
 ];
 
-export const MOCK_PURCHASE_ORDERS: PurchaseOrder[] = [
+// export interface Vendor {
+//   id: number;
+//   first_name: string;
+//   last_name: string;
+//   email: string;
+//   contact_no: string;
+//   address: string;
+//   gst_no: string;
+// }
+
+// export interface VendorPurchaseOrder {
+//   id: number;
+//   vendor: number;
+//   vendor_name: string;
+//   purchase_type: PurchaseOrderType;
+//   purchase_date: string;
+//   status: PurchaseOrderStatus;
+//   delivery_cost: number;
+//   file_location: string;
+//   created_at: string;
+//   updated_at: string;
+// }
+
+export const MOCK_PURCHASE_ORDERS: VendorPurchaseOrder[] = [
   {
-    id: "po-1",
-    poNumber: "PO-2026-001",
-    vendor: VENDORS[0],
+    id: 1,
+    vendor: VENDORS[0].id,
     orderDate: "2026-03-15",
     expectedDelivery: "2026-03-18",
     items: [
@@ -21,7 +45,7 @@ export const MOCK_PURCHASE_ORDERS: PurchaseOrder[] = [
       { id: "li-3", name: "Onions (kg)", quantity: 25, unitPrice: 2.8, total: 70 },
     ],
     totalAmount: 305,
-    status: "delivered",
+    status: "pending",
     timeline: [
       { date: "2026-03-15", status: "draft", note: "Order drafted" },
       { date: "2026-03-15", status: "ordered", note: "Submitted to vendor" },
