@@ -9,7 +9,7 @@ import {
 } from "@/components/shared/StatusBadge";
 import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, ScanSearch } from "lucide-react";
 import { getPerishableStatus } from "../utils/inventoryData";
 import type { Ingredient } from "../data/type";
 import {
@@ -169,6 +169,15 @@ export default function InventoryPage() {
 
   return (
     <PageLayout>
+      {loading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center p-8 bg-card rounded-xl shadow-2xl border text-center max-w-sm w-full mx-4">
+            <ScanSearch className="h-12 w-12 text-primary animate-pulse mb-6" />
+            <h3 className="text-xl font-semibold">Loading Inventory</h3>
+          </div>
+        </div>
+      )}
+
       <PageHeader
         title="Inventory"
         description={`${ingredients.length} items`}
