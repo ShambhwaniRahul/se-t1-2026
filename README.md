@@ -90,7 +90,7 @@ The project is structured into separate directories for the backend API, the fro
    ```
    *The frontend application will now be running at `http://localhost:5173/`. Open this URL in your browser to access Coherence.*
 
-### Step 3: AI Microservices Setup (OCR & Marketing)
+### Step 3: AI Microservices Setup (OCR)
 If you wish to test the AI capabilities (like scanning vendor invoices), you must run the microservices.
 1. Open a new terminal and navigate to the desired service (e.g., `Invoice_OCR`):
    ```bash
