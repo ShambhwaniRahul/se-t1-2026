@@ -2,6 +2,7 @@ from django.db import models
 from django.core.validators import RegexValidator
 from core.models import TimeStampedModel
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
+from datetime import datetime, date, timedelta
 
 
 
@@ -133,28 +134,24 @@ class EmployeeRole(models.Model):
 
 class SalarySlip(TimeStampedModel):
     """
-    Table to record salary slip details for an employee, including the transaction reference and total amount paid.
+    Stores finalized monthly salary payments.
     """
-    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, db_column="employee_id")
-    date_paid = models.DateField(auto_now_add=True, db_column="date_paid")
-    total_amount = models.FloatField(db_column="total_amount")
-    transaction_no = models.CharField(
-                    max_length=100, 
-                    validators=[
-                        RegexValidator(
-                            regex=r'^Tr[0-9]+',
-                            message='Transaction number must start with "Tr" followed by a number'
-                        )
-                    ],
-                    unique=True,
-                    db_column="transaction_no"
-                    )
-    
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='salary_slips')
+    month = models.CharField(max_length=7)  # YYYY-MM
+    base_salary = models.FloatField()
+    overtime_hours = models.FloatField(default=0)
+    bonuses = models.FloatField(default=0)
+    deductions = models.FloatField(default=0)
+    net_pay = models.FloatField()
+    is_paid = models.BooleanField(default=True)
+
     class Meta:
-        unique_together = ("employee", "transaction_no")
+        verbose_name = "Salary Slip"
+        verbose_name_plural = "Salary Slips"
+        # unique_together = ('employee', 'month')
 
     def __str__(self):
-        return f"{self.employee.full_name} received {self.total_amount} on {self.date_paid}"
+        return f"{self.employee.full_name} - {self.month}"
     
 
 class SalarySlipBreakdown(TimeStampedModel):
@@ -192,11 +189,22 @@ class Shifts(TimeStampedModel):
         """
         Under the scanner
         """
-        return self.end_time - self.start_time
+        if self.start_time and self.end_time:
+            # Combine the time with today's date so Python can do the math
+            start_dt = datetime.combine(date.today(), self.start_time)
+            end_dt = datetime.combine(date.today(), self.end_time)
 
+            # Handle overnight shifts (if someone works past midnight)
+            if self.end_time < self.start_time:
+                end_dt += timedelta(days=1)
+
+            return end_dt - start_dt
+        return None
     class Meta:
         verbose_name = "Shift"
         verbose_name_plural = "Shifts"
 
     def __str__(self):
         return f"{self.employee.full_name}"     
+    
+

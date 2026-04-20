@@ -30,25 +30,39 @@ class MenuItemStatusLog(TimeStampedModel):
 class AttendanceLog(TimeStampedModel):
     """
     Logs to store the attendance of the employee.
-    Again, for keeping check on the efficiency of the employees.
     """
     shift = models.ForeignKey(Shifts, on_delete=models.CASCADE, db_column="shift_id")
     entry_time = models.DateTimeField(db_column="entry_time")
-    exit_time = models.DateTimeField(db_column="exit_time")
+    # FIX: Allow exit_time to be null for when they first check in!
+    exit_time = models.DateTimeField(db_column="exit_time", null=True, blank=True)
     
 
     @property
     def entry_delay(self):
         """Delay in entering after shift start"""
+        if not self.entry_time or not self.shift.start_time:
+            return timedelta(0)
+            
         shift_start = datetime.combine(self.entry_time.date(), self.shift.start_time)
-
+        
+        # FIX: Make shift_start timezone-aware so Python can safely do the math
+        if self.entry_time.tzinfo:
+            shift_start = shift_start.replace(tzinfo=self.entry_time.tzinfo)
+            
         delay = self.entry_time - shift_start
         return delay if delay > timedelta(0) else timedelta(0)
     
     @property
     def early_exit(self):
         """Leaving before shift end"""
+        if not self.exit_time or not self.shift.end_time:
+            return timedelta(0)
+            
         shift_end = datetime.combine(self.entry_time.date(), self.shift.end_time)
+        
+        # FIX: Make shift_end timezone-aware so Python can safely do the math
+        if self.exit_time.tzinfo:
+            shift_end = shift_end.replace(tzinfo=self.exit_time.tzinfo)
 
         # Handle overnight shift
         if self.shift.end_time < self.shift.start_time:
@@ -60,12 +74,14 @@ class AttendanceLog(TimeStampedModel):
     @property
     def completed_work_hours(self):
         """Actual worked duration"""
+        # FIX: Only calculate if they have actually checked out
+        if not self.exit_time or not self.entry_time:
+            return timedelta(0)
         return self.exit_time - self.entry_time
-
 
     class Meta:
         verbose_name = "Attendance Log"
         verbose_name_plural = "Attendance Logs"
 
     def __str__(self):
-        return f"{self.shift.employee.full_name} worked for {self.completed_work_hours} hours today!"
+        return f"{self.shift.employee.full_name} Attendance"
