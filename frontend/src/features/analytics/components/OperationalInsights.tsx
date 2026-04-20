@@ -2,12 +2,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, Star, Clock } from "lucide-react";
 import { PEAK_HOURS, TOP_ITEMS, LOW_ITEMS, STAFF_EFFICIENCY } from "../data/mockRevenueData";
+import type { PerformingItems } from "../data/types";
+
 import { cn } from "@/lib/utils";
 
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const dayKeys = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
+interface OperationalInsightsProps {
+  topItems: PerformingItems[];
+  leastItems: PerformingItems[];
+}
 
-export function OperationalInsights() {
+export function OperationalInsights({ topItems, leastItems }: OperationalInsightsProps) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       
@@ -19,17 +23,14 @@ export function OperationalInsights() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {TOP_ITEMS.map((item) => (
+          {topItems.map((item) => (
             <div key={item.name} className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium">{item.name}</p>
-                <p className="text-xs text-muted-foreground">{item.orders} orders</p>
+                <p className="text-xs text-muted-foreground">{item.sales_count} orders</p>
               </div>
               <div className="text-right">
-                <p className="text-sm font-medium">${item.revenue.toLocaleString()}</p>
-                <Badge variant="secondary" className="text-[10px] text-success">
-                  +{item.trend}%
-                </Badge>
+                <p className="text-sm font-medium">${item.total_revenue}</p>
               </div>
             </div>
           ))}
@@ -44,17 +45,14 @@ export function OperationalInsights() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {LOW_ITEMS.map((item) => (
+          {leastItems.map((item) => (
             <div key={item.name} className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium">{item.name}</p>
-                <p className="text-xs text-muted-foreground">{item.orders} orders</p>
+                <p className="text-xs text-muted-foreground">{item.sales_count} orders</p>
               </div>
               <div className="text-right">
-                <p className="text-sm font-medium">${item.revenue.toLocaleString()}</p>
-                <Badge variant="secondary" className="text-[10px] text-destructive">
-                  {item.trend}%
-                </Badge>
+                <p className="text-sm font-medium">${item.total_revenue}</p>
               </div>
             </div>
           ))}

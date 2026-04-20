@@ -7,7 +7,7 @@ import { RevenueChart } from "../components/RevenueChart";
 import { CategoryBreakdownChart } from "../components/CategoryBreakdownChart";
 import { SalesForecastChart } from "../components/SalesForecastChart";
 import { OperationalInsights } from "../components/OperationalInsights";
-import type { RevenueKPIs, RevenueOverTime, OrderVersusRevenue, SalesByCategory } from "../data/types";
+import type { RevenueKPIs, RevenueOverTime, OrderVersusRevenue, SalesByCategory, PerformingItems } from "../data/types";
 import api from "@/lib/api";
 import { toast } from "sonner";
 
@@ -16,12 +16,15 @@ export default function KPIAnalyticsPage() {
   const [revenueOverTime, setRevenueOverTime] = useState<RevenueOverTime[] | []>([]);
   const [orderVersusRevenue, setOrderVersusRevenue] = useState<OrderVersusRevenue[] | []>([]);
   const [salesByCategory, setSalesByCategory] = useState<SalesByCategory[] | []>([]);
+  const [topPerformingItems, setTopPerformingItems] = useState<PerformingItems[] | []>([]);
+  const [leastPerformingItems, setLeastPerformingItems] = useState<PerformingItems[] | []>([]);
 
   useEffect(() => {
     fetchRevenueKPIs();
     fetchRevenueOverTime();
     fetchOrderVersusRevenue();
     fetchSalesByCategory();
+    fetchPerformingItems();
   }, []);
 
   const fetchRevenueKPIs = async () => {
@@ -34,11 +37,9 @@ export default function KPIAnalyticsPage() {
   }
   
   const fetchRevenueOverTime = async () => {
-    let result = null;
     try {
-      result = await api.get("/analytics/revenue-over-time")
+      const result = await api.get("/analytics/revenue-over-time")
       setRevenueOverTime(result.data.data.ewma_trendline);
-      toast.success("Revenue over time data loaded");
     } catch (err) {
         console.error("Failed to fetch revenue over time", err);
     }
@@ -54,12 +55,22 @@ export default function KPIAnalyticsPage() {
   }
 
   const fetchSalesByCategory = async () => {
-    let result = null;
     try {
-      result = await api.get("/analytics/sales-by-category")
+      const result = await api.get("/analytics/sales-by-category")
       setSalesByCategory(result.data.data);
     } catch (err) {   
         console.error("Failed to fetch sales by category", err);
+    }
+  }
+
+  const fetchPerformingItems = async () => {
+    try {
+      const topResult = await api.get("/analytics/top-selling-items/")
+      const leastResult = await api.get("/analytics/least-selling-items/")
+      setTopPerformingItems(topResult.data.data);
+      setLeastPerformingItems(leastResult.data.data);
+    } catch (err) {
+        console.error("Failed to fetch performing items", err);
     }
   }
 
@@ -87,7 +98,7 @@ export default function KPIAnalyticsPage() {
       <SalesForecastChart />
 
       {/* Operational Insights */}
-      <OperationalInsights />
+      <OperationalInsights topItems={topPerformingItems} leastItems={leastPerformingItems} />
     </PageLayout>
   );
 }

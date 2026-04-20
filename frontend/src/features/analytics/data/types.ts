@@ -35,6 +35,13 @@ export interface CategoryRevenue {
   fill: string;
 }
 
+export interface PerformingItems {
+  name: string;
+  sales_count: number;
+  total_revenue: number;
+}
+
+
 export interface PeakHourData {
   hour: string;
   monday: number;
