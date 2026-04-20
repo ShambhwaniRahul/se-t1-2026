@@ -105,4 +105,19 @@ If you wish to test the AI capabilities (like scanning vendor invoices), you mus
    ```bash
    python main.py
    ```
-5. To test the OCR service upload a vendor invoice pdf in an open purchase order to mark as closed. Open Postman and login via https://se-t1-2026.onrender.com/auth/login. Copy the access key into bearer token and visit https://se-t1-2026.onrender.com/api/v1/procurement/purchase-orders/16 with request body containing the file test_invoice.webp as provided in Milestone 5 directory https://drive.google.com/drive/folders/1l4-Ob1FE7gXFTwrEA0hQwlHvBbEeL9B0
+5. To test the OCR service upload a vendor invoice pdf in an open purchase order to mark as closed. Open Postman and login via https://se-t1-2026.onrender.com/auth/login. Copy the access key into bearer token and visit https://se-t1-2026.onrender.com/api/v1/procurement/purchase-orders/16 with request body containing the file test_invoice.webp under the "file" key as provided in Milestone 5 directory https://drive.google.com/drive/folders/1l4-Ob1FE7gXFTwrEA0hQwlHvBbEeL9B0 and "expected_skus_json" key as {
+  "Sabudana": "KG",
+  "Urad Dal": "KG",
+  "Sabudana - Khichdi": "KG",
+  "Oil": "Liters",
+  "Oil Can": "Liters",
+  "Sugar": "Pieces",
+  "Milk": "Litres",
+  "Curd": "KG",
+  "Kidney Beans": "KG",
+  "Biscuit": "Pieces",
+  "Chickpea": "KG",
+  "Chana Dal": "KG",
+  "Masoor Dal": "KG",
+  "Soya Chunks": "KG"
+}
