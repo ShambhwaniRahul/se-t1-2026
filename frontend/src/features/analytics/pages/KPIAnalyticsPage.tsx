@@ -37,7 +37,7 @@ export default function KPIAnalyticsPage() {
     let result = null;
     try {
       result = await api.get("/analytics/revenue-over-time")
-      setRevenueOverTime(result.data.data);
+      setRevenueOverTime(result.data.data.ewma_trendline);
       toast.success("Revenue over time data loaded");
     } catch (err) {
         console.error("Failed to fetch revenue over time", err);

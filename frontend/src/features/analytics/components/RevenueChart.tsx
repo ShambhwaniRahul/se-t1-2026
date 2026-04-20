@@ -1,46 +1,23 @@
+"use client";
+
 import { useMemo } from "react";
 import { Area, ComposedChart, CartesianGrid, XAxis, YAxis, Line, Bar, Legend, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
-export interface RevenueOverTime {
-  index: number;
-  date: string;
-  Revenue: number;
-  EWMA: number;
-}
-
-export interface OrderVersusRevenue {
-  index: number;
-  start_date: string;
-  end_date: string;
-  total_revenue: number;
-  total_orders: number;
-}
-
-interface RevenueChartProps {
-  revenueData: RevenueOverTime[];
-  orderData: OrderVersusRevenue[];
-}
-
+// Config update: Indigo for EWMA to provide premium contrast
 const chartConfig = {
-  revenue: { label: "Revenue", color: "hsl(var(--primary))" },
-  ewma: { label: "Trend (EWMA)", color: "hsl(var(--destructive))" },
+  Revenue: { label: "Revenue", color: "hsl(var(--primary))" },
+  EWMA: { label: "Trend (EWMA)", color: "#6366f1" }, 
   orders: { label: "Orders", color: "#f97316" }, 
 };
 
-/**
- * Formats standard ISO date strings into condensed month-year ticks.
- */
 const formatXAxisDate = (dateString: string) => {
   if (!dateString) return "";
   const date = new Date(dateString);
   return date.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
 };
 
-/**
- * Condenses large currency values into readable abbreviations.
- */
 const formatCurrency = (value: number) => {
   if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
   if (value >= 1000) return `$${(value / 1000).toFixed(0)}k`;
@@ -55,7 +32,7 @@ export function RevenueChart({ revenueData, orderData }: RevenueChartProps) {
       <Card className="shadow-sm border-border">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-semibold tracking-tight">Revenue & Trend Analysis</CardTitle>
-          <CardDescription>Monthly revenue tracking against Exponentially Weighted Moving Average</CardDescription>
+          <CardDescription>Performance tracking with Indigo EWMA trend projection</CardDescription>
         </CardHeader>
         <CardContent>
           <ChartContainer config={chartConfig} className="h-[350px] w-full">
@@ -96,6 +73,7 @@ export function RevenueChart({ revenueData, orderData }: RevenueChartProps) {
                     />
                   } 
                 />
+                <Legend verticalAlign="top" height={36} iconType="circle" />
                 
                 <Area
                   type="monotone"
@@ -106,13 +84,21 @@ export function RevenueChart({ revenueData, orderData }: RevenueChartProps) {
                   animationDuration={800}
                 />
                 
+                {/* Stylized EWMA Line: Indigo color, dashed pattern, and thicker stroke */}
                 <Line
                   type="monotone"
                   dataKey="EWMA"
-                  stroke="hsl(var(--destructive))"
-                  strokeWidth={2}
+                  name="EWMA"
+                  stroke={chartConfig.EWMA.color}
+                  strokeWidth={3}
+                  strokeDasharray="6 4"
                   dot={false}
-                  activeDot={{ r: 4, strokeWidth: 0 }}
+                  activeDot={{ 
+                    r: 6, 
+                    fill: chartConfig.EWMA.color, 
+                    stroke: "#fff", 
+                    strokeWidth: 2 
+                  }}
                   animationDuration={800}
                 />
               </ComposedChart>
@@ -125,12 +111,11 @@ export function RevenueChart({ revenueData, orderData }: RevenueChartProps) {
       <Card className="shadow-sm border-border">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-semibold tracking-tight">Volume to Revenue Correlation</CardTitle>
-          <CardDescription>Order volume mapped against total generated revenue per period</CardDescription>
+          <CardDescription>Quarterly metrics comparison across dual scales</CardDescription>
         </CardHeader>
         <CardContent>
           <ChartContainer config={chartConfig} className="h-[350px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              {/* Added barGap=2 to bring the dual bars physically closer together */}
               <ComposedChart data={orderData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }} barGap={2}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
                 <XAxis 
@@ -144,7 +129,6 @@ export function RevenueChart({ revenueData, orderData }: RevenueChartProps) {
                   tickLine={false}
                 />
                 
-                {/* Financial metric axis (Left) */}
                 <YAxis 
                   yAxisId="revenue-axis" 
                   className="text-xs font-medium"
@@ -155,7 +139,6 @@ export function RevenueChart({ revenueData, orderData }: RevenueChartProps) {
                   tickMargin={10}
                 />
                 
-                {/* Volume metric axis (Right) */}
                 <YAxis 
                   yAxisId="orders-axis" 
                   orientation="right" 
@@ -168,7 +151,7 @@ export function RevenueChart({ revenueData, orderData }: RevenueChartProps) {
                 />
                 
                 <ChartTooltip 
-                  cursor={{ fill: "hsl(var(--muted))", opacity: 0.2 }}
+                  cursor={{ fill: "hsl(var(--muted))", opacity: 0.1 }}
                   content={
                     <ChartTooltipContent 
                       formatter={(value, name) => [
@@ -185,9 +168,8 @@ export function RevenueChart({ revenueData, orderData }: RevenueChartProps) {
                     />
                   } 
                 />
-                <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px' }}/>
+                <Legend verticalAlign="top" height={36} iconType="circle" />
                 
-                {/* Revenue represented as a bar bound to the left Y-axis */}
                 <Bar 
                   yAxisId="revenue-axis" 
                   dataKey="total_revenue" 
@@ -197,7 +179,6 @@ export function RevenueChart({ revenueData, orderData }: RevenueChartProps) {
                   animationDuration={800} 
                 />
 
-                {/* Orders represented as a bar bound to the right Y-axis */}
                 <Bar 
                   yAxisId="orders-axis" 
                   dataKey="total_orders" 
@@ -206,7 +187,6 @@ export function RevenueChart({ revenueData, orderData }: RevenueChartProps) {
                   radius={[4, 4, 0, 0]} 
                   animationDuration={800} 
                 />
-                
               </ComposedChart>
             </ResponsiveContainer>
           </ChartContainer>
