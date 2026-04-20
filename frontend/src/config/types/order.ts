@@ -74,21 +74,11 @@ export interface DraftCartItem {
   quantity: number;
 }
 
-export interface OrderCartItem {
-  order_id: string;
-  table_id: string;
-  menu_item_id: string;
-  item_id: string;
+
+export interface GroupedItem {
+  menu_item: number;
   name: string;
   price: number;
-  status: string;
-}
-
-export interface GroupedOrderItem {
-  item_id: string
-  name: string
-  price: number
-  items: OrderCartItem[]
-}
-
+  items: OrderMenuItem[];
+};
 

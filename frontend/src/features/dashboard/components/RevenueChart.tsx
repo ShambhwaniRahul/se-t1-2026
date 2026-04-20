@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import type { DailyRevenue } from "../data/dashboardData";
+import type { RevenueTrend } from "../data/dashboardData";
 
 const chartConfig = {
   revenue: { label: "Revenue", color: "hsl(var(--primary))" },
@@ -9,7 +9,7 @@ const chartConfig = {
 };
 
 interface RevenueChartProps {
-  data: DailyRevenue[];
+  data: RevenueTrend[];
 }
 
 export function RevenueChart({ data }: RevenueChartProps) {
@@ -50,7 +50,7 @@ export function RevenueChart({ data }: RevenueChartProps) {
                   labelFormatter={(label) => label}
                   formatter={(value, name) => (
                     <span className="font-mono tabular-nums">
-                      {name === "revenue" ? `$${Number(value).toLocaleString()}` : value}
+                      {name === "total_revenue" ? `$${Number(value).toLocaleString()}` : value}
                     </span>
                   )}
                 />
@@ -58,7 +58,7 @@ export function RevenueChart({ data }: RevenueChartProps) {
             />
             <Area
               type="monotone"
-              dataKey="revenue"
+              dataKey="total_revenue"
               stroke="hsl(var(--primary))"
               strokeWidth={2}
               fill="url(#revGradient)"

@@ -1,22 +1,22 @@
-import type { KitchenOrder, KitchenOrderStatus } from "./kitchenData";
+import type { KitchenItem, KitchenStatus } from "../data/kitchenData";
 import { KitchenOrderCard } from "./KitchenOrderCard";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 
 interface KitchenColumnProps {
-  id: KitchenOrderStatus;
+  id: KitchenStatus;
   label: string;
-  orders: KitchenOrder[];
-  onMove: (orderId: string, newStatus: KitchenOrderStatus) => void;
-  onDrop: (orderId: string, targetStatus: KitchenOrderStatus) => void;
-  onDragStart: (e: React.DragEvent, orderId: string) => void;
+  items: KitchenItem[];
+  onMove: (itemId: number, newStatus: KitchenStatus) => void;
+  onDrop: (itemId: number, targetStatus: KitchenStatus) => void;
+  onDragStart: (e: React.DragEvent, itemId: number) => void;
 }
 
 export function KitchenColumn({
   id,
   label,
-  orders,
+  items,
   onMove,
   onDrop,
   onDragStart,
@@ -28,13 +28,20 @@ export function KitchenColumn({
     setDragOver(true);
   };
 
-  const handleDragLeave = () => setDragOver(false);
+  const handleDragLeave = (e: React.DragEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setDragOver(false);
+    }
+  };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
-    const orderId = e.dataTransfer.getData("text/plain");
-    if (orderId) onDrop(orderId, id);
+
+    const itemId = Number(e.dataTransfer.getData("text/plain"));
+    if (!isNaN(itemId)) {
+      onDrop(itemId, id);
+    }
   };
 
   return (
@@ -49,28 +56,27 @@ export function KitchenColumn({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {/* Column header */}
+
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <h2 className="text-lg font-extrabold tracking-tight text-foreground">
           {label}
         </h2>
         <Badge variant="secondary" className="text-base font-bold tabular-nums">
-          {orders.length}
+          {items.length}
         </Badge>
       </div>
 
-      {/* Cards */}
       <ScrollArea className="flex-1">
         <div className="space-y-3 p-3">
-          {orders.length === 0 && (
+          {items.length === 0 && (
             <p className="py-8 text-center text-sm font-medium text-muted-foreground">
-              No orders
+              No items
             </p>
           )}
-          {orders.map((order) => (
+          {items.map((item) => (
             <KitchenOrderCard
-              key={order.id}
-              order={order}
+              key={item.id}
+              item={item}
               onMove={onMove}
               onDragStart={onDragStart}
             />

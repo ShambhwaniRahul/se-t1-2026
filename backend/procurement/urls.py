@@ -7,7 +7,8 @@ from .views import (
     OrderedNonPerishablePurchaseSKUListCreateAPIView, OrderedNonPerishablePurchaseSKUDetailAPIView,
     DeliveredPerishablePurchaseInventoryListAPIView, DeliveredPerishablePurchaseInventoryDetailAPIView,
     DeliveredNonPerishableInventoryListAPIView, DeliveredNonPerishableInventoryDetailAPIView,
-    VendorInvoiceListCreateAPIView
+    VendorInvoiceListCreateAPIView, PurchaseOrderItemsView,
+    PurchaseOrderReceiveAPIView, PurchaseOrderCancelAPIView
 )
 
 
@@ -16,6 +17,9 @@ urlpatterns =[
     path('vendors/<int:pk>/', VendorDetailAPIView.as_view(), name='vendor-detail'),
     path('purchase-orders/', PurchaseOrderListCreateAPIView.as_view(),name='purchaseorder-list-create'),
     path('purchase-orders/<int:pk>/', PurchaseOrderDetailAPIView.as_view(), name='purchaseorder-detail'),
+    path('purchase-orders/<int:pk>/items/', PurchaseOrderItemsView.as_view(), name='purchaseorder-items'),
+    path('purchase-orders/<int:pk>/receive/', PurchaseOrderReceiveAPIView.as_view(), name='purchaseorder-receive'),
+    path('purchase-orders/<int:pk>/cancel/', PurchaseOrderCancelAPIView.as_view(), name='purchaseorder-cancel'),
     path('vendors/<int:vendor_id>/purchase-orders/', VendorPurchaseOrderListAPIView.as_view(), name='vendor-purchase-orders'),
     path('ordered-perishable-purchase-skus/', OrderedPerishablePurchaseSKUListCreateAPIView.as_view(), name='ordered-perishable-purchase-sku-list-create'),
     path('ordered-perishable-purchase-skus/<int:pk>/', OrderedPerishablePurchaseSKUDetailAPIView.as_view(), name='ordered-perishable-purchase-sku-detail'),

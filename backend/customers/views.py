@@ -279,7 +279,7 @@ class CustomerPaymentListCreateAPIView(APIView):
             )
     
         # 🔥 2. Check pending/incomplete items
-        invalid_items = order.ordermenuitem_set.filter(
+        invalid_items = order.items.filter(
             menu_item_status__in=[
                 OrderMenuItem.StatusChoices.PENDING,
                 OrderMenuItem.StatusChoices.IN_PROGRESS,
