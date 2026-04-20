@@ -4,6 +4,25 @@ export interface RevenueKPIs {
   average_revenue_per_order: number;
 }
 
+export interface RevenueOverTime {
+  index: number;
+  date: string;
+  Revenue: number;
+  EWMA: number;
+}
+
+export interface OrderVersusRevenue {
+  date: string;
+  index: number;
+  total_revenue: number;
+  total_orders: number;
+}
+
+export interface SalesByCategory {
+  category: string;
+  total: number;
+}
+
 export interface ForecastPoint {
   date: string;
   revenue?: number;
