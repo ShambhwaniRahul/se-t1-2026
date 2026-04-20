@@ -16,31 +16,26 @@ export default function PosPage() {
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const { tableId } = useParams();
-  
-  if (!tableId) {
-    return <div> Invalid table </div>;
-  }
 
   useEffect(() => {
-    fetchMenu();
-  }, []);
-
-  async function fetchMenu() {
-    try {
+    async function fetchMenu() {
+      try {
         const result = await api.get("/pos/menuitems/");
         if (result.data.success) {
-            setMenuItems(result.data.data ?? []);
-            toast.success(result.data.message || "Menu items loaded successfully!");
+          setMenuItems(result.data.data ?? []);
         } else {
-            toast.error(result.data.message || "Failed to load menu items!");
+          toast.error(result.data.message || "Failed to load menu items!");
         }
-    } catch (err) {
+      } catch (err) {
         console.error("Failed to load menu items", err);
         toast.error("Failed to load menu items!");
-    } finally {
+      } finally {
         setLoading(false);
+      }
     }
-  }
+
+    fetchMenu();
+  }, []);
 
   const cart = useCart(tableId!);
   const filteredProducts = useMemo(
@@ -61,6 +56,8 @@ export default function PosPage() {
     cart.clearOrdered();
     toast.success("Order completed!");
   }, [cart]);
+
+  if (loading) return ( <div> Loading... </div> );
 
   return (
     <div className="-m-4 md:-m-6 flex h-[calc(100svh-3.5rem)] flex-col">

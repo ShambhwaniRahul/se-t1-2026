@@ -1494,30 +1494,30 @@ class UpdateOrderMenuItemStatusAPIView(APIView):
         if (
             old_status == OrderMenuItem.StatusChoices.PENDING and
             new_status == OrderMenuItem.StatusChoices.IN_PROGRESS and
-            is_chef
+            not is_waiter
         ):
             valid_transition = True
 
         elif (
             old_status == OrderMenuItem.StatusChoices.IN_PROGRESS and
             new_status == OrderMenuItem.StatusChoices.READY_TO_SERVE and
-            is_chef
+            not is_waiter
         ):
             valid_transition = True
 
         elif (
             old_status == OrderMenuItem.StatusChoices.READY_TO_SERVE and
             new_status == OrderMenuItem.StatusChoices.SERVED and
-            is_waiter
+            not is_chef
         ):
             valid_transition = True
 
-        if not is_chef and not is_waiter:
-            return standard_response(
-                success=False,
-                message="Only a Chef or Waiter can update the status of an order item!",
-                status_code=status.HTTP_403_FORBIDDEN
-            )    
+        # if not is_chef and not is_waiter:
+        #     return standard_response(
+        #         success=False,
+        #         message="Only a Chef or Waiter can update the status of an order item!",
+        #         status_code=status.HTTP_403_FORBIDDEN
+        #     )    
 
         if not valid_transition:
             return standard_response(
