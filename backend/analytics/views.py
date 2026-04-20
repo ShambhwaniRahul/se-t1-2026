@@ -306,11 +306,19 @@ class LeastSellingItemsView(APIView):
                 filters["order__created_at__date__lte"] = end_date
 
             items = OrderMenuItem.objects.filter(**filters).values('menu_item__name').annotate(
-                sales_count=Count('id')
+                sales_count=Count('id'),
+                total_revenue = Sum('price_at_time')
             ).order_by('sales_count')[:least_n]
 
-            data = [(item['menu_item__name'], item['sales_count']) for item in items]
-            
+            data = [
+                {
+                    'name': item['menu_item__name'],
+                    'sales_count': item['sales_count'],
+                    'total_revenue': float(item['total_revenue'])
+                }
+                for item in items
+            ]
+
             return standard_response(
                 success=True,
                 message="Least selling items retrieved successfully.",
