@@ -18,6 +18,7 @@ import {
 } from "../data/mapper";
 import api from "@/lib/api";
 import { toast } from "sonner";
+import { UpdateQuantityModal } from "../components/UpdateQuantityModal";
 
 const STOCK_STATUS_MAP: Record<
   string,
@@ -42,6 +43,7 @@ export default function InventoryPage() {
 
   const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Ingredient | null>(null);
+  const [updateTarget, setUpdateTarget] = useState<Ingredient | null>(null);
 
   // 🔥 FETCH BASED ON TYPE
   const fetchInventory = async (selectedType = type) => {
@@ -100,7 +102,7 @@ export default function InventoryPage() {
 
           if (i.category === "perishable") {
             status = getPerishableStatus(i);
-          } else{
+          } else {
             status = "in_stock";
           }
           const { label, variant } = STOCK_STATUS_MAP[status];
@@ -129,9 +131,14 @@ export default function InventoryPage() {
       header: "",
       render: (i) => (
         <div className="flex gap-2">
-          <Button size="icon" variant="ghost">
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => setUpdateTarget(i)}
+          >
             <Pencil className="h-4 w-4" />
           </Button>
+
           <Button
             size="icon"
             variant="ghost"
@@ -147,19 +154,60 @@ export default function InventoryPage() {
     return base;
   }, [type]);
 
+  // 🖊 EDIT
+  const handleUpdateQuantity = async (quantity: number) => {
+    if (!updateTarget) return;
+
+    try {
+      let res;
+
+      if (type === "perishable") {
+        res = await api.patch(
+          `/inventory/perishable-inventory/${updateTarget.id}/`,
+          { quantity },
+        );
+      } else {
+        res = await api.patch(
+          `/inventory/non-perishable-inventory/${updateTarget.id}/`,
+          { quantity },
+        );
+      }
+      console.log("✅✅Res: ",res.data);
+      if (res.data.success) {
+        toast.success(res.data.message || "Quantity updated");
+
+        fetchInventory();
+      } else {
+        toast.error(res.data.message || "Update failed");
+      }
+    } catch { 
+      toast.error("Failed to update");
+    } finally {
+      setUpdateTarget(null);
+    }
+  };
+
   // 🗑 DELETE
   const handleDelete = async () => {
     if (!deleteTarget) return;
-
+    let result;
     try {
       if (type === "perishable") {
-        await api.delete(`/inventory/perishable/${deleteTarget.id}/`);
+        result = await api.delete(
+          `/inventory/perishable-inventory/${deleteTarget.id}/`,
+        );
       } else {
-        await api.delete(`/inventory/non-perishable/${deleteTarget.id}/`);
+        result = await api.delete(
+          `/inventory/non-perishable-inventory/${deleteTarget.id}/`,
+        );
       }
 
-      toast.success("Deleted");
-      fetchInventory();
+      if (result.data.success) {
+        toast.success(result.data.message || "Deleted");
+        fetchInventory();
+      } else {
+        toast.error(result.data.message || "Delete failed");
+      }
     } catch {
       toast.error("Delete failed");
     } finally {
@@ -226,6 +274,14 @@ export default function InventoryPage() {
         confirmLabel="Delete"
         variant="destructive"
         onConfirm={handleDelete}
+      />
+
+      {/* EDIT - REUSE ADD DIALOG WITH PRE-FILLED DATA */}
+      <UpdateQuantityModal
+        open={!!updateTarget}
+        onClose={() => setUpdateTarget(null)}
+        item={updateTarget}
+        onSubmit={handleUpdateQuantity}
       />
     </PageLayout>
   );

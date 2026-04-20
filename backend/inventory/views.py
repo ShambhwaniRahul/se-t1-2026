@@ -337,6 +337,57 @@ class PerishableInventoryDetailAPIView(APIView):
                 message="Perishable Inventory retrieved successfully.", 
                 data=serializer.data,
                 status_code=status.HTTP_200_OK) 
+
+    def patch(self, request, pk):
+        perishable_inventory = self.get_object(pk)
+        
+        if perishable_inventory is None:
+            return self.standard_error_response()
+        
+        # ✅ FIX HERE
+        if "quantity" not in request.data:
+            return standard_response(
+                success=False,
+                message="Only quantity field can be updated for Perishable Inventory.",
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+        
+        quantity = request.data.get("quantity")
+    
+        # Optional: type safety
+        try:
+            quantity = float(quantity)
+        except:
+            return standard_response(
+                success=False,
+                message="Quantity must be a number.",
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+    
+        if (
+            quantity < 0
+            or perishable_inventory.is_expired
+            or quantity > perishable_inventory.quantity
+        ):
+            return standard_response(
+                success=False,
+                message="Invalid quantity. Quantity must be non-negative, cannot exceed current quantity, and cannot update expired inventory.",
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+    
+        perishable_inventory.quantity = quantity
+        perishable_inventory.save()
+    
+        serializer = PerishableInventorySerializer(perishable_inventory)
+    
+        return standard_response(
+            success=True,
+            message="Perishable Inventory quantity updated successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+        )
+
+
         
     def delete(self, request, pk):
             perishable_inventory = self.get_object(pk)
