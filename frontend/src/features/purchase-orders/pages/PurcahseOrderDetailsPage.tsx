@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Package, Truck, XCircle, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Package, Truck, XCircle, CheckCircle2, ScanSearch } from "lucide-react";
 import { PageLayout } from "@/components/shared/PageLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import {
@@ -16,19 +16,25 @@ import api from "@/lib/api";
 import { useState, useEffect } from "react";
 import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 
-// Maintains consistency with standard application status variants
 const STATUS_VARIANT: Record<POStatus, StatusBadgeVariant> = {
   Pending: "warning",
   Received: "success",
   Cancelled: "destructive",
 };
 
-// Maps backend enumeration to frontend display nomenclature
 const STATUS_LABEL: Record<POStatus, string> = {
   Pending: "Pending",
   Received: "Delivered",
   Cancelled: "Cancelled",
 };
+
+// Sequential messages displayed during the AI OCR processing phase
+const PROCESSING_STEPS = [
+  "Uploading invoice image...",
+  "Running AI OCR extraction...",
+  "Mapping items to inventory...",
+  "Finalizing receipt..."
+];
 
 export default function PurchaseOrderDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -42,15 +48,35 @@ export default function PurchaseOrderDetailsPage() {
 
   const [status, setStatus] = useState<POStatus>("Pending");
   
-  // Tracks the physical invoice image required for successful receipt processing
   const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
 
-  // Constructs multipart payload containing invoice proof and purchase reference
+  // States for handling the extended AI processing UI
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processStep, setProcessStep] = useState(0);
+
+  // Cycles through processing messages every 2.5 seconds while isProcessing is active
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isProcessing) {
+      setProcessStep(0);
+      interval = setInterval(() => {
+        setProcessStep((prev) => 
+          prev < PROCESSING_STEPS.length - 1 ? prev + 1 : prev
+        );
+      }, 10000);
+    }
+    return () => clearInterval(interval);
+  }, [isProcessing]);
+
   const markAsReceived = async () => {
     if (!invoiceFile) {
       toast.error("Invoice image is required to mark order as received");
       return;
     }
+
+    // Close dialog immediately to show the processing overlay
+    setReceiveOpen(false);
+    setIsProcessing(true);
 
     try {
       const formData = new FormData();
@@ -73,7 +99,7 @@ export default function PurchaseOrderDetailsPage() {
       toast.error("Failed to mark as received");
     } finally {
       fetchPurchaseOrder();
-      setReceiveOpen(false);
+      setIsProcessing(false);
       setInvoiceFile(null);
     }
   };
@@ -105,7 +131,6 @@ export default function PurchaseOrderDetailsPage() {
       if (res.data.success) {
         setItems(res.data.data.items);
         setStatus(res.data.data.status);
-        toast.success(res.data.message);
       } else {
         toast.error(res.data.message);
       }
@@ -143,11 +168,25 @@ export default function PurchaseOrderDetailsPage() {
 
   return (
     <PageLayout>
+      {/* Full-screen blocking overlay active during AI extraction */}
+      {isProcessing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center p-8 bg-card rounded-xl shadow-2xl border text-center max-w-sm w-full mx-4">
+            <ScanSearch className="h-12 w-12 text-primary animate-pulse mb-6" />
+            <h3 className="text-xl font-semibold mb-2">Processing Invoice</h3>
+            <p className="text-sm text-muted-foreground animate-pulse h-6">
+              {PROCESSING_STEPS[processStep]}
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center gap-3">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => navigate("/purchase-orders")}
+          disabled={isProcessing}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -218,6 +257,7 @@ export default function PurchaseOrderDetailsPage() {
                   <input
                     type="file"
                     accept="image/*"
+                    disabled={isProcessing}
                     onChange={(e) => {
                       if (e.target.files && e.target.files.length > 0) {
                         setInvoiceFile(e.target.files[0]);
@@ -230,7 +270,7 @@ export default function PurchaseOrderDetailsPage() {
                 <div className="flex flex-col gap-2">
                   <Button 
                     onClick={() => setReceiveOpen(true)}
-                    disabled={!invoiceFile}
+                    disabled={!invoiceFile || isProcessing}
                   >
                     <Package className="h-4 w-4 mr-1" />
                     Mark as Received
@@ -239,6 +279,7 @@ export default function PurchaseOrderDetailsPage() {
                   <Button
                     variant="destructive"
                     onClick={() => setCancelOpen(true)}
+                    disabled={isProcessing}
                   >
                     <XCircle className="h-4 w-4 mr-1" />
                     Cancel Order
@@ -248,7 +289,7 @@ export default function PurchaseOrderDetailsPage() {
             )}
 
             {status === "Received" && (
-              <Button>
+              <Button disabled={isProcessing}>
                 <CheckCircle2 className="h-4 w-4 mr-1" />
                 Download Receipt
               </Button>

@@ -967,7 +967,7 @@ class VendorInvoiceListCreateAPIView(APIView):
             purchase_order.save()
             return standard_response(
                 success=True,
-                message="Vendor invoice created successfully.",
+                message="Vendor invoice processed successfully.",
                 data=invoice_serializer.data,
                 status_code=status.HTTP_201_CREATED)
         return standard_response(success=False,
