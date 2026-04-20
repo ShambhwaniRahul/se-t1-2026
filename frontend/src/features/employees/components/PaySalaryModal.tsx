@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Download } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import type { Employee } from "@/config/types/role";
+import { computeSalaryPreview, processSalaryPayment } from "../api/EmployeeApi";
 import { toast } from "sonner";
 
 interface Props {
@@ -14,19 +15,39 @@ interface Props {
 }
 
 export function PaySalaryModal({ employee, onClose }: Props) {
+  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
   const [overtimeHours, setOvertimeHours] = useState(0);
   const [overtimeRate, setOvertimeRate] = useState(15); 
   const [bonuses, setBonuses] = useState(0);
   const [deductions, setDeductions] = useState(0);
+  
+  const [isComputing, setIsComputing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Auto-fetch real computation from backend when modal opens or month changes
   useEffect(() => {
-    if (employee) {
-      setOvertimeHours(12);
-      setOvertimeRate(15);
-      setBonuses(200);
-      setDeductions(50);
+    if (employee && month) {
+      const fetchRealMath = async () => {
+        setIsComputing(true);
+        try {
+          const data = await computeSalaryPreview(employee.id, month);
+          setOvertimeHours(data.overtime_hours);
+          setDeductions(data.deductions);
+          setBonuses(0); // Reset bonuses for new month
+          
+          // Calculate their exact hourly rate based on base salary for accuracy
+          const hourly = (employee.monthly_salary / 30 / 8) * 1.5;
+          setOvertimeRate(Number(hourly.toFixed(2)));
+        } catch (error) {
+          toast.error("Could not fetch automated payroll data. Using defaults.");
+        } finally {
+          setIsComputing(false);
+        }
+      };
+      
+      fetchRealMath();
     }
-  }, [employee]);
+  }, [employee, month]);
 
   if (!employee) return null;
 
@@ -35,11 +56,30 @@ export function PaySalaryModal({ employee, onClose }: Props) {
   const overtimeTotal = overtimeHours * overtimeRate;
   const netPayable = baseSalary + overtimeTotal + bonuses - deductions;
 
-  const handlePay = () => {
-    toast.success(`Successfully recorded salary payment for ${fullName}`);
-    onClose();
+  // THIS IS THE UPDATED SUBMIT FUNCTION
+const handlePay = async () => {
+    setIsSubmitting(true);
+    try {
+      await processSalaryPayment({
+        employee_id: employee.id,
+        month: month,
+        base_salary: baseSalary,
+        overtime_hours: overtimeHours,
+        bonuses: bonuses,
+        deductions: deductions,
+        net_pay: netPayable 
+      });
+      toast.success(`Successfully recorded salary payment for ${fullName}`);
+      onClose();
+    } catch (error: any) {
+      // FIX: Now it will show the ACTUAL error sent by the backend!
+      const errorMessage = error.response?.data?.message || "Failed to log payment.";
+      toast.error(errorMessage);
+      console.error("Payment Error Payload:", error.response?.data);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-
   const downloadPayslip = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
@@ -67,7 +107,8 @@ export function PaySalaryModal({ employee, onClose }: Props) {
           <div class="header">
               <h2>PAYSLIP</h2>
               <p><strong>Employee:</strong> ${fullName}</p>
-              <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+              <p><strong>Month:</strong> ${month}</p>
+              <p><strong>Date Generated:</strong> ${new Date().toLocaleDateString()}</p>
           </div>
           <div class="row"><span>Base Salary</span><span>$${baseSalary.toFixed(2)}</span></div>
           <div class="row text-success"><span>Overtime (${overtimeHours}h &times; $${overtimeRate})</span><span>+$${overtimeTotal.toFixed(2)}</span></div>
@@ -90,7 +131,7 @@ export function PaySalaryModal({ employee, onClose }: Props) {
   };
 
   return (
-    <Dialog open={!!employee} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={!!employee} onOpenChange={(open) => !open && !isSubmitting && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Pay Salary</DialogTitle>
@@ -98,47 +139,68 @@ export function PaySalaryModal({ employee, onClose }: Props) {
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          <div className="flex justify-between items-center">
-            <Label className="text-muted-foreground">Monthly Salary</Label>
-            <span className="font-medium">${baseSalary.toFixed(2)}</span>
+          {/* MONTH SELECTOR */}
+          <div className="flex justify-between items-center bg-muted p-2 rounded-md border">
+            <Label>Payroll Month</Label>
+            <Input 
+              type="month" 
+              className="w-40 h-8" 
+              value={month} 
+              onChange={(e) => setMonth(e.target.value)} 
+              disabled={isSubmitting || isComputing}
+            />
           </div>
-          {/* ... Rest of existing Modal code remains exactly identical ... */}
-          
-          <div className="flex justify-between items-center gap-4">
-            <Label className="whitespace-nowrap text-success">Overtime Hours</Label>
-            <div className="flex items-center gap-2">
-              <Input type="number" className="w-20 h-8" value={overtimeHours} onChange={(e) => setOvertimeHours(Number(e.target.value))} />
-              <span className="text-sm text-muted-foreground">× ${overtimeRate}/h</span>
+
+          {isComputing ? (
+            <div className="flex justify-center py-6">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-            <span className="font-medium text-success text-right w-20">+${overtimeTotal.toFixed(2)}</span>
-          </div>
+          ) : (
+            <>
+              <div className="flex justify-between items-center">
+                <Label className="text-muted-foreground">Monthly Salary</Label>
+                <span className="font-medium">${baseSalary.toFixed(2)}</span>
+              </div>
+              
+              <div className="flex justify-between items-center gap-4">
+                <Label className="whitespace-nowrap text-success">Overtime Hours</Label>
+                <div className="flex items-center gap-2">
+                  <Input type="number" className="w-20 h-8" value={overtimeHours} onChange={(e) => setOvertimeHours(Number(e.target.value))} />
+                  <span className="text-sm text-muted-foreground">× ${overtimeRate}/h</span>
+                </div>
+                <span className="font-medium text-success text-right w-20">+${overtimeTotal.toFixed(2)}</span>
+              </div>
 
-          <div className="flex justify-between items-center gap-4">
-            <Label className="text-success">Bonuses</Label>
-            <Input type="number" className="w-24 h-8" value={bonuses} onChange={(e) => setBonuses(Number(e.target.value))} />
-            <span className="font-medium text-success text-right w-20">+${bonuses.toFixed(2)}</span>
-          </div>
+              <div className="flex justify-between items-center gap-4">
+                <Label className="text-success">Bonuses</Label>
+                <Input type="number" className="w-24 h-8" value={bonuses} onChange={(e) => setBonuses(Number(e.target.value))} />
+                <span className="font-medium text-success text-right w-20">+${bonuses.toFixed(2)}</span>
+              </div>
 
-          <div className="flex justify-between items-center gap-4">
-            <Label className="text-destructive">Deductions</Label>
-            <Input type="number" className="w-24 h-8" value={deductions} onChange={(e) => setDeductions(Number(e.target.value))} />
-            <span className="font-medium text-destructive text-right w-20">-${deductions.toFixed(2)}</span>
-          </div>
+              <div className="flex justify-between items-center gap-4">
+                <Label className="text-destructive">Deductions</Label>
+                <Input type="number" className="w-24 h-8" value={deductions} onChange={(e) => setDeductions(Number(e.target.value))} />
+                <span className="font-medium text-destructive text-right w-20">-${deductions.toFixed(2)}</span>
+              </div>
 
-          <Separator />
+              <Separator />
 
-          <div className="flex justify-between items-center">
-            <Label className="text-lg font-bold">Net Payable</Label>
-            <span className="text-lg font-bold">${netPayable.toFixed(2)}</span>
-          </div>
+              <div className="flex justify-between items-center">
+                <Label className="text-lg font-bold">Net Payable</Label>
+                <span className="text-lg font-bold">${netPayable.toFixed(2)}</span>
+              </div>
+            </>
+          )}
         </div>
 
         <DialogFooter className="mt-4">
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button variant="secondary" onClick={downloadPayslip}>
+          <Button variant="outline" onClick={onClose} disabled={isSubmitting || isComputing}>Cancel</Button>
+          <Button variant="secondary" onClick={downloadPayslip} disabled={isSubmitting || isComputing}>
             <Download className="mr-1.5 h-4 w-4" /> Payslip
           </Button>
-          <Button onClick={handlePay}>Confirm Payment</Button>
+          <Button onClick={handlePay} disabled={isSubmitting || isComputing}>
+            {isSubmitting ? "Processing..." : "Confirm Payment"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

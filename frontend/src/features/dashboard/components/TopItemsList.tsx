@@ -1,12 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { TopItem } from "../data/dashboardData";
+import type { TopSellingItems } from "../data/dashboardData";
 
 interface TopItemsListProps {
-  items: TopItem[];
+  items: TopSellingItems[];
 }
 
 export function TopItemsList({ items }: TopItemsListProps) {
-  const maxQty = Math.max(...items.map((i) => i.quantity));
+  const maxQty = Math.max(...items.map((i) => i.sales_count), 1);
 
   return (
     <Card>
@@ -22,13 +22,13 @@ export function TopItemsList({ items }: TopItemsListProps) {
                 <span className="font-medium">{item.name}</span>
               </span>
               <span className="text-muted-foreground tabular-nums text-xs">
-                {item.quantity} sold · ${item.revenue.toLocaleString()}
+                {item.sales_count} sold · ${item.total_revenue.toLocaleString()}
               </span>
             </div>
             <div className="h-1.5 rounded-full bg-muted overflow-hidden">
               <div
                 className="h-full rounded-full bg-primary transition-all duration-500"
-                style={{ width: `${(item.quantity / maxQty) * 100}%` }}
+                style={{ width: `${(item.sales_count / maxQty) * 100}%` }}
               />
             </div>
           </div>

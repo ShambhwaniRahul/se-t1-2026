@@ -1,7 +1,27 @@
-export interface DailyRevenue {
+import { ForecastDuration } from './types';
+export interface RevenueKPIs {
+  total_revenue: number;
+  total_orders: number;
+  average_revenue_per_order: number;
+}
+
+export interface RevenueOverTime {
+  index: number;
   date: string;
-  revenue: number;
-  orders: number;
+  Revenue: number;
+  EWMA: number;
+}
+
+export interface OrderVersusRevenue {
+  date: string;
+  index: number;
+  total_revenue: number;
+  total_orders: number;
+}
+
+export interface SalesByCategory {
+  category: string;
+  total: number;
 }
 
 export interface ForecastPoint {
@@ -16,30 +36,25 @@ export interface CategoryRevenue {
   fill: string;
 }
 
-export interface PeakHourData {
-  hour: string;
-  monday: number;
-  tuesday: number;
-  wednesday: number;
-  thursday: number;
-  friday: number;
-  saturday: number;
-  sunday: number;
+export interface PerformingItems {
+  name: string;
+  sales_count: number;
+  total_revenue: number;
 }
 
-export interface PerformingItem {
-  name: string;
-  orders: number;
-  revenue: number;
-  trend: number;
+export interface RevenueTrend {
+  date: string;
+  total_revenue: number;
+  total_orders: number;
+  average_revenue: number;
 }
 
-export interface StaffEfficiency {
-  name: string;
-  ordersHandled: number;
-  avgTime: number;
-  rating: number;
+export interface SalesForecasting {
+  date: string;
+  holt_winters_forecast: number;
+  sarima_forecast: number;
 }
+
 
 export type DateRange = "today" | "week" | "month" | "custom";
 export type ForecastDuration = 7 | 14 | 30;

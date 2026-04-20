@@ -1,22 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import type { ActivityItem } from "../data/dashboardData";
+import type { RecentOrders } from "../data/dashboardData";
 
 interface ActivityFeedProps {
-  items: ActivityItem[];
+  items: RecentOrders[];
 }
 
-const TYPE_STYLES: Record<ActivityItem["type"], string> = {
-  order: "bg-success/15 text-success",
-  refund: "bg-destructive/15 text-destructive",
-  reservation: "bg-info/15 text-info",
-};
-
-const TYPE_LABELS: Record<ActivityItem["type"], string> = {
-  order: "Order",
-  refund: "Refund",
-  reservation: "Booking",
+const STATUS_STYLES: Record<RecentOrders["status"], string> = {
+  Open: "bg-info/15 text-info",
+  Closed: "bg-success/15 text-success",
 };
 
 export function ActivityFeed({ items }: ActivityFeedProps) {
@@ -29,28 +22,26 @@ export function ActivityFeed({ items }: ActivityFeedProps) {
         <ScrollArea className="h-[340px]">
           <div className="divide-y divide-border">
             {items.map((item) => (
-              <div key={item.id} className="flex items-center gap-3 px-6 py-3">
+              <div key={item.order_id} className="flex items-center gap-3 px-6 py-3">
                 <span
                   className={cn(
                     "inline-flex shrink-0 items-center rounded-md px-2 py-0.5 text-[11px] font-medium",
-                    TYPE_STYLES[item.type]
+                    STATUS_STYLES[item.status]
                   )}
                 >
-                  {TYPE_LABELS[item.type]}
+                  {item.status}
                 </span>
-                <span className="flex-1 truncate text-sm">{item.description}</span>
+                <span className="flex-1 truncate text-sm">{item.dining_type}</span>
                 <span className="shrink-0 text-right">
-                  {item.amount !== 0 && (
+                  
                     <span
                       className={cn(
-                        "block text-sm font-medium tabular-nums",
-                        item.amount < 0 ? "text-destructive" : "text-foreground"
+                        "block text-sm font-medium tabular-nums", "text-foreground"
                       )}
                     >
-                      {item.amount < 0 ? "-" : "+"}${Math.abs(item.amount).toFixed(2)}
+                      +${Math.abs(item.total_amount).toFixed(2)}
                     </span>
-                  )}
-                  <span className="text-[11px] text-muted-foreground">{item.time}</span>
+                  <span className="text-[11px] text-muted-foreground">{Math.abs(item.timedelta_since_order)} minutes ago</span>
                 </span>
               </div>
             ))}

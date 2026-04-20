@@ -1,35 +1,33 @@
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import type { OrderCartItem, GroupedOrderItem } from "../../data/posData";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
+import type { GroupedItem, OrderMenuItem } from "@/config/types/order";
 
-interface OrderedCartProps {
-  orderedItems: OrderCartItem[];
-}
+type OrderedCartProps = {
+  orderedItems: OrderMenuItem[];
+};
 
-export function OrderedCart({ orderedItems }: OrderedCartProps) {
+export function OrderedCart({ orderedItems }:  OrderedCartProps) {
 
   const groupedOrderedItems = useMemo(() => {
-    const map = new Map<string, GroupedOrderItem>();
+    const map = new Map<string, GroupedItem>();
 
     for (const item of orderedItems) {
+        if (!map.has(item.menu_item.toString())) {
+          map.set(item.menu_item.toString(), {
+            menu_item: item.menu_item,
+            name: item.menu_item_name,
+            price: item.price_at_time,
+            items: [],
+          });
+        }
 
-      if (!map.has(item.item_id)) {
-        map.set(item.item_id, {
-          item_id: item.item_id,
-          name: item.name,
-          price: item.price,
-          items: []
-        });
+        map.get(item.menu_item.toString())!.items.push(item);
       }
 
-      map.get(item.item_id)!.items.push(item);
-    }
-
-    return Array.from(map.values());
-
-  }, [orderedItems]);
+      return Array.from(map.values());
+    }, [orderedItems]);
 
   if (orderedItems.length === 0) return null;
 
@@ -49,7 +47,7 @@ export function OrderedCart({ orderedItems }: OrderedCartProps) {
 
           {groupedOrderedItems.map((group) => (
             <div
-              key={group.item_id}
+              key={group.menu_item.toString()}
               className="rounded-md px-2 py-2 hover:bg-accent/50"
             >
 
@@ -67,20 +65,18 @@ export function OrderedCart({ orderedItems }: OrderedCartProps) {
 
                 {group.items.map((item) => (
                   <span
-                    key={item.menu_item_id}
+                    key={item.id}
                     className={cn(
                       "px-2 py-0.5 rounded text-xs font-medium",
-                      item.status === "ready" && "bg-green-100 text-green-700",
-                      item.status === "pending" && "bg-yellow-100 text-yellow-700",
-                      item.status === "in-progress" && "bg-blue-100 text-blue-700"
+                      item.menu_item_status_display.toLowerCase() === "ready" && "bg-green-100 text-green-700",
+                      item.menu_item_status_display.toLowerCase() === "pending" && "bg-yellow-100 text-yellow-700",
+                      item.menu_item_status_display.toLowerCase() === "in-progress" && "bg-blue-100 text-blue-700"
                     )}
                   >
-                    {item.status}
+                    {item.menu_item_status_display}
                   </span>
                 ))}
-
               </div>
-
             </div>
           ))}
 

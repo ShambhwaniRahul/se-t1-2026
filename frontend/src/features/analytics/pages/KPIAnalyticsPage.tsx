@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, use } from "react";
 import { PageLayout } from "@/components/shared/PageLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -7,53 +7,151 @@ import { RevenueChart } from "../components/RevenueChart";
 import { CategoryBreakdownChart } from "../components/CategoryBreakdownChart";
 import { SalesForecastChart } from "../components/SalesForecastChart";
 import { OperationalInsights } from "../components/OperationalInsights";
-import type { DateRange } from "../data/types";
-
-const ranges: { label: string; value: DateRange }[] = [
-  { label: "Today", value: "today" },
-  { label: "Week", value: "week" },
-  { label: "Month", value: "month" },
-  { label: "All", value: "custom" },
-];
+import type { RevenueKPIs, RevenueOverTime, OrderVersusRevenue, SalesByCategory, PerformingItems, SalesForecasting, RevenueTrend } from "../data/types";
+import api from "@/lib/api";
+import { toast } from "sonner";
 
 export default function KPIAnalyticsPage() {
-  const [range, setRange] = useState<DateRange>("month");
+
+  const now = new Date();
+
+  // 1) Current date in IST (YYYY-MM-DD)
+  const istDate = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+  }).format(now);
+
+  const istTime = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Kolkata",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).format(now);
+
+
+  // 3) N days back date in IST (YYYY-MM-DD)
+  const yesterday = new Date(now);
+  const oneMonthBack = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  oneMonthBack.setDate(oneMonthBack.getDate() - 30);
+
+  const istYesterday = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+  }).format(yesterday);
+
+  const istOneMonthBack = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+  }).format(oneMonthBack);
+
+  const [kpiData, setKPIData] = useState<RevenueKPIs | []>([]);
+  const [revenueOverTime, setRevenueOverTime] = useState<RevenueOverTime[] | []>([]);
+  const [monthRevenue, setMonthRevenue] = useState<RevenueOverTime[] | []>([]);
+  const [orderVersusRevenue, setOrderVersusRevenue] = useState<OrderVersusRevenue[] | []>([]);
+  const [salesByCategory, setSalesByCategory] = useState<SalesByCategory[] | []>([]);
+  const [topPerformingItems, setTopPerformingItems] = useState<PerformingItems[] | []>([]);
+  const [leastPerformingItems, setLeastPerformingItems] = useState<PerformingItems[] | []>([]);
+  const [salesForecasting, setSalesForecasting] = useState<SalesForecasting[] | []>([]);
+
+  useEffect(() => {
+    fetchRevenueKPIs();
+    fetchRevenueOverTime();
+    fetchOrderVersusRevenue();
+    fetchSalesByCategory();
+    fetchPerformingItems();
+    fetchSalesForecasting();
+    fetchMonthRevenue();
+  }, []);
+
+  const fetchRevenueKPIs = async () => {
+    try {
+      const result = await api.get("/analytics/revenue-kpis")
+      setKPIData(result.data.data);
+    } catch (err) {
+        console.error("Failed to fetch revenue KPIs", err);
+    }
+  }
+  
+  const fetchRevenueOverTime = async () => {
+    try {
+      const result = await api.get("/analytics/revenue-over-time")
+      setRevenueOverTime(result.data.data.ewma_trendline);
+    } catch (err) {
+        console.error("Failed to fetch revenue over time", err);
+    }
+  }
+
+  const fetchOrderVersusRevenue = async () => {
+    try {
+      const result = await api.get("/analytics/order-versus-revenue")
+      setOrderVersusRevenue(result.data.data);
+    } catch (err) {
+        console.error("Failed to fetch order vs revenue", err);
+    }
+  }
+
+  const fetchSalesByCategory = async () => {
+    try {
+      const result = await api.get("/analytics/sales-by-category")
+      setSalesByCategory(result.data.data);
+    } catch (err) {   
+        console.error("Failed to fetch sales by category", err);
+    }
+  }
+
+  const fetchPerformingItems = async () => {
+    try {
+      const topResult = await api.get("/analytics/top-selling-items/")
+      const leastResult = await api.get("/analytics/least-selling-items/")
+      setTopPerformingItems(topResult.data.data);
+      setLeastPerformingItems(leastResult.data.data);
+    } catch (err) {
+        console.error("Failed to fetch performing items", err);
+    }
+  }
+
+  const fetchSalesForecasting = async () => {
+    try {
+      const result = await api.get(`/analytics/sales-forecast?end_date=${istYesterday}`)
+      setSalesForecasting(result.data.data);
+    } catch (err) {
+      console.error("Failed to fetch sales forecasting", err);
+    }
+  }
+
+  const fetchMonthRevenue = async () => {
+    try {
+      const result = await api.get(`/analytics/revenue-over-time?start_date=${istOneMonthBack}&end_date=${istDate}&end_time=${istTime}&span=1`)
+      setMonthRevenue(result.data.data.ewma_trendline);
+    } catch (err) {
+        console.error("Failed to fetch month revenue", err);
+    }
+  }
 
   return (
     <PageLayout>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <PageHeader title="Analytics" description="Business intelligence & performance insights" />
         <div className="flex gap-1">
-          {ranges.map((r) => (
-            <Button
-              key={r.value}
-              size="sm"
-              variant={range === r.value ? "default" : "outline"}
-              onClick={() => setRange(r.value)}
-              className="h-8 text-xs"
-            >
-              {r.label}
-            </Button>
-          ))}
+
         </div>
       </div>
 
       {/* KPI Summary */}
-      <KPIGrid range={range} />
+      <KPIGrid kpiData={kpiData} />
 
       {/* Revenue Analytics */}
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <RevenueChart range={range} />
+          <RevenueChart revenueData={revenueOverTime} orderData={orderVersusRevenue} />
         </div>
-        <CategoryBreakdownChart />
+        <CategoryBreakdownChart data={salesByCategory} />
       </div>
 
       {/* Sales Forecasting */}
-      <SalesForecastChart />
+      <SalesForecastChart prevData={monthRevenue} salesForecast={salesForecasting} />
 
       {/* Operational Insights */}
-      <OperationalInsights />
+      <OperationalInsights topItems={topPerformingItems} leastItems={leastPerformingItems} />
     </PageLayout>
   );
 }

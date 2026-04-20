@@ -13,7 +13,7 @@ interface TableCardProps {
   onDelete: (id: string) => void;
 }
 
-export default function TableCard({ id, table_number, total_seats, is_available, canManage, onEdit, onDelete }: TableCardProps) {
+export function TableCard({ id, table_number, total_seats, is_available, canManage, onEdit, onDelete }: TableCardProps) {
   const navigate = useNavigate();
 
   const handleClick = () => {

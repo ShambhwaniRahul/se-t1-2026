@@ -1,16 +1,20 @@
-import type { EmployeeRole } from "@/features/erp/data/types";
+export interface ShiftData {
+  id: number;
+  start_time: string | null; // ISO String
+  end_time: string | null;   // ISO String
+}
 
-export type RosterStatus = "on_shift" | "present" | "late" | "absent" | "scheduled" | "off";
+export interface AttendanceData {
+  id: number;
+  entry_time: string | null; // ISO String
+  exit_time: string | null;  // ISO String
+}
 
 export interface RosterEntry {
-  id: string;
-  employeeId: string;
-  employeeName: string;
-  avatarInitials: string;
-  role: EmployeeRole;
-  shiftStart: string | null; // "09:00"
-  shiftEnd: string | null;   // "17:00"
-  checkIn: string | null;
-  checkOut: string | null;
-  status: RosterStatus;
+  employee_id: number;
+  first_name: string;
+  last_name: string;
+  role_display: string;
+  shift: ShiftData | null;
+  attendance: AttendanceData | null;
 }

@@ -158,36 +158,10 @@ class changeEmployeePasswordSerializer(serializers.Serializer):
 class SalarySlipSerializer(serializers.ModelSerializer):
     employee_name = serializers.CharField(source='employee.full_name', read_only=True)
 
-    breakdowns = SalarySlipBreakdownSerializer(
-        source='salaryslipbreakdown_set',
-        many=True,
-        read_only=True
-    )
-
     class Meta:
         model = SalarySlip
-        fields = [
-            'id',
-            'employee',
-            'employee_name',
-            'date_paid',
-            'total_amount',
-            'transaction_no',
-            'breakdowns',
-            'created_at',
-            'updated_at',
-        ]
-        read_only_fields = ['date_paid', 'created_at', 'updated_at']
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-
-        total = 0
-        for b in instance.salaryslipbreakdown_set.all():
-            total += b.amount * b.type_pay
-
-        data['total_amount'] = total
-        return data
+        # '__all__' automatically grabs all the new fields we just made (month, net_pay, etc.)
+        fields = '__all__'
 
 
 

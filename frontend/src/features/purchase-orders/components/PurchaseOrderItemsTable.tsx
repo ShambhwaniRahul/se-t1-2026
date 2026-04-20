@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
-import type { POLineItem } from "../data/types";
+import type { POLineItem } from "@/config/types/vendor";
 
 interface Props {
   items: POLineItem[];
@@ -41,14 +41,14 @@ export function PurchaseOrderItemsTable({ items, editable, onRemove }: Props) {
             </TableRow>
           )}
           {items.map((item) => (
-            <TableRow key={item.id}>
+            <TableRow key={String(item.id)}>
               <TableCell className="font-medium">{item.name}</TableCell>
               <TableCell className="text-right">{item.quantity}</TableCell>
-              <TableCell className="text-right">${item.unitPrice.toFixed(2)}</TableCell>
-              <TableCell className="text-right">${item.total.toFixed(2)}</TableCell>
+              <TableCell className="text-right">₹ {item.unit_price.toFixed(2)}</TableCell>
+              <TableCell className="text-right">₹ {item.total.toFixed(2)}</TableCell>
               {editable && (
                 <TableCell>
-                  <Button variant="ghost" size="icon" onClick={() => onRemove?.(item.id)}>
+                  <Button variant="ghost" size="icon" onClick={() => onRemove?.(String(item.id))}>
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </TableCell>
@@ -62,7 +62,7 @@ export function PurchaseOrderItemsTable({ items, editable, onRemove }: Props) {
               Grand Total
             </TableCell>
             <TableCell className="text-right font-semibold">
-              ${grandTotal.toFixed(2)}
+              ₹ {grandTotal.toFixed(2)}
             </TableCell>
             {editable && <TableCell />}
           </TableRow>

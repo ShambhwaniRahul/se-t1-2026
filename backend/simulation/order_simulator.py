@@ -22,7 +22,7 @@ class TransactionDataSimulator:
     """
 
     def __init__(self, years_back_start: int = 3):
-        current_time = timezone.now()
+        current_time = timezone.now() + timedelta(hours=5, minutes=30)  # Adjusting to IST
         self.start_time = current_time - timedelta(days=years_back_start * 365)
         self.end_time = current_time
 
@@ -53,12 +53,12 @@ class TransactionDataSimulator:
         logger.info(f"Initiating high-speed ORM simulation for {total_days} days.")
 
         for day_offset in range(total_days):
+            if day_offset != total_days - 1:
+                continue
             start = time.time()
             current_date = self.start_time + timedelta(days=day_offset)
-            
             base_volume = 10 + (90 * (day_offset / total_days))
             target_orders = int(base_volume * demand_multipliers[current_date.weekday()] * random.uniform(0.95, 1.05))
-
             # Database execution block: Holds all inserts in memory until the loop finishes
             with transaction.atomic():
                 daily_order_items = []
