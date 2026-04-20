@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { Plus, ScanSearch } from "lucide-react";
 import { PageLayout } from "@/components/shared/PageLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SearchInput } from "@/components/shared/SearchInput";
@@ -38,24 +38,6 @@ export default function PurchaseOrdersPage() {
   const [loading, setLoading] = useState(true); // 🔥 loader
   const [error, setError] = useState<string | null>(null);
   const [vendors, setVendors] = useState<Vendor[]>([]);
-
-  // const filtered = useMemo(() => {
-  //   return MOCK_PURCHASE_ORDERS.filter((po) => {
-  //     const matchSearch =
-  //       po.poNumber.toLowerCase().includes(search.toLowerCase()) ||
-  //       po.vendor.name.toLowerCase().includes(search.toLowerCase());
-  //     const matchStatus = statusFilter === "all" || po.status === statusFilter;
-  //     const matchVendor = vendorFilter === "all" || po.vendor.id === vendorFilter;
-  //     return matchSearch && matchStatus && matchVendor;
-  //   });
-  // }, [search, statusFilter, vendorFilter]);
-
-  // const counts = useMemo(() => ({
-  //   total: MOCK_PURCHASE_ORDERS.length,
-  //   draft: MOCK_PURCHASE_ORDERS.filter((p) => p.status === "draft").length,
-  //   ordered: MOCK_PURCHASE_ORDERS.filter((p) => p.status === "ordered").length,
-  //   delivered: MOCK_PURCHASE_ORDERS.filter((p) => p.status === "delivered").length,
-  // }), []);
 
   const fetchPurchaseOrders = async () => {
     try {
@@ -121,15 +103,17 @@ export default function PurchaseOrdersPage() {
     [purchaseOrders],
   );
 
-
-  if (loading) {
-    return (
-      <div>Loading...</div>
-    )
-  }
-
   return (
     <PageLayout>
+      {loading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center p-8 bg-card rounded-xl shadow-2xl border text-center max-w-sm w-full mx-4">
+            <ScanSearch className="h-12 w-12 text-primary animate-pulse mb-6" />
+            <h3 className="text-xl font-semibold">Loading Purchase Orders</h3>
+          </div>
+        </div>
+      )}
+
       <PageHeader
         title="Purchase Orders"
         description="Manage vendor procurement and supply orders"

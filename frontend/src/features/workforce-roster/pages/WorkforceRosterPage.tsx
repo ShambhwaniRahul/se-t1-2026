@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { EditShiftSheet } from "../components/EditShiftSheet";
 import { LogAttendanceDialog } from "../components/LogAttendanceDialog";
 import type { RosterEntry } from "../data/types";
-import { CalendarIcon, Loader2 } from "lucide-react";
+import { CalendarIcon, ScanSearch } from "lucide-react";
 import { fetchDailyRoster } from "../api/rosterApi";
 import { toast } from "sonner";
 
@@ -119,6 +119,15 @@ export function WorkforceRosterPage() {
 
   return (
     <PageLayout>
+      {isLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center p-8 bg-card rounded-xl shadow-2xl border text-center max-w-sm w-full mx-4">
+            <ScanSearch className="h-12 w-12 text-primary animate-pulse mb-6" />
+            <h3 className="text-xl font-semibold">Loading Roster</h3>
+          </div>
+        </div>
+      )}
+
       <PageHeader
         title="Daily Workforce Roster"
         description="Manage shifts and track daily attendance"
@@ -138,11 +147,7 @@ export function WorkforceRosterPage() {
       />
 
       <div className="rounded-md border">
-        {isLoading ? (
-           <div className="p-10 flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-        ) : (
-          <DataTable columns={columns} data={roster} keyExtractor={(r) => r.employee_id.toString()} />
-        )}
+        <DataTable columns={columns} data={roster} keyExtractor={(r) => r.employee_id.toString()} />
       </div>
 
       <EditShiftSheet
