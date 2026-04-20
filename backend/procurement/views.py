@@ -866,6 +866,7 @@ class VendorInvoiceListCreateAPIView(APIView):
             "file": (invoice_image.name, invoice_image, invoice_image.content_type)
         }
         data_payload = {"expected_skus_json": json.dumps(expected_skus_json)}
+        print(data_payload)
         try:
             response = requests.post(OCR_URL, files=file_payload, data=data_payload, timeout=120)
             data = response.json()
