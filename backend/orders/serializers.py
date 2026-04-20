@@ -5,9 +5,8 @@ from datetime import timedelta
 
 
 class MenuItemSerializer(serializers.ModelSerializer):
-
     discount = serializers.SerializerMethodField()
-
+    category_name = serializers.CharField(source='get_category_display', read_only=True)
     class Meta:
         model = MenuItem
         fields = [
@@ -18,6 +17,7 @@ class MenuItemSerializer(serializers.ModelSerializer):
             'discount',
             'is_veg',
             'category',
+            'category_name',
             'created_at',
             'updated_at'
         ]

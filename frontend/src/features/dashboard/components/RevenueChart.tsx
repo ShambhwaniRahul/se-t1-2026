@@ -40,7 +40,7 @@ export function RevenueChart({ data }: RevenueChartProps) {
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              tickFormatter={(v) => `$${(v / 1000).toFixed(1)}k`}
+              tickFormatter={(v) => ` ${(v / 1000).toFixed(1)}k`}
               className="text-xs"
               width={48}
             />
@@ -50,7 +50,7 @@ export function RevenueChart({ data }: RevenueChartProps) {
                   labelFormatter={(label) => label}
                   formatter={(value, name) => (
                     <span className="font-mono tabular-nums">
-                      {name === "total_revenue" ? `$${Number(value).toLocaleString()}` : value}
+                      {name === "total_revenue" ? `₹ ${Number(value).toLocaleString()}` : value}
                     </span>
                   )}
                 />
