@@ -15,7 +15,7 @@ import {
   type TopSellingItems,
   type RecentOrders,
 } from "@/features/dashboard/data/dashboardData";
-import { DollarSign, ShoppingCart, Receipt, UtensilsCrossed } from "lucide-react";
+import { DollarSign, ShoppingCart, Receipt, UtensilsCrossed, IndianRupee, IndianRupeeIcon } from "lucide-react";
 
 
 export default function DashboardPage() {
@@ -148,8 +148,8 @@ export default function DashboardPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="Today's Revenue"
-          value={`$${revenueKPIs?.total_revenue.toLocaleString()}`}
-          icon={DollarSign}
+          value={`₹ ${revenueKPIs?.total_revenue.toLocaleString()}`}
+          icon={IndianRupee}
           trend={{ value: (revenueKPIs?.total_revenue / revenueKPIsYesterday?.total_revenue - 1) * 100, label: "vs yesterday" }}
         />
         <StatsCard
@@ -160,8 +160,8 @@ export default function DashboardPage() {
         />
         <StatsCard
           title="Avg Ticket"
-          value={`$${revenueKPIs?.average_revenue_per_order.toFixed(2)}`}
-          icon={Receipt}
+          value={`₹ ${revenueKPIs?.average_revenue_per_order.toFixed(0)}`}
+          icon={IndianRupee}
           trend={{ value: (revenueKPIs?.average_revenue_per_order / revenueKPIsYesterday?.average_revenue_per_order - 1) * 100, label: "vs yesterday" }}
         />
         <StatsCard

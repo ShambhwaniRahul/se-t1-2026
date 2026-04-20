@@ -22,7 +22,7 @@ export function TopItemsList({ items }: TopItemsListProps) {
                 <span className="font-medium">{item.name}</span>
               </span>
               <span className="text-muted-foreground tabular-nums text-xs">
-                {item.sales_count} sold · ${item.total_revenue.toLocaleString()}
+                {item.sales_count} sold · ₹{item.total_revenue.toLocaleString()}
               </span>
             </div>
             <div className="h-1.5 rounded-full bg-muted overflow-hidden">

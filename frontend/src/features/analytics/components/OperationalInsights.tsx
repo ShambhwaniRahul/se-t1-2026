@@ -30,7 +30,7 @@ export function OperationalInsights({ topItems, leastItems }: OperationalInsight
                 <p className="text-xs text-muted-foreground">{item.sales_count} orders</p>
               </div>
               <div className="text-right">
-                <p className="text-sm font-medium">${item.total_revenue}</p>
+                <p className="text-sm font-medium">₹ {item.total_revenue}</p>
               </div>
             </div>
           ))}
@@ -52,7 +52,7 @@ export function OperationalInsights({ topItems, leastItems }: OperationalInsight
                 <p className="text-xs text-muted-foreground">{item.sales_count} orders</p>
               </div>
               <div className="text-right">
-                <p className="text-sm font-medium">${item.total_revenue}</p>
+                <p className="text-sm font-medium">₹ {item.total_revenue}</p>
               </div>
             </div>
           ))}

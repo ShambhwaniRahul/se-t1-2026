@@ -13,6 +13,13 @@ const STATUS_STYLES: Record<RecentOrders["status"], string> = {
 };
 
 export function ActivityFeed({ items }: ActivityFeedProps) {
+
+  function minute_to_hour(minutes: number) {
+    const hour = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+
+    return hour > 0 ? `${hour}h ${mins}m` : `${mins}m`;
+  }
   return (
     <Card>
       <CardHeader>
@@ -39,9 +46,9 @@ export function ActivityFeed({ items }: ActivityFeedProps) {
                         "block text-sm font-medium tabular-nums", "text-foreground"
                       )}
                     >
-                      +${Math.abs(item.total_amount).toFixed(2)}
+                      +₹{Math.abs(item.total_amount).toFixed(2)}
                     </span>
-                  <span className="text-[11px] text-muted-foreground">{Math.abs(item.timedelta_since_order)} minutes ago</span>
+                  <span className="text-[11px] text-muted-foreground">{minute_to_hour(Math.abs(item.timedelta_since_order))} ago</span>
                 </span>
               </div>
             ))}
