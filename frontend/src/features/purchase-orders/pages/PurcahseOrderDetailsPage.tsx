@@ -16,15 +16,17 @@ import api from "@/lib/api";
 import { useState, useEffect } from "react";
 import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 
+// Maintains consistency with standard application status variants
 const STATUS_VARIANT: Record<POStatus, StatusBadgeVariant> = {
   Pending: "warning",
-  Received: "success", // (Delivered UI name ho sakta hai, but backend = Received)
+  Received: "success",
   Cancelled: "destructive",
 };
 
+// Maps backend enumeration to frontend display nomenclature
 const STATUS_LABEL: Record<POStatus, string> = {
   Pending: "Pending",
-  Received: "Delivered", // UI friendly label
+  Received: "Delivered",
   Cancelled: "Cancelled",
 };
 
@@ -39,10 +41,27 @@ export default function PurchaseOrderDetailsPage() {
   const [cancelOpen, setCancelOpen] = useState(false);
 
   const [status, setStatus] = useState<POStatus>("Pending");
+  
+  // Tracks the physical invoice image required for successful receipt processing
+  const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
 
+  // Constructs multipart payload containing invoice proof and purchase reference
   const markAsReceived = async () => {
+    if (!invoiceFile) {
+      toast.error("Invoice image is required to mark order as received");
+      return;
+    }
+
     try {
-      const res = await api.post(`/procurement/purchase-orders/${id}/receive/`);
+      const formData = new FormData();
+      formData.append("invoice_image", invoiceFile);
+      formData.append("purchase", id as string);
+
+      const res = await api.post(`/procurement/vendor-invoices/`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       if (res.data.success) {
         toast.success(res.data.message || "Order marked as received");
@@ -55,6 +74,7 @@ export default function PurchaseOrderDetailsPage() {
     } finally {
       fetchPurchaseOrder();
       setReceiveOpen(false);
+      setInvoiceFile(null);
     }
   };
 
@@ -117,11 +137,6 @@ export default function PurchaseOrderDetailsPage() {
 
   const totalAmount = items.reduce((sum, i) => sum + i.total, 0);
 
-  const action = (label: string) => () => {
-    toast.success(`Order ${label.toLowerCase()}`);
-    navigate("/purchase-orders");
-  };
-
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -147,7 +162,6 @@ export default function PurchaseOrderDetailsPage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          {/* Items */}
           <Card>
             <CardHeader>
               <CardTitle>Items Ordered</CardTitle>
@@ -157,7 +171,6 @@ export default function PurchaseOrderDetailsPage() {
             </CardContent>
           </Card>
 
-          {/* Simple Summary instead of timeline */}
           <Card>
             <CardHeader>
               <CardTitle>Summary</CardTitle>
@@ -176,7 +189,6 @@ export default function PurchaseOrderDetailsPage() {
           </Card>
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -196,36 +208,42 @@ export default function PurchaseOrderDetailsPage() {
             </CardContent>
           </Card>
 
-          {/* <div className="flex flex-col gap-2">
-            {items?.length > 0 && (
-              <>
-                <Button onClick={()=>{setReceiveOpen(true)}} className="cursor-pointer">
-                  <Package className="h-4 w-4 mr-1" />
-                  Mark as Received
-                </Button>
-
-                <Button variant="destructive" onClick={()=>{setCancelOpen(true)}} className="cursor-pointer">
-                  <XCircle className="h-4 w-4 mr-1" />
-                  Cancel Order
-                </Button>
-              </>
-            )}
-          </div> */}
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-4">
             {status === "Pending" && (
               <>
-                <Button onClick={() => setReceiveOpen(true)}>
-                  <Package className="h-4 w-4 mr-1" />
-                  Mark as Received
-                </Button>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Invoice Image
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        setInvoiceFile(e.target.files[0]);
+                      }
+                    }}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </div>
 
-                <Button
-                  variant="destructive"
-                  onClick={() => setCancelOpen(true)}
-                >
-                  <XCircle className="h-4 w-4 mr-1" />
-                  Cancel Order
-                </Button>
+                <div className="flex flex-col gap-2">
+                  <Button 
+                    onClick={() => setReceiveOpen(true)}
+                    disabled={!invoiceFile}
+                  >
+                    <Package className="h-4 w-4 mr-1" />
+                    Mark as Received
+                  </Button>
+
+                  <Button
+                    variant="destructive"
+                    onClick={() => setCancelOpen(true)}
+                  >
+                    <XCircle className="h-4 w-4 mr-1" />
+                    Cancel Order
+                  </Button>
+                </div>
               </>
             )}
 
