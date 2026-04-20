@@ -18,6 +18,8 @@ import {
 } from "../data/mapper";
 import api from "@/lib/api";
 import { toast } from "sonner";
+import { UpdateQuantityModal } from "../components/UpdateQuantityModal";
+import { PerishableSkuModal } from "../components/PerishableSkuModal";
 
 const STOCK_STATUS_MAP: Record<
   string,
@@ -42,6 +44,8 @@ export default function InventoryPage() {
 
   const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Ingredient | null>(null);
+  const [updateTarget, setUpdateTarget] = useState<Ingredient | null>(null);
+  const [skuModalOpen, setSkuModalOpen] = useState(false);
 
   // 🔥 FETCH BASED ON TYPE
   const fetchInventory = async (selectedType = type) => {
@@ -100,7 +104,7 @@ export default function InventoryPage() {
 
           if (i.category === "perishable") {
             status = getPerishableStatus(i);
-          } else{
+          } else {
             status = "in_stock";
           }
           const { label, variant } = STOCK_STATUS_MAP[status];
@@ -129,9 +133,14 @@ export default function InventoryPage() {
       header: "",
       render: (i) => (
         <div className="flex gap-2">
-          <Button size="icon" variant="ghost">
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => setUpdateTarget(i)}
+          >
             <Pencil className="h-4 w-4" />
           </Button>
+
           <Button
             size="icon"
             variant="ghost"
@@ -147,19 +156,80 @@ export default function InventoryPage() {
     return base;
   }, [type]);
 
+  const handleCreateSKU = async (data: any) => {
+    try {
+      const res = await api.post("/inventory/perishable-skus/", data);
+
+      if (res.data.success) {
+        console.log("Data: ",res.data);
+        
+        toast.success(res.data.message || "SKU created successfully");
+        // optionally refresh SKU list
+      } else {
+        console.log("Data: ",res.data.message)
+        toast.error(res.data.message || "Failed to create SKU");
+      }
+    } catch {
+      console.log("✅✅✅Reached bloody here!");
+      
+      toast.error("Something went wrong");
+    }
+  };
+
+  // 🖊 EDIT
+  const handleUpdateQuantity = async (quantity: number) => {
+    if (!updateTarget) return;
+
+    try {
+      let res;
+
+      if (type === "perishable") {
+        res = await api.patch(
+          `/inventory/perishable-inventory/${updateTarget.id}/`,
+          { quantity },
+        );
+      } else {
+        res = await api.patch(
+          `/inventory/non-perishable-inventory/${updateTarget.id}/`,
+          { quantity },
+        );
+      }
+      // console.log("✅✅Res: ", res.data);
+      if (res.data.success) {
+        toast.success(res.data.message || "Quantity updated");
+
+        fetchInventory();
+      } else {
+        toast.error(res.data.message || "Update failed");
+      }
+    } catch {
+      toast.error("Failed to update");
+    } finally {
+      setUpdateTarget(null);
+    }
+  };
+
   // 🗑 DELETE
   const handleDelete = async () => {
     if (!deleteTarget) return;
-
+    let result;
     try {
       if (type === "perishable") {
-        await api.delete(`/inventory/perishable/${deleteTarget.id}/`);
+        result = await api.delete(
+          `/inventory/perishable-inventory/${deleteTarget.id}/`,
+        );
       } else {
-        await api.delete(`/inventory/non-perishable/${deleteTarget.id}/`);
+        result = await api.delete(
+          `/inventory/non-perishable-inventory/${deleteTarget.id}/`,
+        );
       }
 
-      toast.success("Deleted");
-      fetchInventory();
+      if (result.data.success) {
+        toast.success(result.data.message || "Deleted");
+        fetchInventory();
+      } else {
+        toast.error(result.data.message || "Delete failed");
+      }
     } catch {
       toast.error("Delete failed");
     } finally {
@@ -182,9 +252,9 @@ export default function InventoryPage() {
         title="Inventory"
         description={`${ingredients.length} items`}
         actions={
-          <Button>
+          <Button onClick={() => setSkuModalOpen(true)}>
             <Plus className="mr-1 h-4 w-4" />
-            Add
+            SKU
           </Button>
         }
       />
@@ -227,6 +297,22 @@ export default function InventoryPage() {
         variant="destructive"
         onConfirm={handleDelete}
       />
+
+      {/* EDIT - REUSE ADD DIALOG WITH PRE-FILLED DATA */}
+      <UpdateQuantityModal
+        open={!!updateTarget}
+        onClose={() => setUpdateTarget(null)}
+        item={updateTarget}
+        onSubmit={handleUpdateQuantity}
+      />
+    <PerishableSkuModal
+  open={skuModalOpen}
+  onOpenChange={setSkuModalOpen}
+  onSubmit={handleCreateSKU}
+/>
+
     </PageLayout>
+
+    
   );
 }

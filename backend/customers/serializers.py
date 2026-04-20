@@ -1,7 +1,9 @@
 from rest_framework import serializers
 from .models import Customer, CustomerPayment, CustomerPointsBank
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from orders.models import Order
+from django.utils import timezone
+from datetime import timedelta
 
 class CustomerSerializer(serializers.ModelSerializer):
     """
@@ -45,13 +47,18 @@ class CustomerReadSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at", "updated_at"]
 
     def get_total_points(self, obj):
-        return CustomerPayment.objects.filter(
-            customer=obj,
-            usage_type=CustomerPayment.TypeChoices.VALID
-        ).aggregate(
-            total=Sum("earned_loyalty_points")
-        )["total"] or 0
-
+        # Calculate the date 30 days ago
+        
+        expiry_threshold = timezone.now() - timedelta(days=1)
+        
+        # Filter for points > 0 OR created within the last 30 days
+        # total = CustomerPointsBank.objects.filter(
+        #     Q(payment__customer=obj),
+        #     Q(points__gt=0) & Q(created_at__gte=expiry_threshold)
+        # ).aggregate(total=Sum('points'))['total']
+        total = CustomerPointsBank.objects.filter(payment__customer=obj,points__gt=0,created_at__gte=expiry_threshold).aggregate(total=Sum('points'))['total']
+        
+        return total or 0
 
 class CustomerPaymentSerializer(serializers.ModelSerializer):
 

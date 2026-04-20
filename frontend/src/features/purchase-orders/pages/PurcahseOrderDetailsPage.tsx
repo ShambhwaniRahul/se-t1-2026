@@ -162,6 +162,122 @@ export default function PurchaseOrderDetailsPage() {
 
   const totalAmount = items.reduce((sum, i) => sum + i.total, 0);
 
+  const handleDownloadReceipt = () => {
+  const printWindow = window.open("", "_blank");
+
+  if (!printWindow) {
+    toast.error("Please allow pop-ups to download receipt.");
+    return;
+  }
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>PO Receipt - ${id}</title>
+        <style>
+            body {
+              font-family: system-ui, -apple-system, sans-serif;
+              padding: 40px;
+              color: #111827;
+              max-width: 700px;
+              margin: 0 auto;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 30px;
+              border-bottom: 2px solid #e5e7eb;
+              padding-bottom: 20px;
+            }
+            .header h2 {
+              margin: 0 0 10px 0;
+              font-size: 24px;
+            }
+            .header p {
+              margin: 5px 0;
+              color: #4b5563;
+            }
+            .row {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 10px;
+              padding-bottom: 6px;
+              border-bottom: 1px dashed #f3f4f6;
+            }
+            .table {
+              margin-top: 20px;
+              width: 100%;
+              border-collapse: collapse;
+            }
+            .table th, .table td {
+              text-align: left;
+              padding: 8px;
+              border-bottom: 1px solid #e5e7eb;
+            }
+            .total {
+              margin-top: 20px;
+              font-weight: bold;
+              font-size: 1.2rem;
+              display: flex;
+              justify-content: space-between;
+              border-top: 2px solid #111827;
+              padding-top: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h2>PURCHASE ORDER RECEIPT</h2>
+            <p><strong>PO ID:</strong> ${id}</p>
+            <p><strong>Status:</strong> ${STATUS_LABEL[status]}</p>
+            <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+        </div>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Qty</th>
+                    <th>Price</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${items
+                  .map(
+                    (item) => `
+                  <tr>
+                      <td>${item.name}</td>
+                      <td>${item.quantity ?? "-"}</td>
+                      <td>₹${item.unit_price ?? "-"}</td>
+                      <td>₹${item.total}</td>
+                  </tr>
+                `
+                  )
+                  .join("")}
+            </tbody>
+        </table>
+
+        <div class="total">
+            <span>Total Amount</span>
+            <span>₹${totalAmount.toFixed(2)}</span>
+        </div>
+
+        <script>
+            window.onload = () => {
+              window.print();
+              setTimeout(() => window.close(), 500);
+            }
+        </script>
+    </body>
+    </html>
+  `;
+
+  printWindow.document.write(html);
+  printWindow.document.close();
+};
+
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -289,7 +405,7 @@ export default function PurchaseOrderDetailsPage() {
             )}
 
             {status === "Received" && (
-              <Button disabled={isProcessing}>
+             <Button onClick={handleDownloadReceipt} disabled={isProcessing} className="cursor-pointer">
                 <CheckCircle2 className="h-4 w-4 mr-1" />
                 Download Receipt
               </Button>

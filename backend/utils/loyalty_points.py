@@ -1,6 +1,9 @@
 from enum import Enum
 from orders.models import Order
 from customers.models import CustomerPayment,CustomerPointsBank
+from django.utils import timezone
+from django.db.models import Q
+from datetime import timedelta
 
 class Converter(Enum):
     POINTS_TO_RUPEES = 1
@@ -24,11 +27,18 @@ def compute_adjusted_amount(final_total, customer_id):
     points_used = 0
     updated_entries = []
 
-    # 🔒 Lock rows to prevent race condition
+    # Calculate the date threshold for 30 days ago
+    expiry_threshold = timezone.now() - timedelta(days=7)
+
+    # 🔒 Lock rows with the new filter criteria
     loyalty_entries = (
         CustomerPointsBank.objects
         .select_for_update()
-        .filter(payment__customer__id=customer_id, points__gt=0)
+        .filter(
+            Q(payment__customer__id=customer_id),
+            # points > 0 AND created_at >= 7 days ago
+            Q(points__gt=0) & Q(created_at__gte=expiry_threshold)
+        )
         .order_by("created_at")   # FIFO
     )
 
