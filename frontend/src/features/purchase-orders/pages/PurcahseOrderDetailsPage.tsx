@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, data } from "react-router-dom";
 import { ArrowLeft, Package, Truck, XCircle, CheckCircle2 } from "lucide-react";
 import { PageLayout } from "@/components/shared/PageLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -122,6 +122,114 @@ export default function PurchaseOrderDetailsPage() {
     navigate("/purchase-orders");
   };
 
+  const downloadReceipt = () => {
+    const printWindow = window.open("", "_blank");
+
+    if (!printWindow) {
+      toast.error("Please allow pop-ups to download the receipt.");
+      return;
+    }
+
+    const totalAmount = items.reduce((sum, i) => sum + i.total, 0);
+
+    const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Purchase Receipt - PO ${id}</title>
+      <style>
+        body {
+          font-family: system-ui, -apple-system, sans-serif;
+          padding: 40px;
+          color: #111827;
+          max-width: 700px;
+          margin: 0 auto;
+        }
+        .header {
+          text-align: center;
+          margin-bottom: 30px;
+          border-bottom: 2px solid #e5e7eb;
+          padding-bottom: 20px;
+        }
+        .header h2 {
+          margin: 0;
+        }
+        .row {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 10px;
+        }
+        .table {
+          width: 100%;
+          margin-top: 20px;
+          border-collapse: collapse;
+        }
+        .table th, .table td {
+          border-bottom: 1px solid #e5e7eb;
+          padding: 8px;
+          text-align: left;
+        }
+        .total {
+          font-weight: bold;
+          font-size: 1.2rem;
+          margin-top: 20px;
+          border-top: 2px solid #111827;
+          padding-top: 10px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h2>PURCHASE RECEIPT</h2>
+        <p><strong>PO ID:</strong> ${id}</p>
+        <p><strong>Status:</strong> ${status}</p>
+        <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+      </div>
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Qty</th>
+            <th>Unit Price</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items
+            .map(
+              (item) => `
+            <tr>
+              <td>${item.name}</td>
+              <td>${item.quantity}</td>
+              <td>₹${item.unit_price}</td>
+              <td>₹${item.total}</td>
+            </tr>
+          `,
+            )
+            .join("")}
+        </tbody>
+      </table>
+
+      <div class="total row">
+        <span>Total Amount</span>
+        <span>₹${totalAmount.toFixed(2)}</span>
+      </div>
+
+      <script>
+        window.onload = () => {
+          window.print();
+          setTimeout(() => window.close(), 500);
+        };
+      </script>
+    </body>
+    </html>
+  `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -196,21 +304,6 @@ export default function PurchaseOrderDetailsPage() {
             </CardContent>
           </Card>
 
-          {/* <div className="flex flex-col gap-2">
-            {items?.length > 0 && (
-              <>
-                <Button onClick={()=>{setReceiveOpen(true)}} className="cursor-pointer">
-                  <Package className="h-4 w-4 mr-1" />
-                  Mark as Received
-                </Button>
-
-                <Button variant="destructive" onClick={()=>{setCancelOpen(true)}} className="cursor-pointer">
-                  <XCircle className="h-4 w-4 mr-1" />
-                  Cancel Order
-                </Button>
-              </>
-            )}
-          </div> */}
           <div className="flex flex-col gap-2">
             {status === "Pending" && (
               <>
@@ -230,7 +323,7 @@ export default function PurchaseOrderDetailsPage() {
             )}
 
             {status === "Received" && (
-              <Button>
+              <Button onClick={downloadReceipt} className="cursor-pointer">
                 <CheckCircle2 className="h-4 w-4 mr-1" />
                 Download Receipt
               </Button>

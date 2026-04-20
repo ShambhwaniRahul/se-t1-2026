@@ -1,93 +1,94 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { PageLayout } from "@/components/shared/PageLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { DataTable, type Column } from "@/components/shared/DataTable";
-import { StatusBadge, type StatusBadgeVariant } from "@/components/shared/StatusBadge";
+import {
+  StatusBadge,
+  type StatusBadgeVariant,
+} from "@/components/shared/StatusBadge";
 import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 import { Button } from "@/components/ui/button";
+import { Plus, Pencil, Trash2 } from "lucide-react";
+import { getPerishableStatus } from "../utils/inventoryData";
+import type { Ingredient } from "../data/type";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Plus, History, Pencil, Trash2 } from "lucide-react";
-import { useInventory } from "../hooks/useInventory";
-import { IngredientFormModal } from "../components/IngredientFormModal";
-import { StockHistoryModal } from "../components/StockHistoryModal";
-import type { Ingredient, IngredientCategory } from "../data/inventoryData";
-import { INGREDIENT_CATEGORIES, getStockStatus } from "../data/inventoryData";
+  mapPerishableToIngredient,
+  mapNonPerishableToIngredient,
+} from "../data/mapper";
+import api from "@/lib/api";
+import { toast } from "sonner";
 
-const STOCK_STATUS_MAP: Record<string, { label: string; variant: StatusBadgeVariant }> = {
+const STOCK_STATUS_MAP: Record<
+  string,
+  { label: string; variant: StatusBadgeVariant }
+> = {
   in_stock: { label: "In Stock", variant: "success" },
   low_stock: { label: "Low Stock", variant: "warning" },
   out_of_stock: { label: "Out of Stock", variant: "destructive" },
+
+  // 🔥 NEW
+  expired: { label: "Expired", variant: "secondary" }, // grey
+  expiring_soon: { label: "Expiring Soon", variant: "warning" },
 };
 
 export default function InventoryPage() {
-  const { ingredients, addIngredient, updateIngredient, deleteIngredient, getMovements } = useInventory();
+  const [type, setType] = useState<"perishable" | "non_perishable">(
+    "perishable",
+  );
+
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [stockFilter, setStockFilter] = useState<string>("all");
-
-  // Modal states
-  const [formOpen, setFormOpen] = useState(false);
-  const [editTarget, setEditTarget] = useState<Ingredient | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Ingredient | null>(null);
-  const [historyTarget, setHistoryTarget] = useState<Ingredient | null>(null);
-  const [showAllHistory, setShowAllHistory] = useState(false);
 
-  // Filtered data
+  // 🔥 FETCH BASED ON TYPE
+  const fetchInventory = async (selectedType = type) => {
+    try {
+      setLoading(true);
+
+      if (selectedType === "perishable") {
+        const res = await api.get("/inventory/perishable-inventory/");
+        const mapped = res.data.data.map(mapPerishableToIngredient);
+        setIngredients(mapped);
+      } else {
+        const res = await api.get("/inventory/non-perishable-inventory/");
+        const mapped = res.data.data.map(mapNonPerishableToIngredient);
+        setIngredients(mapped);
+      }
+    } catch {
+      toast.error("Failed to load inventory");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchInventory();
+  }, [type]);
+
+  // 🔍 FILTER
   const filtered = useMemo(() => {
-    let result = ingredients;
-    if (search) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (i) =>
-          i.name.toLowerCase().includes(q) ||
-          i.supplier.toLowerCase().includes(q)
-      );
-    }
-    if (categoryFilter !== "all") {
-      result = result.filter((i) => i.category === categoryFilter);
-    }
-    if (stockFilter !== "all") {
-      result = result.filter((i) => getStockStatus(i) === stockFilter);
-    }
-    return result;
-  }, [ingredients, search, categoryFilter, stockFilter]);
+    if (!search) return ingredients;
+    const q = search.toLowerCase();
+    return ingredients.filter((i) => i.name.toLowerCase().includes(q));
+  }, [ingredients, search]);
 
-  // Column defs
-  const columns: Column<Ingredient>[] = useMemo(
-    () => [
-      { key: "name", header: "Ingredient", render: (i) => <span className="font-semibold">{i.name}</span> },
+  // 🧾 COLUMNS (dynamic)
+  const columns: Column<Ingredient>[] = useMemo(() => {
+    const base: Column<Ingredient>[] = [
       {
-        key: "category",
-        header: "Category",
-        render: (i) => (
-          <span className="capitalize text-muted-foreground">
-            {INGREDIENT_CATEGORIES.find((c) => c.id === i.category)?.label ?? i.category}
-          </span>
-        ),
+        key: "name",
+        header: "Name",
+        render: (i) => <span className="font-semibold">{i.name}</span>,
       },
       {
-        key: "currentStock",
+        key: "quantity",
         header: "Stock",
         render: (i) => (
-          <span className="font-semibold tabular-nums">
-            {i.currentStock} {i.unit}
-          </span>
-        ),
-      },
-      {
-        key: "minStock",
-        header: "Min",
-        render: (i) => (
-          <span className="tabular-nums text-muted-foreground">
-            {i.minStock} {i.unit}
+          <span className="font-semibold">
+            {i.quantity} {i.unit}
           </span>
         ),
       },
@@ -95,168 +96,127 @@ export default function InventoryPage() {
         key: "status",
         header: "Status",
         render: (i) => {
-          const s = getStockStatus(i);
-          const { label, variant } = STOCK_STATUS_MAP[s];
+          let status;
+
+          if (i.category === "perishable") {
+            status = getPerishableStatus(i);
+          } else{
+            status = "in_stock";
+          }
+          const { label, variant } = STOCK_STATUS_MAP[status];
+
           return <StatusBadge variant={variant}>{label}</StatusBadge>;
         },
       },
-      {
-        key: "supplier",
-        header: "Supplier",
-        render: (i) => <span className="text-muted-foreground">{i.supplier}</span>,
-      },
-      {
-        key: "costPerUnit",
-        header: "Cost/Unit",
-        render: (i) => <span className="tabular-nums">${i.costPerUnit.toFixed(2)}</span>,
-      },
-      {
-        key: "actions",
-        header: "",
-        className: "w-[120px]",
+    ];
+
+    // 👉 Add expiry column only for perishable
+    if (type === "perishable") {
+      base.push({
+        key: "expiry",
+        header: "Expiry",
         render: (i) => (
-          <div className="flex items-center gap-1 justify-end">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); setHistoryTarget(i); }}>
-              <History className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); openEdit(i); }}>
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteTarget(i); }}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
+          <span className={i.isExpired ? "text-destructive" : ""}>
+            {i.expiryDate ?? "-"}
+          </span>
         ),
-      },
-    ],
-    []
-  );
-
-  // Handlers
-  const openAdd = () => {
-    setEditTarget(null);
-    setFormOpen(true);
-  };
-
-  const openEdit = (ingredient: Ingredient) => {
-    setEditTarget(ingredient);
-    setFormOpen(true);
-  };
-
-  const handleSave = (data: Omit<Ingredient, "id">) => {
-    if (editTarget) {
-      updateIngredient(editTarget.id, data);
-    } else {
-      addIngredient(data);
+      });
     }
-  };
 
-  const handleDelete = () => {
-    if (deleteTarget) {
-      deleteIngredient(deleteTarget.id);
+    // 👉 Actions
+    base.push({
+      key: "actions",
+      header: "",
+      render: (i) => (
+        <div className="flex gap-2">
+          <Button size="icon" variant="ghost">
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="text-destructive"
+            onClick={() => setDeleteTarget(i)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+    });
+
+    return base;
+  }, [type]);
+
+  // 🗑 DELETE
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+
+    try {
+      if (type === "perishable") {
+        await api.delete(`/inventory/perishable/${deleteTarget.id}/`);
+      } else {
+        await api.delete(`/inventory/non-perishable/${deleteTarget.id}/`);
+      }
+
+      toast.success("Deleted");
+      fetchInventory();
+    } catch {
+      toast.error("Delete failed");
+    } finally {
       setDeleteTarget(null);
     }
   };
-
-  const lowStockCount = ingredients.filter((i) => getStockStatus(i) !== "in_stock").length;
 
   return (
     <PageLayout>
       <PageHeader
         title="Inventory"
-        description={`${ingredients.length} ingredients · ${lowStockCount} need attention`}
+        description={`${ingredients.length} items`}
         actions={
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowAllHistory(true)}>
-              <History className="mr-1 h-4 w-4" />
-              History
-            </Button>
-            <Button size="sm" onClick={openAdd}>
-              <Plus className="mr-1 h-4 w-4" />
-              Add Ingredient
-            </Button>
-          </div>
+          <Button>
+            <Plus className="mr-1 h-4 w-4" />
+            Add
+          </Button>
         }
       />
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder="Search ingredients or suppliers…"
-          className="w-full sm:w-72"
-        />
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            {INGREDIENT_CATEGORIES.map((c) => (
-              <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={stockFilter} onValueChange={setStockFilter}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Stock status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="in_stock">In Stock</SelectItem>
-            <SelectItem value="low_stock">Low Stock</SelectItem>
-            <SelectItem value="out_of_stock">Out of Stock</SelectItem>
-          </SelectContent>
-        </Select>
+      {/* 🔥 TOGGLE BUTTONS */}
+      <div className="flex gap-2">
+        <Button
+          variant={type === "perishable" ? "default" : "outline"}
+          onClick={() => setType("perishable")}
+        >
+          Perishable
+        </Button>
+
+        <Button
+          variant={type === "non_perishable" ? "default" : "outline"}
+          onClick={() => setType("non_perishable")}
+        >
+          Non-Perishable
+        </Button>
       </div>
 
-      {/* Table */}
-      <DataTable<Ingredient>
-        columns={columns}
-        data={filtered}
-        keyExtractor={(i) => i.id}
-        onRowClick={openEdit}
-        emptyState={
-          <div className="py-12 text-center">
-            <p className="text-muted-foreground">No ingredients match your filters.</p>
-          </div>
-        }
+      {/* 🔍 SEARCH */}
+      <SearchInput
+        value={search}
+        onChange={setSearch}
+        placeholder="Search..."
+        className="w-72"
       />
 
-      {/* Add/Edit modal */}
-      <IngredientFormModal
-        key={editTarget?.id ?? "new"}
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        ingredient={editTarget}
-        onSave={handleSave}
-      />
+      {/* TABLE */}
+      <DataTable columns={columns} data={filtered} keyExtractor={(i) => i.id} />
 
-      {/* Delete confirmation */}
+      {/* DELETE */}
       <ConfirmationDialog
         open={!!deleteTarget}
         onOpenChange={(o) => !o && setDeleteTarget(null)}
-        title="Delete Ingredient"
-        description={`Are you sure you want to remove "${deleteTarget?.name}"? This action cannot be undone.`}
+        title="Delete"
+        description={`Delete ${deleteTarget?.name}?`}
         confirmLabel="Delete"
         variant="destructive"
         onConfirm={handleDelete}
-      />
-
-      {/* Stock history – single ingredient */}
-      <StockHistoryModal
-        open={!!historyTarget}
-        onOpenChange={(o) => !o && setHistoryTarget(null)}
-        movements={historyTarget ? getMovements(historyTarget.id) : []}
-        ingredientName={historyTarget?.name}
-      />
-
-      {/* Stock history – all */}
-      <StockHistoryModal
-        open={showAllHistory}
-        onOpenChange={setShowAllHistory}
-        movements={getMovements()}
       />
     </PageLayout>
   );
