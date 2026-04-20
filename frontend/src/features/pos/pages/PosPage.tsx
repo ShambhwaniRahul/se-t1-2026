@@ -9,6 +9,7 @@ import { PaymentModal } from "../components/PaymentModal";
 import { toast } from "sonner";
 import { useParams } from "react-router-dom";
 import api from "@/lib/api";
+import { ScanSearch } from "lucide-react";
 
 export default function PosPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -57,10 +58,17 @@ export default function PosPage() {
     toast.success("Order completed!");
   }, [cart]);
 
-  if (loading) return ( <div> Loading... </div> );
-
   return (
     <div className="-m-4 md:-m-6 flex h-[calc(100svh-3.5rem)] flex-col">
+      {loading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center p-8 bg-card rounded-xl shadow-2xl border text-center max-w-sm w-full mx-4">
+            <ScanSearch className="h-12 w-12 text-primary animate-pulse mb-6" />
+            <h3 className="text-xl font-semibold">Loading POS</h3>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-1 overflow-hidden">
         <div className="flex flex-1 flex-col overflow-hidden">
           <div className="border-b bg-card px-4 py-3">
