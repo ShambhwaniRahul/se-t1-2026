@@ -16,11 +16,12 @@ load_dotenv()
 app = FastAPI()
 
 api_key = os.getenv('GEMINI_API_KEY')
+model = os.getenv('MODEL', 'gemini-2.5-flash')  # Default to 'gemini-2.5-flash' if MODEL is not set
 if not api_key:
     raise ValueError("GEMINI_API_KEY not found in .env file")
 
 provider = GoogleProvider(api_key=api_key)
-model = GoogleModel('gemini-2.5-flash', provider=provider)
+model = GoogleModel(model, provider=provider)
 
 # Agent definition utilizes dependency injection for dictionary runtime variables
 agent = Agent(
@@ -74,6 +75,8 @@ async def scan_invoice(
             result.output.model_dump(), 
             context={'authorized_skus': expected_skus}
         )
+
+        print("Validated Output:", validated_output.model_dump())
 
         return validated_output
 
