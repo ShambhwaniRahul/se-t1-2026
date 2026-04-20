@@ -434,16 +434,13 @@ class RevenueOverTimeView(APIView):
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-
-import datetime
-
 class OrderVersusRevenueView(APIView):
     def get(self, request):
         try:
             start_date = request.query_params.get('start_date')
             end_date = request.query_params.get('end_date')
             
-            # Extract and validate grouping interval
+            # Extract and validate grouping interval to ensure valid partitioning
             try:
                 n_days = int(request.query_params.get('n_days', 90))
                 if n_days < 1:
@@ -481,7 +478,8 @@ class OrderVersusRevenueView(APIView):
             if order_revenue_data:
                 # Establish anchor date to ensure consistent n_days calendar windows
                 if start_date:
-                    base_date = datetime.datetime.strptime(start_date, "%Y-%m-%d").date()
+                    # Utilize the class-level datetime import
+                    base_date = datetime.strptime(start_date, "%Y-%m-%d").date()
                 else:
                     base_date = order_revenue_data[0]['created_at__date']
 
@@ -494,8 +492,9 @@ class OrderVersusRevenueView(APIView):
                     bucket_idx = max(0, delta_days // n_days)
 
                     if bucket_idx not in intervals:
-                        interval_start = base_date + datetime.timedelta(days=bucket_idx * n_days)
-                        interval_end = interval_start + datetime.timedelta(days=n_days - 1)
+                        # Utilize the class-level timedelta import
+                        interval_start = base_date + timedelta(days=bucket_idx * n_days)
+                        interval_end = interval_start + timedelta(days=n_days - 1)
                         
                         intervals[bucket_idx] = {
                             "index": bucket_idx,
@@ -508,7 +507,7 @@ class OrderVersusRevenueView(APIView):
                     intervals[bucket_idx]["total_revenue"] += item['total_revenue']
                     intervals[bucket_idx]["total_orders"] += item['total_orders']
 
-                # Flatten ordered dictionary values to list format
+                # Flatten ordered dictionary values to list format for JSON serialization
                 data = list(intervals.values())
                 
             return standard_response(
@@ -570,11 +569,18 @@ class SalesForecastView(APIView):
 
             hw_forecast = generate_holt_winters_forecast(revenue_df, forecast_days=forecast_days, seasonal_periods=seasonal_periods)
             sarima_forecast = generate_sarima_forecast(revenue_df, forecast_days=forecast_days, seasonal_periods=seasonal_periods)
+            
+            hw_forecast = hw_forecast.to_dict(orient='records')
+            sarima_forecast = sarima_forecast.to_dict(orient='records')
 
-            data = {
-                "holt_winters_forecast": hw_forecast.reset_index().to_dict(orient='records'),
-                "sarima_forecast": sarima_forecast.reset_index().to_dict(orient='records')
-            }
+            data = []
+            for i in range(len(hw_forecast)):
+                payload = {
+                    "date": hw_forecast[i]['Date'].isoformat(),
+                    "holt_winters_forecast": float(hw_forecast[i]['HW_Forecast']),
+                    "sarima_forecast": float(sarima_forecast[i]['SARIMA_Forecast'])
+                }
+                data.append(payload)
 
             return standard_response(
                 success=True,
