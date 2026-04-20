@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { Plus, Pencil, Trash2, Eye } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, ScanSearch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SearchInput } from "@/components/shared/SearchInput";
@@ -234,21 +234,17 @@ export default function VendorsPage() {
     [],
   );
 
-  // const vendorOrders = useMemo(
-  //   async () =>{
-
-  //   }
-  //     // Simulating API call to fetch purchase orders for the selected vendor
-  //   ),
-  //   [selectedVendor]
-  // );
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
   return (
     <div className="space-y-6 p-4 md:p-6">
+      {loading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center p-8 bg-card rounded-xl shadow-2xl border text-center max-w-sm w-full mx-4">
+            <ScanSearch className="h-12 w-12 text-primary animate-pulse mb-6" />
+            <h3 className="text-xl font-semibold">Loading Vendors</h3>
+          </div>
+        </div>
+      )}
+
       <PageHeader
         title="Vendors"
         description="Manage your supplier relationships"

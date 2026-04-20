@@ -1,5 +1,5 @@
-import { useParams, useNavigate, data } from "react-router-dom";
-import { ArrowLeft, Package, Truck, XCircle, CheckCircle2 } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
+import { ArrowLeft, Package, Truck, XCircle, CheckCircle2, ScanSearch } from "lucide-react";
 import { PageLayout } from "@/components/shared/PageLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import {
@@ -18,15 +18,23 @@ import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 
 const STATUS_VARIANT: Record<POStatus, StatusBadgeVariant> = {
   Pending: "warning",
-  Received: "success", // (Delivered UI name ho sakta hai, but backend = Received)
+  Received: "success",
   Cancelled: "destructive",
 };
 
 const STATUS_LABEL: Record<POStatus, string> = {
   Pending: "Pending",
-  Received: "Delivered", // UI friendly label
+  Received: "Delivered",
   Cancelled: "Cancelled",
 };
+
+// Sequential messages displayed during the AI OCR processing phase
+const PROCESSING_STEPS = [
+  "Uploading invoice image...",
+  "Running AI OCR extraction...",
+  "Mapping items to inventory...",
+  "Finalizing receipt..."
+];
 
 export default function PurchaseOrderDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -39,10 +47,47 @@ export default function PurchaseOrderDetailsPage() {
   const [cancelOpen, setCancelOpen] = useState(false);
 
   const [status, setStatus] = useState<POStatus>("Pending");
+  
+  const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
+
+  // States for handling the extended AI processing UI
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processStep, setProcessStep] = useState(0);
+
+  // Cycles through processing messages every 2.5 seconds while isProcessing is active
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isProcessing) {
+      setProcessStep(0);
+      interval = setInterval(() => {
+        setProcessStep((prev) => 
+          prev < PROCESSING_STEPS.length - 1 ? prev + 1 : prev
+        );
+      }, 10000);
+    }
+    return () => clearInterval(interval);
+  }, [isProcessing]);
 
   const markAsReceived = async () => {
+    if (!invoiceFile) {
+      toast.error("Invoice image is required to mark order as received");
+      return;
+    }
+
+    // Close dialog immediately to show the processing overlay
+    setReceiveOpen(false);
+    setIsProcessing(true);
+
     try {
-      const res = await api.post(`/procurement/purchase-orders/${id}/receive/`);
+      const formData = new FormData();
+      formData.append("invoice_image", invoiceFile);
+      formData.append("purchase", id as string);
+
+      const res = await api.post(`/procurement/vendor-invoices/`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       if (res.data.success) {
         toast.success(res.data.message || "Order marked as received");
@@ -54,7 +99,8 @@ export default function PurchaseOrderDetailsPage() {
       toast.error("Failed to mark as received");
     } finally {
       fetchPurchaseOrder();
-      setReceiveOpen(false);
+      setIsProcessing(false);
+      setInvoiceFile(null);
     }
   };
 
@@ -85,7 +131,6 @@ export default function PurchaseOrderDetailsPage() {
       if (res.data.success) {
         setItems(res.data.data.items);
         setStatus(res.data.data.status);
-        toast.success(res.data.message);
       } else {
         toast.error(res.data.message);
       }
@@ -117,130 +162,31 @@ export default function PurchaseOrderDetailsPage() {
 
   const totalAmount = items.reduce((sum, i) => sum + i.total, 0);
 
-  const action = (label: string) => () => {
-    toast.success(`Order ${label.toLowerCase()}`);
-    navigate("/purchase-orders");
-  };
-
-  const downloadReceipt = () => {
-    const printWindow = window.open("", "_blank");
-
-    if (!printWindow) {
-      toast.error("Please allow pop-ups to download the receipt.");
-      return;
-    }
-
-    const totalAmount = items.reduce((sum, i) => sum + i.total, 0);
-
-    const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Purchase Receipt - PO ${id}</title>
-      <style>
-        body {
-          font-family: system-ui, -apple-system, sans-serif;
-          padding: 40px;
-          color: #111827;
-          max-width: 700px;
-          margin: 0 auto;
-        }
-        .header {
-          text-align: center;
-          margin-bottom: 30px;
-          border-bottom: 2px solid #e5e7eb;
-          padding-bottom: 20px;
-        }
-        .header h2 {
-          margin: 0;
-        }
-        .row {
-          display: flex;
-          justify-content: space-between;
-          margin-bottom: 10px;
-        }
-        .table {
-          width: 100%;
-          margin-top: 20px;
-          border-collapse: collapse;
-        }
-        .table th, .table td {
-          border-bottom: 1px solid #e5e7eb;
-          padding: 8px;
-          text-align: left;
-        }
-        .total {
-          font-weight: bold;
-          font-size: 1.2rem;
-          margin-top: 20px;
-          border-top: 2px solid #111827;
-          padding-top: 10px;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <h2>PURCHASE RECEIPT</h2>
-        <p><strong>PO ID:</strong> ${id}</p>
-        <p><strong>Status:</strong> ${status}</p>
-        <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
-      </div>
-
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Item</th>
-            <th>Qty</th>
-            <th>Unit Price</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${items
-            .map(
-              (item) => `
-            <tr>
-              <td>${item.name}</td>
-              <td>${item.quantity}</td>
-              <td>₹${item.unit_price}</td>
-              <td>₹${item.total}</td>
-            </tr>
-          `,
-            )
-            .join("")}
-        </tbody>
-      </table>
-
-      <div class="total row">
-        <span>Total Amount</span>
-        <span>₹${totalAmount.toFixed(2)}</span>
-      </div>
-
-      <script>
-        window.onload = () => {
-          window.print();
-          setTimeout(() => window.close(), 500);
-        };
-      </script>
-    </body>
-    </html>
-  `;
-
-    printWindow.document.write(html);
-    printWindow.document.close();
-  };
-
   if (loading) {
     return <div>Loading...</div>;
   }
 
   return (
     <PageLayout>
+      {/* Full-screen blocking overlay active during AI extraction */}
+      {isProcessing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center p-8 bg-card rounded-xl shadow-2xl border text-center max-w-sm w-full mx-4">
+            <ScanSearch className="h-12 w-12 text-primary animate-pulse mb-6" />
+            <h3 className="text-xl font-semibold mb-2">Processing Invoice</h3>
+            <p className="text-sm text-muted-foreground animate-pulse h-6">
+              {PROCESSING_STEPS[processStep]}
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center gap-3">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => navigate("/purchase-orders")}
+          disabled={isProcessing}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -255,7 +201,6 @@ export default function PurchaseOrderDetailsPage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          {/* Items */}
           <Card>
             <CardHeader>
               <CardTitle>Items Ordered</CardTitle>
@@ -265,7 +210,6 @@ export default function PurchaseOrderDetailsPage() {
             </CardContent>
           </Card>
 
-          {/* Simple Summary instead of timeline */}
           <Card>
             <CardHeader>
               <CardTitle>Summary</CardTitle>
@@ -284,7 +228,6 @@ export default function PurchaseOrderDetailsPage() {
           </Card>
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -304,26 +247,49 @@ export default function PurchaseOrderDetailsPage() {
             </CardContent>
           </Card>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-4">
             {status === "Pending" && (
               <>
-                <Button onClick={() => setReceiveOpen(true)}>
-                  <Package className="h-4 w-4 mr-1" />
-                  Mark as Received
-                </Button>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Invoice Image
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={isProcessing}
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        setInvoiceFile(e.target.files[0]);
+                      }
+                    }}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </div>
 
-                <Button
-                  variant="destructive"
-                  onClick={() => setCancelOpen(true)}
-                >
-                  <XCircle className="h-4 w-4 mr-1" />
-                  Cancel Order
-                </Button>
+                <div className="flex flex-col gap-2">
+                  <Button 
+                    onClick={() => setReceiveOpen(true)}
+                    disabled={!invoiceFile || isProcessing}
+                  >
+                    <Package className="h-4 w-4 mr-1" />
+                    Mark as Received
+                  </Button>
+
+                  <Button
+                    variant="destructive"
+                    onClick={() => setCancelOpen(true)}
+                    disabled={isProcessing}
+                  >
+                    <XCircle className="h-4 w-4 mr-1" />
+                    Cancel Order
+                  </Button>
+                </div>
               </>
             )}
 
             {status === "Received" && (
-              <Button onClick={downloadReceipt} className="cursor-pointer">
+              <Button disabled={isProcessing}>
                 <CheckCircle2 className="h-4 w-4 mr-1" />
                 Download Receipt
               </Button>

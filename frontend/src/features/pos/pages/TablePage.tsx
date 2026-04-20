@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Modal } from "@/components/shared/Modal";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { ScanSearch } from "lucide-react";
 
 export default function TablePage() {
   const [tables, setTables] = useState<Table[]>([]);
@@ -50,7 +51,7 @@ export default function TablePage() {
     setFormData({
       table_number: table.table_number,
       total_seats: table.total_seats,
-      is_available: table.is_available, // kept internally, not shown
+      is_available: table.is_available,
     });
 
     setShowEdit(true);
@@ -135,12 +136,17 @@ export default function TablePage() {
     }
   };
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
   return (
     <div className="p-6">
+      {loading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center p-8 bg-card rounded-xl shadow-2xl border text-center max-w-sm w-full mx-4">
+            <ScanSearch className="h-12 w-12 text-primary animate-pulse mb-6" />
+            <h3 className="text-xl font-semibold">Loading Tables</h3>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-between mb-6">
         <h1 className="text-2xl font-semibold">Tables</h1>
 

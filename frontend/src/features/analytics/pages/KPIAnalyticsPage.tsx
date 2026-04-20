@@ -10,6 +10,15 @@ import { OperationalInsights } from "../components/OperationalInsights";
 import type { RevenueKPIs, RevenueOverTime, OrderVersusRevenue, SalesByCategory, PerformingItems, SalesForecasting, RevenueTrend } from "../data/types";
 import api from "@/lib/api";
 import { toast } from "sonner";
+import { ScanSearch } from "lucide-react";
+
+// Sequential messages displayed during the data fetching & AI forecasting phase
+const PROCESSING_STEPS = [
+  "Aggregating revenue KPIs...",
+  "Analyzing historical trends...",
+  "Running AI sales forecasting...",
+  "Compiling operational insights..."
+];
 
 export default function KPIAnalyticsPage() {
 
@@ -52,14 +61,40 @@ export default function KPIAnalyticsPage() {
   const [leastPerformingItems, setLeastPerformingItems] = useState<PerformingItems[] | []>([]);
   const [salesForecasting, setSalesForecasting] = useState<SalesForecasting[] | []>([]);
 
+  // States for handling the extended AI processing UI
+  const [isProcessing, setIsProcessing] = useState(true);
+  const [processStep, setProcessStep] = useState(0);
+
+  // Cycles through processing messages every 2.5 seconds while isProcessing is active
   useEffect(() => {
-    fetchRevenueKPIs();
-    fetchRevenueOverTime();
-    fetchOrderVersusRevenue();
-    fetchSalesByCategory();
-    fetchPerformingItems();
-    fetchSalesForecasting();
-    fetchMonthRevenue();
+    let interval: NodeJS.Timeout;
+    if (isProcessing) {
+      setProcessStep(0);
+      interval = setInterval(() => {
+        setProcessStep((prev) => 
+          prev < PROCESSING_STEPS.length - 1 ? prev + 1 : prev
+        );
+      }, 2500);
+    }
+    return () => clearInterval(interval);
+  }, [isProcessing]);
+
+  useEffect(() => {
+    const loadAllAnalyticsData = async () => {
+      setIsProcessing(true);
+      await Promise.all([
+        fetchRevenueKPIs(),
+        fetchRevenueOverTime(),
+        fetchOrderVersusRevenue(),
+        fetchSalesByCategory(),
+        fetchPerformingItems(),
+        fetchSalesForecasting(),
+        fetchMonthRevenue()
+      ]);
+      setIsProcessing(false);
+    };
+
+    loadAllAnalyticsData();
   }, []);
 
   const fetchRevenueKPIs = async () => {
@@ -129,6 +164,19 @@ export default function KPIAnalyticsPage() {
 
   return (
     <PageLayout>
+      {/* Full-screen blocking overlay active during data fetch and AI forecasting */}
+      {isProcessing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center p-8 bg-card rounded-xl shadow-2xl border text-center max-w-sm w-full mx-4">
+            <ScanSearch className="h-12 w-12 text-primary animate-pulse mb-6" />
+            <h3 className="text-xl font-semibold mb-2">Analyzing Data</h3>
+            <p className="text-sm text-muted-foreground animate-pulse h-6">
+              {PROCESSING_STEPS[processStep]}
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <PageHeader title="Analytics" description="Business intelligence & performance insights" />
         <div className="flex gap-1">

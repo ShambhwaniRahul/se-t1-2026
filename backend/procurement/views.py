@@ -866,6 +866,7 @@ class VendorInvoiceListCreateAPIView(APIView):
             "file": (invoice_image.name, invoice_image, invoice_image.content_type)
         }
         data_payload = {"expected_skus_json": json.dumps(expected_skus_json)}
+        print(data_payload)
         try:
             response = requests.post(OCR_URL, files=file_payload, data=data_payload, timeout=120)
             data = response.json()
@@ -962,9 +963,11 @@ class VendorInvoiceListCreateAPIView(APIView):
                     return standard_response(success=False,
                                              message="Invalid data for delivered non-perishable inventory.",
                                              status_code=status.HTTP_400_BAD_REQUEST)
+            purchase_order.status = PurchaseOrder.StatusChoices.RECEIVED
+            purchase_order.save()
             return standard_response(
                 success=True,
-                message="Vendor invoice created successfully.",
+                message="Vendor invoice processed successfully.",
                 data=invoice_serializer.data,
                 status_code=status.HTTP_201_CREATED)
         return standard_response(success=False,

@@ -6,7 +6,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { Plus, MoreHorizontal, Pencil, Ban, CheckCircle, Banknote, KeyRound, Loader2 } from "lucide-react";
+import { Plus, MoreHorizontal, Pencil, Ban, CheckCircle, Banknote, KeyRound, ScanSearch } from "lucide-react";
 import { ROLES, type Employee } from "@/config/types/role";
 import { EmployeeFormModal } from "../components/EmployeeFormModal";
 import { PaySalaryModal } from "../components/PaySalaryModal";
@@ -128,6 +128,15 @@ export default function EmployeeManagementPage() {
 
   return (
     <PageLayout>
+      {isLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center p-8 bg-card rounded-xl shadow-2xl border text-center max-w-sm w-full mx-4">
+            <ScanSearch className="h-12 w-12 text-primary animate-pulse mb-6" />
+            <h3 className="text-xl font-semibold">Loading Employees</h3>
+          </div>
+        </div>
+      )}
+
       <PageHeader
         title="Employee Management"
         description="Create and manage employee accounts, roles, and payroll"
@@ -155,13 +164,7 @@ export default function EmployeeManagementPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-                </TableCell>
-              </TableRow>
-            ) : filtered.length === 0 ? (
+            {filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                   No employees found
