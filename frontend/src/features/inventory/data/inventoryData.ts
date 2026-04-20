@@ -1,17 +1,31 @@
 export type StockStatus = "in_stock" | "low_stock" | "out_of_stock";
 
-export interface Ingredient {
-  id: string;
-  name: string;
-  category: IngredientCategory;
-  unit: string;
-  currentStock: number;
-  minStock: number;
-  costPerUnit: number;
-  supplier: string;
-  lastRestocked: string; // ISO date
+export interface PerishableInventory {
+  id: number;
+  sku: number;
+  sku_name: string;
+  sku_unit: string;
+  purchase_date: string;
+  expiry_date: string;
+  quantity: number;
+  created_at: string;
+  updated_at: string;
 }
 
+export interface PerishableSKU {
+  id: number;
+  name: string;
+  unit: string;
+  typical_shelf_life: number;
+}
+
+export interface NonPerishableInventory {
+  id: number;
+  name: string;
+  quantity: number;
+  created_at: string;
+  updated_at: string;
+}
 export interface StockMovement {
   id: string;
   ingredientId: string;
