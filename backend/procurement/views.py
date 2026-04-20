@@ -962,6 +962,8 @@ class VendorInvoiceListCreateAPIView(APIView):
                     return standard_response(success=False,
                                              message="Invalid data for delivered non-perishable inventory.",
                                              status_code=status.HTTP_400_BAD_REQUEST)
+            purchase_order.status = PurchaseOrder.StatusChoices.RECEIVED
+            purchase_order.save()
             return standard_response(
                 success=True,
                 message="Vendor invoice created successfully.",
