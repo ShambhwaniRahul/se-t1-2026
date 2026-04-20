@@ -47,7 +47,7 @@ class EmployeeLoginView(APIView):
 
         user = authenticate(request, phone_no=phone_no, password=password)
 
-        if user is not None:
+        if user is not None and user.is_working:
             refresh = RefreshToken.for_user(user)
             return standard_response(
                 success=True,
