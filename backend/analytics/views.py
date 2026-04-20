@@ -306,11 +306,19 @@ class LeastSellingItemsView(APIView):
                 filters["order__created_at__date__lte"] = end_date
 
             items = OrderMenuItem.objects.filter(**filters).values('menu_item__name').annotate(
-                sales_count=Count('id')
+                sales_count=Count('id'),
+                total_revenue = Sum('price_at_time')
             ).order_by('sales_count')[:least_n]
 
-            data = [(item['menu_item__name'], item['sales_count']) for item in items]
-            
+            data = [
+                {
+                    'name': item['menu_item__name'],
+                    'sales_count': item['sales_count'],
+                    'total_revenue': float(item['total_revenue'])
+                }
+                for item in items
+            ]
+
             return standard_response(
                 success=True,
                 message="Least selling items retrieved successfully.",
@@ -403,7 +411,7 @@ class RevenueOverTimeView(APIView):
 
             revenue_df.rename(columns={'created_at__date': 'date'}, inplace=True)
             
-            span = int(request.query_params.get('span', 7))
+            span = int(request.query_params.get('span', 30))
             alpha = float(request.query_params.get('alpha', 0.3))
             
             ewma_df = apply_dynamic_ewma(revenue_df, span=span, alpha=alpha)
@@ -427,11 +435,26 @@ class RevenueOverTimeView(APIView):
             )
 
 
+import datetime
+
 class OrderVersusRevenueView(APIView):
     def get(self, request):
         try:
             start_date = request.query_params.get('start_date')
             end_date = request.query_params.get('end_date')
+            
+            # Extract and validate grouping interval
+            try:
+                n_days = int(request.query_params.get('n_days', 90))
+                if n_days < 1:
+                    raise ValueError
+            except ValueError:
+                return standard_response(
+                    success=False,
+                    message="n_days must be a positive integer.",
+                    data={},
+                    status_code=status.HTTP_400_BAD_REQUEST
+                )
 
             validation_error = validate_date_params(start_date, end_date)
             if validation_error:
@@ -448,20 +471,46 @@ class OrderVersusRevenueView(APIView):
             if end_date:
                 filters["created_at__date__lte"] = end_date
 
+            # Aggregate by day at the database level to minimize memory footprint
             order_revenue_data = Order.objects.filter(**filters).values('created_at__date').annotate(
                 total_revenue=Sum('final_total'),
-                total_orders=Count('id')
-            )
+                total_orders=Count('id'),
+            ).order_by('created_at__date')
 
-            data = {
-                item['created_at__date'].isoformat(): {
-                    "index": i,
-                    "date": item['created_at__date'].isoformat(),
-                    "total_revenue": item['total_revenue'],
-                    "total_orders": item['total_orders']
-                } for i, item in enumerate(order_revenue_data)
-            }
-            
+            data = []
+            if order_revenue_data:
+                # Establish anchor date to ensure consistent n_days calendar windows
+                if start_date:
+                    base_date = datetime.datetime.strptime(start_date, "%Y-%m-%d").date()
+                else:
+                    base_date = order_revenue_data[0]['created_at__date']
+
+                intervals = {}
+
+                for item in order_revenue_data:
+                    current_date = item['created_at__date']
+                    # Calculate bucket index via days offset from anchor date
+                    delta_days = (current_date - base_date).days
+                    bucket_idx = max(0, delta_days // n_days)
+
+                    if bucket_idx not in intervals:
+                        interval_start = base_date + datetime.timedelta(days=bucket_idx * n_days)
+                        interval_end = interval_start + datetime.timedelta(days=n_days - 1)
+                        
+                        intervals[bucket_idx] = {
+                            "index": bucket_idx,
+                            "start_date": interval_start.isoformat(),
+                            "end_date": interval_end.isoformat(),
+                            "total_revenue": 0,
+                            "total_orders": 0
+                        }
+                    
+                    intervals[bucket_idx]["total_revenue"] += item['total_revenue']
+                    intervals[bucket_idx]["total_orders"] += item['total_orders']
+
+                # Flatten ordered dictionary values to list format
+                data = list(intervals.values())
+                
             return standard_response(
                 success=True,
                 message="Order versus revenue data retrieved successfully.",

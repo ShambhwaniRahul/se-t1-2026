@@ -41,7 +41,7 @@ export function ActivityFeed({ items }: ActivityFeedProps) {
                     >
                       +${Math.abs(item.total_amount).toFixed(2)}
                     </span>
-                  <span className="text-[11px] text-muted-foreground">{item.timedelta_since_order} minutes ago</span>
+                  <span className="text-[11px] text-muted-foreground">{Math.abs(item.timedelta_since_order)} minutes ago</span>
                 </span>
               </div>
             ))}
