@@ -159,7 +159,7 @@ export function SalesForecastChart({ prevData, salesForecast }: SalesForecastCha
               <YAxis
                 className="text-xs font-medium"
                 tick={{ fill: "hsl(var(--muted-foreground))" }}
-                tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+                tickFormatter={(v) => `₹ ${(v / 1000).toFixed(0)}k`}
                 axisLine={false}
                 tickLine={false}
                 tickMargin={10}
@@ -169,7 +169,7 @@ export function SalesForecastChart({ prevData, salesForecast }: SalesForecastCha
                 content={
                   <ChartTooltipContent 
                     formatter={(value, name) => [
-                      `$${(Math.round(Number(value)).toLocaleString())} `, 
+                      `₹ ${(Math.round(Number(value)).toLocaleString())} `, 
                       chartConfig[name as keyof typeof chartConfig]?.label || name
                     ]}
                   />
