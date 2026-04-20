@@ -7,17 +7,50 @@ import { RevenueChart } from "../components/RevenueChart";
 import { CategoryBreakdownChart } from "../components/CategoryBreakdownChart";
 import { SalesForecastChart } from "../components/SalesForecastChart";
 import { OperationalInsights } from "../components/OperationalInsights";
-import type { RevenueKPIs, RevenueOverTime, OrderVersusRevenue, SalesByCategory, PerformingItems } from "../data/types";
+import type { RevenueKPIs, RevenueOverTime, OrderVersusRevenue, SalesByCategory, PerformingItems, SalesForecasting, RevenueTrend } from "../data/types";
 import api from "@/lib/api";
 import { toast } from "sonner";
 
 export default function KPIAnalyticsPage() {
+
+  const now = new Date();
+
+  // 1) Current date in IST (YYYY-MM-DD)
+  const istDate = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+  }).format(now);
+
+  const istTime = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Kolkata",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).format(now);
+
+
+  // 3) N days back date in IST (YYYY-MM-DD)
+  const yesterday = new Date(now);
+  const oneMonthBack = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  oneMonthBack.setDate(oneMonthBack.getDate() - 30);
+
+  const istYesterday = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+  }).format(yesterday);
+
+  const istOneMonthBack = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+  }).format(oneMonthBack);
+
   const [kpiData, setKPIData] = useState<RevenueKPIs | []>([]);
   const [revenueOverTime, setRevenueOverTime] = useState<RevenueOverTime[] | []>([]);
+  const [monthRevenue, setMonthRevenue] = useState<RevenueOverTime[] | []>([]);
   const [orderVersusRevenue, setOrderVersusRevenue] = useState<OrderVersusRevenue[] | []>([]);
   const [salesByCategory, setSalesByCategory] = useState<SalesByCategory[] | []>([]);
   const [topPerformingItems, setTopPerformingItems] = useState<PerformingItems[] | []>([]);
   const [leastPerformingItems, setLeastPerformingItems] = useState<PerformingItems[] | []>([]);
+  const [salesForecasting, setSalesForecasting] = useState<SalesForecasting[] | []>([]);
 
   useEffect(() => {
     fetchRevenueKPIs();
@@ -25,6 +58,8 @@ export default function KPIAnalyticsPage() {
     fetchOrderVersusRevenue();
     fetchSalesByCategory();
     fetchPerformingItems();
+    fetchSalesForecasting();
+    fetchMonthRevenue();
   }, []);
 
   const fetchRevenueKPIs = async () => {
@@ -74,6 +109,24 @@ export default function KPIAnalyticsPage() {
     }
   }
 
+  const fetchSalesForecasting = async () => {
+    try {
+      const result = await api.get(`/analytics/sales-forecast?end_date=${istYesterday}`)
+      setSalesForecasting(result.data.data);
+    } catch (err) {
+      console.error("Failed to fetch sales forecasting", err);
+    }
+  }
+
+  const fetchMonthRevenue = async () => {
+    try {
+      const result = await api.get(`/analytics/revenue-over-time?start_date=${istOneMonthBack}&end_date=${istDate}&end_time=${istTime}&span=1`)
+      setMonthRevenue(result.data.data.ewma_trendline);
+    } catch (err) {
+        console.error("Failed to fetch month revenue", err);
+    }
+  }
+
   return (
     <PageLayout>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -95,7 +148,7 @@ export default function KPIAnalyticsPage() {
       </div>
 
       {/* Sales Forecasting */}
-      <SalesForecastChart />
+      <SalesForecastChart prevData={monthRevenue} salesForecast={salesForecasting} />
 
       {/* Operational Insights */}
       <OperationalInsights topItems={topPerformingItems} leastItems={leastPerformingItems} />

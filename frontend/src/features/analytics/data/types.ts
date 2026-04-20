@@ -1,3 +1,4 @@
+import { ForecastDuration } from './types';
 export interface RevenueKPIs {
   total_revenue: number;
   total_orders: number;
@@ -41,31 +42,19 @@ export interface PerformingItems {
   total_revenue: number;
 }
 
-
-export interface PeakHourData {
-  hour: string;
-  monday: number;
-  tuesday: number;
-  wednesday: number;
-  thursday: number;
-  friday: number;
-  saturday: number;
-  sunday: number;
+export interface RevenueTrend {
+  date: string;
+  total_revenue: number;
+  total_orders: number;
+  average_revenue: number;
 }
 
-export interface PerformingItem {
-  name: string;
-  orders: number;
-  revenue: number;
-  trend: number;
+export interface SalesForecasting {
+  date: string;
+  holt_winters_forecast: number;
+  sarima_forecast: number;
 }
 
-export interface StaffEfficiency {
-  name: string;
-  ordersHandled: number;
-  avgTime: number;
-  rating: number;
-}
 
 export type DateRange = "today" | "week" | "month" | "custom";
 export type ForecastDuration = 7 | 14 | 30;
