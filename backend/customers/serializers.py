@@ -45,12 +45,7 @@ class CustomerReadSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at", "updated_at"]
 
     def get_total_points(self, obj):
-        return CustomerPayment.objects.filter(
-            customer=obj,
-            usage_type=CustomerPayment.TypeChoices.VALID
-        ).aggregate(
-            total=Sum("earned_loyalty_points")
-        )["total"] or 0
+        return CustomerPointsBank.objects.filter(payment__customer=obj).aggregate(total=Sum('points'))['total'] or 0
 
 
 class CustomerPaymentSerializer(serializers.ModelSerializer):
