@@ -20,7 +20,7 @@ interface NavItem {
 }
 
 const dashboardItems: NavItem[] = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard, roles: ["Owner", "Manager"] },
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, roles: ["Owner", "Manager"] },
 ];
 
 const operationItems: NavItem[] = [

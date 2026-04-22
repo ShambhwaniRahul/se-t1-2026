@@ -54,7 +54,7 @@ export function LoginForm() {
             <Input
               id="identifier"
               type="text"
-              placeholder="you@coherence.app or +1 (555) ..."
+              placeholder="9XXXXXXXXX"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               required
@@ -74,7 +74,7 @@ export function LoginForm() {
             />
           </div>
         </CardContent>
-        <CardFooter className="flex flex-col gap-3">
+        <CardFooter className="flex flex-col gap-3 pt-5">
           <Button type="submit" className="w-full">
             {"Sign in"}
           </Button>
