@@ -2,7 +2,7 @@
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/features/auth/hooks/useAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -47,11 +47,12 @@ const App = () => (
             <Routes>
               {/* Public auth routes */}
               <Route path="signup" element={<SignupPage />} />
-              <Route path="login" element={<LoginPage />} />
+              <Route path="/login" element={<Navigate to="/" replace />} />
+              <Route index element={<LoginPage />} />
 
               {/* Protected app shell */}
               <Route element={<AppLayout />}>
-                <Route index element={
+                <Route path = "/dashboard" element={
                   <ProtectedRoute allowedRoles={["Owner", "Manager"]}>
                     <DashboardPage />
                   </ProtectedRoute>
