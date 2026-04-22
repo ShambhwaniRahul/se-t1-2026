@@ -23,7 +23,7 @@ from django.shortcuts import get_object_or_404
 from utils.response import standard_response
 from drf_spectacular.utils import extend_schema
 
-OCR_URL = "http://localhost:5000/scan/"
+OCR_URL = "https://se-t1-2026-1.onrender.com/scan/"
 
 # Create your views here.
 
