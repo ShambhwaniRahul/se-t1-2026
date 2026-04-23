@@ -41,7 +41,9 @@ SECRET_KEY = 'django-insecure-xk3ti1l8a%z*=9m)47w+r9p%5(6nvgz$+^k5d&#ieic^o&cyi$
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    "se-t1-2026.onrender.com"
+    "se-t1-2026.onrender.com",
+    "localhost",
+    "127.0.0.1"
 ]
 
 
@@ -99,10 +101,114 @@ REST_FRAMEWORK = {
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Your API",
-    "DESCRIPTION": "API Docs",
+    "DESCRIPTION": """
+# API Documentation
+
+This API powers the backend for the procurement and inventory system.
+
+## User Stories Mapping
+
+### GenAI Supplier Invoice Processing
+**User Story:**  
+As a Store Keeper, I want to upload supplier invoices and auto-extract item data so that manual entry errors and overhead are reduced.
+
+**API Endpoints:**  
+- `localhost:8000/api/v1/inventory/supplier-invoices/`
+
+**Deployed GenAI OCR Microservice Endpoint:**  
+- `https://se-t1-2026-1.onrender.com/scan/`
+
+- Refer to **GenAI_OCR.yaml** for detailed request/response schema and example payloads for the OCR microservice. 
+
+---
+
+### Role & Permission Management
+**User Story:**  
+As a Restaurant Manager, I want to create roles and assign module-level permissions so that staff only access features relevant to their responsibilities.
+
+**API Endpoints:**  
+- `localhost:8000/api/v1/hr/auth/employees`
+
+---
+
+### Order Management (POS)
+**User Story:**  
+As a Cashier/Waitstaff, I want to create, modify, and track orders via a table dashboard so that I can manage peak-hour service efficiently.
+
+**API Endpoints:**  
+- `localhost:8000/api/v1/pos/orders/all-menuitems/`  
+- `localhost:8000/api/v1/pos/orders/update-menu-items/<int:pk>/status/`  
+- `localhost:8000/api/v1/pos/orders/<int:pk>/menuitems/`
+
+---
+
+### Billing & Payments
+**User Story:**  
+As a Cashier/Waitstaff, I want to automatically generate itemized invoices so that billing errors are minimized and checkout is faster.
+
+**API Endpoints:**  
+- `localhost:8000/api/v1/pos/orders/<int:order_id>/menuitems/<int:pk>`  
+- `localhost:8000/api/v1/customers/payments/`  
+- `localhost:8000/api/v1/customers/payments/<int:pk>/`
+
+**Notes:**  
+- Invoice generation is handled at the frontend.
+
+---
+
+### Kitchen Dashboard
+**User Story:**  
+As a Kitchen Staff Member, I want to view a complete, real-time dashboard of all incoming and active orders, including priority, preparation time, and status, so that I can plan preparation sequence and avoid delays.
+
+**API Endpoints:**  
+- `localhost:8000/api/v1/pos/orders/all-menuitems/`
+
+---
+
+### Inventory Management
+**User Story:**  
+As a Store Keeper, I want to create and update SKUs with stock quantities so that inventory records remain accurate.
+
+**API Endpoints:**  
+- `localhost:8000/api/v1/inventory/perishable-skus/`  
+- `localhost:8000/api/v1/inventory/perishable-skus/<int:pk>/`  
+- `localhost:8000/api/v1/inventory/perishable-inventory`  
+- `localhost:8000/api/v1/inventory/perishable-inventory/<int:pk>/`  
+- `localhost:8000/api/v1/inventory/non-perishable-inventory/`  
+- `localhost:8000/api/v1/inventory/non-perishable-inventory/<int:pk>/`
+
+---
+
+### Procurement (Purchase Orders)
+**User Story:**  
+As a Store Keeper, I want to create formal purchase orders so that procurement is structured, traceable, and linked to inventory.
+
+**API Endpoints:**  
+- `localhost:8000/api/v1/procurement/purchase-orders/`  
+- `localhost:8000/api/v1/procurement/purchase-orders/<int:pk>/`  
+- `localhost:8000/api/v1/procurement/purchase-orders/<int:pk>/items/`  
+- `localhost:8000/api/v1/procurement/purchase-orders/<int:pk>/receive/`  
+- `localhost:8000/api/v1/procurement/purchase-orders/<int:pk>/cancel/`
+
+---
+
+### Business Insights (Daily KPIs)
+**User Story:**  
+As a Business Owner, I want to view daily KPIs such as revenue, order count, and average order value so that I can monitor restaurant performance in real time.
+
+**API Endpoints:**  
+- `localhost:8000/api/v1/analytics/revenue-kpis/`  
+- `localhost:8000/api/v1/analytics/active-tables/`  
+- `localhost:8000/api/v1/analytics/revenue-by-date/`  
+- `localhost:8000/api/v1/analytics/sales-by-category/`  
+- `localhost:8000/api/v1/analytics/top-selling-items/`  
+- `localhost:8000/api/v1/analytics/least-selling-items/`  
+- `localhost:8000/api/v1/analytics/recent-orders/`
+""",
     "VERSION": "1.0.0",
     "SECURITY": [{"BearerAuth": []}],
 }
+
 
 
 SIMPLE_JWT = {

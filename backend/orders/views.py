@@ -1335,7 +1335,8 @@ class AllOrdersMenuItemsListAPIView(APIView):
     required_roles = [
         EmployeeRole.RoleChoices.OWNER,
         EmployeeRole.RoleChoices.MANAGER,
-        EmployeeRole.RoleChoices.WAITER
+        EmployeeRole.RoleChoices.WAITER,
+        EmployeeRole.RoleChoices.CHEF
     ]
 
     @extend_schema(responses=OrderMenuItemSerializer(many=True))

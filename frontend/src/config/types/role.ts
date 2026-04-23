@@ -23,7 +23,7 @@ const { OWNER, MANAGER, CHEF, WAITER, INVENTORY_MANAGER, OTHER } = ROLES;
 // ROUTE ACCESS CONTROL
 // =======================
 export const ROUTE_ACCESS: Record<string, AppRole[]> = {
-  "/": [OWNER.value, MANAGER.value],
+  "/dashboard": [OWNER.value, MANAGER.value],
   "/pos": [OWNER.value, MANAGER.value, WAITER.value],
   "/kitchen": [OWNER.value, MANAGER.value, CHEF.value],
   "/inventory": [OWNER.value, MANAGER.value, INVENTORY_MANAGER.value],
@@ -42,8 +42,8 @@ export const ROUTE_ACCESS: Record<string, AppRole[]> = {
 // ROLE HOME ROUTES
 // =======================
 export const ROLE_HOME: Record<AppRole, string> = {
-  [OWNER.value]: "/",
-  [MANAGER.value]: "/",
+  [OWNER.value]: "/dashboard",
+  [MANAGER.value]: "/dashboard",
   [WAITER.value]: "/pos",
   [CHEF.value]: "/kitchen",
   [INVENTORY_MANAGER.value]: "/purchase-orders",

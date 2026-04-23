@@ -298,16 +298,16 @@ class CustomerPaymentListCreateAPIView(APIView):
             with transaction.atomic():
     
                 # 🔥 3. Compute adjusted amount using loyalty points
-                result = compute_adjusted_amount(
-                    final_total=order.final_total,
-                    customer_id=customer.id
-                )
+                # result = compute_adjusted_amount(
+                #     final_total=order.final_total,
+                #     customer_id=customer.id
+                # )
     
-                amt_paid = result["amt_paid"]
-                points_adjusted = result["points_used"] 
+                # amt_paid = result["amt_paid"]
+                # points_adjusted = result["points_used"] 
     
                 # 🔥 4. Save payment with computed amt_paid
-                payment = serializer.save(amt_paid=amt_paid)
+                payment = serializer.save(amt_paid=order.final_total)
     
                 # 🔥 5. Close order
                 order.status = Order.StatusChoices.CLOSED
@@ -319,7 +319,7 @@ class CustomerPaymentListCreateAPIView(APIView):
                 # 7. Making an entry into the CustomerPointsBank table
                 CustomerPointsBank.objects.create(
                     payment=payment,
-                    points=amt_paid * Converter.RUPEES_TO_POINTS.value
+                    points=order.final_total * Converter.RUPEES_TO_POINTS.value
                 )
 
     
