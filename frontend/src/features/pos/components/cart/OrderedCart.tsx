@@ -8,26 +8,26 @@ type OrderedCartProps = {
   orderedItems: OrderMenuItem[];
 };
 
-export function OrderedCart({ orderedItems }:  OrderedCartProps) {
+export function OrderedCart({ orderedItems }: OrderedCartProps) {
 
   const groupedOrderedItems = useMemo(() => {
     const map = new Map<string, GroupedItem>();
 
     for (const item of orderedItems) {
-        if (!map.has(item.menu_item.toString())) {
-          map.set(item.menu_item.toString(), {
-            menu_item: item.menu_item,
-            name: item.menu_item_name,
-            price: item.price_at_time,
-            items: [],
-          });
-        }
-
-        map.get(item.menu_item.toString())!.items.push(item);
+      if (!map.has(item.menu_item.toString())) {
+        map.set(item.menu_item.toString(), {
+          menu_item: item.menu_item,
+          name: item.menu_item_name,
+          price: item.price_at_time,
+          items: [],
+        });
       }
 
-      return Array.from(map.values());
-    }, [orderedItems]);
+      map.get(item.menu_item.toString())!.items.push(item);
+    }
+
+    return Array.from(map.values());
+  }, [orderedItems]);
 
   if (orderedItems.length === 0) return null;
 
@@ -57,7 +57,7 @@ export function OrderedCart({ orderedItems }:  OrderedCartProps) {
                 </p>
 
                 <span className="text-sm font-medium">
-                  ${(group.price * group.items.length).toFixed(2)}
+                  ₹{(group.price * group.items.length).toFixed(2)}
                 </span>
               </div>
 
@@ -68,9 +68,10 @@ export function OrderedCart({ orderedItems }:  OrderedCartProps) {
                     key={item.id}
                     className={cn(
                       "px-2 py-0.5 rounded text-xs font-medium",
-                      item.menu_item_status_display.toLowerCase() === "ready" && "bg-green-100 text-green-700",
-                      item.menu_item_status_display.toLowerCase() === "pending" && "bg-yellow-100 text-yellow-700",
-                      item.menu_item_status_display.toLowerCase() === "in-progress" && "bg-blue-100 text-blue-700"
+                      item.menu_item_status_display.toLowerCase() === "ready to serve" && "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20",
+                      item.menu_item_status_display.toLowerCase() === "pending" && "bg-amber-500/10 text-amber-600 border border-amber-500/20",
+                      item.menu_item_status_display.toLowerCase() === "in progress" && "bg-blue-500/10 text-blue-600 border border-blue-500/20",
+                      item.menu_item_status_display.toLowerCase() === "served" && "bg-zinc-500/10 text-zinc-500 border border-zinc-500/20"
                     )}
                   >
                     {item.menu_item_status_display}

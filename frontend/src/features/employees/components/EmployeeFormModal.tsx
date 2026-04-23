@@ -123,7 +123,7 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSave }: Prop
               <Input value={phone_no} onChange={(e) => setPhoneNo(e.target.value)} required />
             </div>
             <div className="space-y-2">
-              <Label>Monthly Salary ($)</Label>
+              <Label>Monthly Salary (₹)</Label>
               <Input 
                 type="number" 
                 value={monthly_salary} 

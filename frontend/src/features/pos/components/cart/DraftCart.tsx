@@ -27,7 +27,7 @@ export function DraftCart({
       </div>
 
       <Separator />
-      
+
       <ScrollArea className="flex-1 min-h-0">
 
         {draftItems.length === 0 ? (
@@ -51,7 +51,7 @@ export function DraftCart({
                   </p>
 
                   <p className="text-xs text-muted-foreground">
-                    ${item.menu_item.price.toFixed(2)} ea
+                    ₹{item.menu_item.price.toFixed(2)} ea
                   </p>
                 </div>
 
@@ -60,7 +60,7 @@ export function DraftCart({
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-7 w-7"
+                    className="h-7 w-7 shrink-0"
                     onClick={() => onUpdateQuantity(item.menu_item.id, -1)}
                   >
                     <Minus className="h-3 w-3" />
@@ -73,7 +73,7 @@ export function DraftCart({
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-7 w-7"
+                    className="h-7 w-7 shrink-0"
                     onClick={() => onUpdateQuantity(item.menu_item.id, 1)}
                   >
                     <Plus className="h-3 w-3" />
@@ -81,14 +81,14 @@ export function DraftCart({
 
                 </div>
 
-                <span className="w-16 text-right text-sm font-semibold">
-                  ${(item.menu_item.price * item.quantity).toFixed(2)}
+                <span className="w-20 shrink-0 text-right text-sm font-semibold">
+                  ₹{(item.menu_item.price * item.quantity).toFixed(2)}
                 </span>
 
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                  className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
                   onClick={() => onRemove(item.menu_item.id)}
                 >
                   <Trash2 className="h-3.5 w-3.5" />

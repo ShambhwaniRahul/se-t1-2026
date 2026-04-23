@@ -110,11 +110,11 @@ const handlePay = async () => {
               <p><strong>Month:</strong> ${month}</p>
               <p><strong>Date Generated:</strong> ${new Date().toLocaleDateString()}</p>
           </div>
-          <div class="row"><span>Base Salary</span><span>$${baseSalary.toFixed(2)}</span></div>
-          <div class="row text-success"><span>Overtime (${overtimeHours}h &times; $${overtimeRate})</span><span>+$${overtimeTotal.toFixed(2)}</span></div>
-          <div class="row text-success"><span>Bonuses</span><span>+$${bonuses.toFixed(2)}</span></div>
-          <div class="row text-destructive"><span>Deductions</span><span>-$${deductions.toFixed(2)}</span></div>
-          <div class="row total"><span>Net Payable</span><span>$${netPayable.toFixed(2)}</span></div>
+          <div class="row"><span>Base Salary</span><span>₹${baseSalary.toFixed(2)}</span></div>
+          <div class="row text-success"><span>Overtime (${overtimeHours}h &times; ₹${overtimeRate})</span><span>+₹${overtimeTotal.toFixed(2)}</span></div>
+          <div class="row text-success"><span>Bonuses</span><span>+₹${bonuses.toFixed(2)}</span></div>
+          <div class="row text-destructive"><span>Deductions</span><span>-₹${deductions.toFixed(2)}</span></div>
+          <div class="row total"><span>Net Payable</span><span>₹${netPayable.toFixed(2)}</span></div>
           
           <script>
               window.onload = () => { 

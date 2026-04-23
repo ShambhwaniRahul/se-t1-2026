@@ -180,7 +180,7 @@ export default function EmployeeManagementPage() {
                     <TableCell className="font-medium">{emp.full_name}</TableCell>
                     <TableCell>{roleLabel}</TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground text-xs">{emp.phone_no}</TableCell>
-                    <TableCell className="font-medium">${emp.monthly_salary}</TableCell>
+                    <TableCell className="font-medium">₹{emp.monthly_salary}</TableCell>
                     <TableCell>
                       <StatusBadge variant={emp.is_working ? "success" : "destructive"}>
                         {emp.is_working ? "Active" : "Disabled"}

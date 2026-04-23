@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { PageLayout } from "@/components/shared/PageLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatsCard } from "@/components/shared/StatsCard";
@@ -150,7 +151,7 @@ export default function DashboardPage() {
   return (
     <PageLayout>
       {/* Full-screen blocking overlay active during data fetch/processing */}
-      {isProcessing && (
+      {isProcessing && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
           <div className="flex flex-col items-center p-8 bg-card rounded-xl shadow-2xl border text-center max-w-sm w-full mx-4">
             <ScanSearch className="h-12 w-12 text-primary animate-pulse mb-6" />
@@ -159,7 +160,8 @@ export default function DashboardPage() {
               Analyzing insights
             </p>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <PageHeader

@@ -138,8 +138,8 @@ export function VendorFormSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-lg overflow-y-auto">
-        <SheetHeader>
+      <SheetContent className="w-full sm:max-w-lg overflow-y-auto p-0">
+        <SheetHeader className="p-6 pb-4 border-b">
           <SheetTitle>{isEditing ? "Edit Vendor" : "Add Vendor"}</SheetTitle>
           <SheetDescription>
             {isEditing
@@ -148,11 +148,12 @@ export function VendorFormSheet({
           </SheetDescription>
         </SheetHeader>
 
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleVendorSubmit)}
-            className="mt-6 space-y-4"
-          >
+        <div className="p-6">
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(handleVendorSubmit)}
+              className="space-y-4"
+            >
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -260,6 +261,7 @@ export function VendorFormSheet({
             </div>
           </form>
         </Form>
+        </div>
       </SheetContent>
     </Sheet>
   );

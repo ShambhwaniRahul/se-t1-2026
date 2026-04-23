@@ -2,19 +2,24 @@ import type { MenuItem } from "../../../config/types/order";
 
 // backend → frontend map
 export const mapToMenuItem = (item: any): MenuItem => ({
-  id: String(item.id),
+  id: Number(item.id),
   name: item.name,
-  categoryId: String(item.category),
-  price: item.price,
-  estimatedPrepTime: item.estimated_prep_time,
-  isVeg: item.is_veg,
+  category: Number(item.category),
+  category_name: item.category_name || "",
+  price: Number(item.price),
+  estimated_prep_time: Number(item.estimated_prep_time),
+  discount: Number(item.discount || 0),
+  is_veg: Boolean(item.is_veg),
+  created_at: item.created_at || "",
+  updated_at: item.updated_at || "",
 });
 
 // frontend → backend map
-export const mapToApiPayload = (item: Omit<MenuItem, "id">) => ({
+export const mapToApiPayload = (item: any) => ({
   name: item.name,
-  category: Number(item.categoryId),
-  price: item.price,
-  estimated_prep_time: item.estimatedPrepTime,
-  is_veg: item.isVeg,
+  category: Number(item.category),
+  price: Number(item.price),
+  estimated_prep_time: Number(item.estimated_prep_time),
+  discount: Number(item.discount || 0),
+  is_veg: Boolean(item.is_veg),
 });

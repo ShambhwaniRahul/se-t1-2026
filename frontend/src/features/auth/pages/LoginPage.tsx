@@ -33,8 +33,8 @@ export default function LoginPage() {
       {/* LEFT — Brand Showcase */}
       <div className="relative hidden flex-col justify-between p-12 lg:flex xl:p-20 bg-gradient-to-br from-primary/10 via-background to-primary/5 border-r border-border overflow-hidden">
         {/* Decorative Grid Overlay */}
-        <div 
-          className="absolute inset-0 opacity-[0.03]" 
+        <div
+          className="absolute inset-0 opacity-[0.03]"
           style={{ backgroundImage: "radial-gradient(circle at 2px 2px, black 1px, transparent 0)", backgroundSize: "24px 24px" }}
         />
 
@@ -47,7 +47,7 @@ export default function LoginPage() {
         </div>
 
         {/* Middle: Headline + features */}
-        <div className="relative z-10 flex max-w-lg flex-col gap-12 mt-12">
+        <div className="relative z-10 flex flex-1 flex-col justify-center max-w-lg gap-12 py-12">
           <div className="space-y-6 animate-in fade-in slide-in-from-left-8 duration-700 delay-100 fill-mode-both">
             <h1 className="text-5xl font-bold leading-[1.1] tracking-tight text-foreground xl:text-6xl">
               Bring Coherence
@@ -61,8 +61,8 @@ export default function LoginPage() {
 
           <div className="grid gap-8">
             {features.map(({ icon: Icon, title, description }, i) => (
-              <div 
-                key={title} 
+              <div
+                key={title}
                 className="group flex items-start gap-5 animate-in fade-in slide-in-from-bottom-4 fill-mode-both"
                 style={{ animationDuration: '500ms', animationDelay: `${200 + i * 150}ms` }}
               >

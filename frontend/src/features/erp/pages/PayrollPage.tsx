@@ -3,13 +3,13 @@ import { PageLayout } from "@/components/shared/PageLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatsCard } from "@/components/shared/StatsCard";
 import { DataTable, type Column } from "@/components/shared/DataTable";
-import { DollarSign, Clock, TrendingUp, ScanSearch } from "lucide-react";
+import { IndianRupee, Clock, TrendingUp, ScanSearch } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 // Ensure this path correctly points to your API file based on your folder structure
 import { fetchSalaryHistory } from "../../employees/api/EmployeeApi";
 
-const fmt = (n: number) => `$${(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const fmt = (n: number) => `₹${(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 // We updated the columns to exactly match the backend payload we built in Phase 4
 const columns: Column<any>[] = [
@@ -95,7 +95,7 @@ export default function PayrollPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-3 mb-6">
-        <StatsCard title="Total Payroll" value={fmt(totalPayroll)} icon={DollarSign} />
+        <StatsCard title="Total Payroll" value={fmt(totalPayroll)} icon={IndianRupee} />
         <StatsCard title="Avg. Net Pay" value={fmt(avgSalary)} icon={TrendingUp} />
         <StatsCard title="Slips Processed" value={totalRecords.toString()} icon={Clock} />
       </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect, use } from "react";
+import { createPortal } from "react-dom";
 import { PageLayout } from "@/components/shared/PageLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -71,7 +72,7 @@ export default function KPIAnalyticsPage() {
     if (isProcessing) {
       setProcessStep(0);
       interval = setInterval(() => {
-        setProcessStep((prev) => 
+        setProcessStep((prev) =>
           prev < PROCESSING_STEPS.length - 1 ? prev + 1 : prev
         );
       }, 2500);
@@ -102,16 +103,16 @@ export default function KPIAnalyticsPage() {
       const result = await api.get("/analytics/revenue-kpis")
       setKPIData(result.data.data);
     } catch (err) {
-        console.error("Failed to fetch revenue KPIs", err);
+      console.error("Failed to fetch revenue KPIs", err);
     }
   }
-  
+
   const fetchRevenueOverTime = async () => {
     try {
       const result = await api.get("/analytics/revenue-over-time")
       setRevenueOverTime(result.data.data.ewma_trendline);
     } catch (err) {
-        console.error("Failed to fetch revenue over time", err);
+      console.error("Failed to fetch revenue over time", err);
     }
   }
 
@@ -120,7 +121,7 @@ export default function KPIAnalyticsPage() {
       const result = await api.get("/analytics/order-versus-revenue")
       setOrderVersusRevenue(result.data.data);
     } catch (err) {
-        console.error("Failed to fetch order vs revenue", err);
+      console.error("Failed to fetch order vs revenue", err);
     }
   }
 
@@ -128,8 +129,8 @@ export default function KPIAnalyticsPage() {
     try {
       const result = await api.get("/analytics/sales-by-category")
       setSalesByCategory(result.data.data);
-    } catch (err) {   
-        console.error("Failed to fetch sales by category", err);
+    } catch (err) {
+      console.error("Failed to fetch sales by category", err);
     }
   }
 
@@ -140,7 +141,7 @@ export default function KPIAnalyticsPage() {
       setTopPerformingItems(topResult.data.data);
       setLeastPerformingItems(leastResult.data.data);
     } catch (err) {
-        console.error("Failed to fetch performing items", err);
+      console.error("Failed to fetch performing items", err);
     }
   }
 
@@ -158,14 +159,14 @@ export default function KPIAnalyticsPage() {
       const result = await api.get(`/analytics/revenue-over-time?start_date=${istOneMonthBack}&end_date=${istDate}&end_time=${istTime}&span=1`)
       setMonthRevenue(result.data.data.ewma_trendline);
     } catch (err) {
-        console.error("Failed to fetch month revenue", err);
+      console.error("Failed to fetch month revenue", err);
     }
   }
 
   return (
     <PageLayout>
       {/* Full-screen blocking overlay active during data fetch and AI forecasting */}
-      {isProcessing && (
+      {isProcessing && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
           <div className="flex flex-col items-center p-8 bg-card rounded-xl shadow-2xl border text-center max-w-sm w-full mx-4">
             <ScanSearch className="h-12 w-12 text-primary animate-pulse mb-6" />
@@ -174,7 +175,8 @@ export default function KPIAnalyticsPage() {
               {PROCESSING_STEPS[processStep]}
             </p>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

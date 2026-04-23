@@ -54,13 +54,13 @@ export function CartSummary({
 
         <div className="flex justify-between text-muted-foreground">
           <span>Subtotal</span>
-          <span>${subtotal.toFixed(2)}</span>
+          <span>₹{subtotal.toFixed(2)}</span>
         </div>
 
         {discountPercent > 0 && (
           <div className="flex justify-between text-green-600">
             <span>Discount ({discountPercent}%)</span>
-            <span>-${discountAmount.toFixed(2)}</span>
+            <span>-₹{discountAmount.toFixed(2)}</span>
           </div>
         )}
 
@@ -68,7 +68,7 @@ export function CartSummary({
 
         <div className="flex justify-between text-lg font-bold pt-1">
           <span>Total</span>
-          <span>${total.toFixed(2)}</span>
+          <span>₹{total.toFixed(2)}</span>
         </div>
 
       </div>
