@@ -9,7 +9,7 @@ import { PaymentModal } from "../components/PaymentModal";
 import { toast } from "sonner";
 import { useParams } from "react-router-dom";
 import api from "@/lib/api";
-import { CustomerInfoModal} from "../components/CustomerInfoModal";
+import { CustomerInfoModal } from "../components/CustomerInfoModal";
 import type { CustomerInfo } from "../data/types";
 import { useCustomerLookup } from "../hooks/useCustomerLookup";
 
@@ -21,7 +21,7 @@ export default function PosPage() {
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const { tableId } = useParams();
-  
+
   useEffect(() => {
     async function fetchMenu() {
       try {
@@ -84,7 +84,7 @@ export default function PosPage() {
   }, [cart, clearCustomer]);;
 
 
-  if (loading) return ( <div> Loading... </div> );
+  if (loading) return (<div> Loading... </div>);
 
   return (
     <div className="-m-4 md:-m-6 flex h-[calc(100svh-3.5rem)] flex-col">
@@ -112,7 +112,7 @@ export default function PosPage() {
           </div>
         </div>
 
-        <div className="hidden w-[340px] shrink-0 border-l bg-card md:flex md:flex-col lg:w-[380px]">
+        <div className="hidden w-[500px] shrink-0 border-l bg-card md:flex md:flex-col lg:w-[600px] xl:w-[650px]">
           <CartPanel
             orderedItems={cart.orderedItems}
             draftItems={cart.draftItems}
@@ -127,26 +127,23 @@ export default function PosPage() {
         </div>
       </div>
 
-        <CheckoutBar
-          total={cart.total}
-          orderedItemCount={cart.orderedItemCount}
-          draftItemCount={cart.draftItemCount}
-          onPay={handlePay}
-          onClear={cart.clearDraft}
-          submitDraft={cart.submitDraft}
-        />
+      <CheckoutBar
+        total={cart.total}
+        orderedItemCount={cart.orderedItemCount}
+        draftItemCount={cart.draftItemCount}
+        onPay={handlePay}
+        onClear={cart.clearDraft}
+        submitDraft={cart.submitDraft}
+      />
 
-        <CustomerInfoModal
-          open={customerModalOpen}
-          onOpenChange={(open) => {
-            if (!open) return;
-            setCustomerModalOpen(open);
-          }}
-          onContinue={handleCustomerContinue}
-          isLoading={customerLoading}
-        />
+      <CustomerInfoModal
+        open={customerModalOpen}
+        onOpenChange={setCustomerModalOpen}
+        onContinue={handleCustomerContinue}
+        isLoading={customerLoading}
+      />
 
-        {/* <PaymentModal
+      {/* <PaymentModal
           open={paymentOpen}
           onOpenChange={setPaymentOpen}
           items={[

@@ -9,10 +9,15 @@ export interface MenuItem {
   id: number;
   name: string;
   price: number;
-  estimatedPrepTime: number;
-  isVeg: boolean;
+  estimated_prep_time: number;
+  discount: number;
+  is_veg: boolean;
   category: number;
+  category_name: string;
+  created_at: string;
+  updated_at: string;
 }
+
 
 export interface MenuCategory {
   id: number;

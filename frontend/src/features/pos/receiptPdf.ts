@@ -83,7 +83,7 @@ export function generateReceiptPdf(data: ReceiptData) {
     const name =
       item.product.name.length > 22 ? item.product.name.slice(0, 22) + "…" : item.product.name;
     const qtyName = `${item.quantity}× ${name}`;
-    const lineTotal = `$${(item.product.price * item.quantity).toFixed(2)}`;
+    const lineTotal = `₹${(item.product.price * item.quantity).toFixed(2)}`;
     row(qtyName, lineTotal);
     y += lineH;
   });
@@ -92,19 +92,19 @@ export function generateReceiptPdf(data: ReceiptData) {
   y += 4;
 
   // Totals
-  row("Subtotal", `$${data.subtotal.toFixed(2)}`);
+  row("Subtotal", `₹${data.subtotal.toFixed(2)}`);
   y += 4;
   if (data.discountPercent > 0) {
-    row(`Discount (${data.discountPercent}%)`, `-$${data.discountAmount.toFixed(2)}`);
+    row(`Discount (${data.discountPercent}%)`, `-₹${data.discountAmount.toFixed(2)}`);
     y += 4;
   }
   if (data.loyaltyPointsApplied > 0) {
-    row(`Loyalty (${data.loyaltyPointsApplied} pts)`, `-$${data.loyaltyValue.toFixed(2)}`);
+    row(`Loyalty (${data.loyaltyPointsApplied} pts)`, `-₹${data.loyaltyValue.toFixed(2)}`);
     y += 4;
   }
   hr();
   y += 4;
-  row("TOTAL", `$${data.finalTotal.toFixed(2)}`, true);
+  row("TOTAL", `₹${data.finalTotal.toFixed(2)}`, true);
   y += 5;
 
   if (data.customer && data.pointsEarned > 0) {

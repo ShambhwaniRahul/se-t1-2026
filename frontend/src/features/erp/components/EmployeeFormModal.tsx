@@ -66,7 +66,7 @@ export function EmployeeFormModal({ open, onOpenChange, employee }: Props) {
           </div>
         </div>
         <div className="grid gap-2">
-          <Label>Monthly Salary ($)</Label>
+          <Label>Monthly Salary (₹)</Label>
           <Input type="number" defaultValue={employee?.salary ?? ""} placeholder="0" />
         </div>
       </div>

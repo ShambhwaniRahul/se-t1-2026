@@ -2,6 +2,7 @@ import { DraftCart } from "./DraftCart";
 import { OrderedCart } from "./OrderedCart";
 import { CartSummary } from "./CartSummary";
 import type { DraftCartItem, OrderMenuItem } from "@/config/types/order";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 
 interface CartPanelProps {
   orderedItems: OrderMenuItem[];
@@ -16,17 +17,42 @@ interface CartPanelProps {
 }
 
 export function CartPanel(props: CartPanelProps) {
+  const hasOrderedItems = props.orderedItems.length > 0;
 
   return (
     <div className="flex h-full flex-col min-h-0">
+      
+      <ResizablePanelGroup direction="vertical" className="flex-1">
+        {hasOrderedItems && (
+          <>
+            <ResizablePanel 
+              defaultSize={35} 
+              minSize={20} 
+              collapsible={true} 
+              collapsedSize={0} 
+              className="flex flex-col min-h-0"
+            >
+              <OrderedCart orderedItems={props.orderedItems} />
+            </ResizablePanel>
 
-      <OrderedCart orderedItems={props.orderedItems} />
+            <ResizableHandle withHandle className="hover:bg-primary/20 transition-colors" />
+          </>
+        )}
 
-      <DraftCart
-        draftItems={props.draftItems}
-        onUpdateQuantity={props.onUpdateQuantity}
-        onRemove={props.onRemove}
-      />
+        <ResizablePanel 
+          defaultSize={hasOrderedItems ? 65 : 100} 
+          minSize={20} 
+          collapsible={true} 
+          collapsedSize={0} 
+          className="flex flex-col min-h-0"
+        >
+          <DraftCart
+            draftItems={props.draftItems}
+            onUpdateQuantity={props.onUpdateQuantity}
+            onRemove={props.onRemove}
+          />
+        </ResizablePanel>
+      </ResizablePanelGroup>
 
       <CartSummary
         subtotal={props.subtotal}

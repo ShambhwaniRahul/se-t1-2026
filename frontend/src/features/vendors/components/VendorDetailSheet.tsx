@@ -32,17 +32,17 @@ const poColumns: Column<VendorPurchaseOrder>[] = [
     header: "Delivery Cost",
     render: (row) => `₹${row.delivery_cost.toLocaleString("en-IN")}`,
   },
-  {
-    key: "file_location",
-    header: "",
-    render: (row) => (
-      <button
-      className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 hover:bg-gray-100 transition hover:cursor-pointer"
-    >
-      <Download className="h-4 w-4" />
-    </button>
-    )
-  }
+  // {
+  //   key: "file_location",
+  //   header: "",
+  //   render: (row) => (
+  //     <button
+  //       className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 hover:bg-gray-100 transition hover:cursor-pointer"
+  //     >
+  //       <Download className="h-4 w-4" />
+  //     </button>
+  //   )
+  // }
 ];
 
 interface VendorDetailSheetProps {
@@ -57,13 +57,13 @@ export function VendorDetailSheet({ open, onOpenChange, vendor, purchaseOrders }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-2xl overflow-y-auto">
-        <SheetHeader>
+      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto p-0">
+        <SheetHeader className="p-6 pb-4 border-b">
           <SheetTitle>{vendor.first_name} {vendor.last_name}</SheetTitle>
           <SheetDescription>Vendor profile and purchase history</SheetDescription>
         </SheetHeader>
 
-        <div className="mt-6 space-y-4">
+        <div className="p-6 space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Mail className="h-4 w-4 shrink-0" />
@@ -82,9 +82,7 @@ export function VendorDetailSheet({ open, onOpenChange, vendor, purchaseOrders }
               <span className="font-mono text-foreground">{vendor.gst_no}</span>
             </div>
           </div>
-
           <Separator />
-
           <div>
             <h3 className="text-sm font-semibold mb-3">Purchase History</h3>
             <DataTable

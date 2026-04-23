@@ -130,7 +130,7 @@ export function IngredientFormModal({
         {/* Cost + Supplier row */}
         <div className="grid grid-cols-2 gap-4">
           <div className="grid gap-2">
-            <Label htmlFor="ing-cost">Cost / Unit ($)</Label>
+            <Label htmlFor="ing-cost">Cost / Unit (₹)</Label>
             <Input id="ing-cost" type="number" min="0" step="0.01" value={costPerUnit} onChange={(e) => setCostPerUnit(e.target.value)} />
           </div>
           <div className="grid gap-2">

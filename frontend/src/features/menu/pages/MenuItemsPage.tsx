@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MenuItemFormSheet } from "../components/MenuItemFormSheet";
-import { MENU_CATEGORIES, type MenuItem } from "../../../config/types/order";
+import { type MenuItem } from "../../../config/types/order";
 import { toast } from "sonner";
 import { mapToMenuItem, mapToApiPayload } from "../utils/mapper";
 import api from "@/lib/api";
@@ -43,7 +43,7 @@ export default function MenuItemsPage() {
     if (isProcessing) {
       setProcessStep(0);
       interval = setInterval(() => {
-        setProcessStep((prev) => 
+        setProcessStep((prev) =>
           prev < PROCESSING_STEPS.length - 1 ? prev + 1 : prev
         );
       }, 4000);
@@ -61,30 +61,30 @@ export default function MenuItemsPage() {
       const q = search.toLowerCase();
       result = result.filter((i) => i.name.toLowerCase().includes(q));
     }
-    if (catFilter !== "all") result = result.filter((i) => i.categoryId === catFilter);
-    if (dietFilter === "veg") result = result.filter((i) => i.isVeg);
-    if (dietFilter === "non-veg") result = result.filter((i) => !i.isVeg);
+    if (catFilter !== "all") {
+      result = result.filter(item => item.category_name === catFilter);
+    }
+    if (dietFilter === "veg") result = result.filter((i) => i.is_veg);
+    if (dietFilter === "non-veg") result = result.filter((i) => !i.is_veg);
     return result;
   }, [items, search, catFilter, dietFilter]);
 
-  const categoryLabel = (id: string) => MENU_CATEGORIES.find((c) => c.id === id)?.label ?? id;
-
   const columns: Column<MenuItem>[] = [
     { key: "name", header: "Item Name" },
-    { key: "category", header: "Category", render: (r) => categoryLabel(r.categoryId) },
+    { key: "category", header: "Category", render: (r) => r.category_name },
     {
       key: "dietary", header: "Dietary",
       render: (r) => (
-        <Badge variant="outline" className={r.isVeg
+        <Badge variant="outline" className={r.is_veg
           ? "border-green-500/40 bg-green-500/10 text-green-700 dark:text-green-400"
           : "border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-400"
         }>
-          {r.isVeg ? "Veg" : "Non-Veg"}
+          {r.is_veg ? "Veg" : "Non-Veg"}
         </Badge>
       ),
     },
     { key: "price", header: "Price", render: (r) => `₹${r.price}` },
-    { key: "prepTime", header: "Prep Time", render: (r) => `${r.estimatedPrepTime} mins` },
+    { key: "prepTime", header: "Prep Time", render: (r) => `${r.estimated_prep_time} mins` },
     {
       key: "actions", header: "Actions",
       render: (r) => (
@@ -113,10 +113,10 @@ export default function MenuItemsPage() {
     }
   };
 
-  const handleSave = async (data: Omit<MenuItem, "id">) => {
+  const handleSave = async (data: any) => {
     try {
       const payload = mapToApiPayload(data);
-      
+
       if (editing) {
         await api.patch(`/pos/menuitems/${editing.id}/`, payload);
         toast.success("Menu item updated");
@@ -177,7 +177,9 @@ export default function MenuItemsPage() {
           <SelectTrigger className="w-[180px]"><SelectValue placeholder="Category" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
-            {MENU_CATEGORIES.map((c) => <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>)}
+            {Array.from(new Set(items.map(i => i.category_name).filter(Boolean))).map((cat) => (
+              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Select value={dietFilter} onValueChange={setDietFilter}>

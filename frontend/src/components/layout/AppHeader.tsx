@@ -33,7 +33,7 @@ export function Header() {
     //   </div>
     // </header>
 
-    <header className="flex h-12 shrink-0 items-center gap-2 border-b group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+    <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-background/60 backdrop-blur-md sticky top-0 z-50 transition-all group-has-data-[collapsible=icon]/sidebar-wrapper:h-14">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
         <SidebarTrigger className="-ml-1" />
         <Separator
@@ -42,12 +42,12 @@ export function Header() {
         />
         <div className="flex flex-1 items-center justify-end gap-2">
           {user && (
-            <span className="hidden text-sm text-muted-foreground sm:inline">
+            <span className="hidden text-sm font-medium text-muted-foreground sm:inline mr-2">
               {user.full_name}
             </span>
           )}
           <ThemeToggle />
-          <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout">
+          <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout" className="hover:bg-destructive/10 hover:text-destructive transition-colors">
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
