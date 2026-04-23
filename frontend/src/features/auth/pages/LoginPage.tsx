@@ -21,9 +21,9 @@ const features = [
 
 export default function LoginPage() {
   return (
-    <div className="grid min-h-screen w-full grid-cols-1 lg:grid-cols-2 bg-white">
+    <div className="grid min-h-screen w-full grid-cols-1 lg:grid-cols-2 bg-background selection:bg-primary/20 selection:text-primary">
       {/* LEFT — Brand Showcase */}
-      <div className="relative hidden flex-col justify-between p-12 lg:flex xl:p-20 bg-gradient-to-br from-zinc-50 to-zinc-100/80 border-r border-zinc-200/50">
+      <div className="relative hidden flex-col justify-between p-12 lg:flex xl:p-20 bg-gradient-to-br from-primary/10 via-background to-primary/5 border-r border-border overflow-hidden">
         {/* Decorative Grid Overlay */}
         <div 
           className="absolute inset-0 opacity-[0.03]" 
@@ -31,35 +31,39 @@ export default function LoginPage() {
         />
 
         {/* Top: Logo */}
-        <div className="relative z-10 flex items-center gap-2.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white shadow-lg shadow-primary/20 font-bold text-xl">
+        <div className="relative z-10 flex items-center gap-2.5 animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 font-bold text-xl">
             C
           </div>
-          <span className="text-xl font-bold tracking-tight text-zinc-900">Coherence</span>
+          <span className="text-xl font-bold tracking-tight text-foreground">Coherence</span>
         </div>
 
         {/* Middle: Headline + features */}
-        <div className="relative z-10 flex max-w-lg flex-col gap-12">
-          <div className="space-y-6">
-            <h1 className="text-5xl font-bold leading-[1.1] tracking-tight text-zinc-900 xl:text-6xl">
+        <div className="relative z-10 flex max-w-lg flex-col gap-12 mt-12">
+          <div className="space-y-6 animate-in fade-in slide-in-from-left-8 duration-700 delay-100 fill-mode-both">
+            <h1 className="text-5xl font-bold leading-[1.1] tracking-tight text-foreground xl:text-6xl">
               Bring Coherence
               <br />
-              to your <span className="text-primary">Chaos.</span>
+              to your <span className="text-primary drop-shadow-sm">Chaos.</span>
             </h1>
-            <p className="text-lg text-zinc-600 leading-relaxed">
+            <p className="text-lg text-muted-foreground leading-relaxed">
               The intelligent operating system designed for the next generation of high-performance hospitality.
             </p>
           </div>
 
           <div className="grid gap-8">
-            {features.map(({ icon: Icon, title, description }) => (
-              <div key={title} className="group flex items-start gap-5">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white border border-zinc-200 shadow-sm transition-all group-hover:border-primary/30 group-hover:shadow-md group-hover:shadow-primary/5">
-                  <Icon className="h-5 w-5 text-primary" />
+            {features.map(({ icon: Icon, title, description }, i) => (
+              <div 
+                key={title} 
+                className="group flex items-start gap-5 animate-in fade-in slide-in-from-bottom-4 fill-mode-both"
+                style={{ animationDuration: '500ms', animationDelay: `${200 + i * 150}ms` }}
+              >
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl glass border border-border shadow-sm transition-all duration-300 group-hover:border-primary/50 group-hover:shadow-lg group-hover:shadow-primary/20 group-hover:-translate-y-1">
+                  <Icon className="h-6 w-6 text-primary" />
                 </div>
                 <div className="space-y-1">
-                  <p className="font-semibold text-zinc-900">{title}</p>
-                  <p className="text-sm text-zinc-500 leading-relaxed">{description}</p>
+                  <p className="font-semibold text-foreground text-lg">{title}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
                 </div>
               </div>
             ))}
@@ -67,17 +71,20 @@ export default function LoginPage() {
         </div>
 
         {/* Bottom: Footer */}
-        <div className="relative z-10">
-          <p className="text-sm font-medium text-zinc-400">
+        <div className="relative z-10 animate-in fade-in duration-1000 delay-700 fill-mode-both">
+          <p className="text-sm font-medium text-muted-foreground/60">
             © {new Date().getFullYear()} Coherence OS. Built for scale.
           </p>
         </div>
       </div>
 
       {/* RIGHT — Auth Wrapper */}
-      <div className="flex items-center justify-center p-8 bg-white lg:bg-zinc-50/30">
-        <div className="w-full max-w-sm">
-          <LoginForm />
+      <div className="flex items-center justify-center p-8 bg-background relative">
+        <div className="absolute inset-0 bg-gradient-to-tl from-primary/5 via-transparent to-transparent opacity-50" />
+        <div className="w-full max-w-sm relative z-10 animate-in fade-in slide-in-from-right-8 duration-700">
+          <div className="glass-panel p-8 rounded-3xl">
+            <LoginForm />
+          </div>
         </div>
       </div>
     </div>

@@ -76,8 +76,8 @@ function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
                 <NavLink
                   to={item.url}
                   end={item.url === "/"}
-                  className="hover:bg-sidebar-accent/50"
-                  activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                  className="transition-all duration-200 hover:bg-sidebar-accent/50 hover:pl-3"
+                  activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-sm ring-1 ring-border/50"
                 >
                   <item.icon className="h-4 w-4" />
                   {!collapsed && <span>{item.title}</span>}
