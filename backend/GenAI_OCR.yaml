@@ -1,0 +1,229 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "FastAPI",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/scan/": {
+      "post": {
+        "summary": "Scan Invoice",
+        "description": "Processes an invoice image using PydanticAI Agent with dynamic SKU and unit constraints.",
+        "operationId": "scan_invoice_scan__post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_scan_invoice_scan__post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceData"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Body_scan_invoice_scan__post": {
+        "properties": {
+          "expected_skus_json": {
+            "type": "string",
+            "title": "Expected Skus Json",
+            "description": "JSON encoded dictionary mapping SKUs to predefined units (e.g., {'Sabudana': 'KG'})"
+          },
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "expected_skus_json",
+          "file"
+        ],
+        "title": "Body_scan_invoice_scan__post"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "InvoiceData": {
+        "properties": {
+          "invoice_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoice Number",
+            "description": "Extract the invoice or bill number"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date",
+            "description": "Extract the date in YYYY-MM-DD format"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Item"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "InvoiceData"
+      },
+      "Item": {
+        "properties": {
+          "mapped_sku": {
+            "type": "string",
+            "title": "Mapped Sku",
+            "description": "The authorized SKU name mapped from the invoice"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "KG",
+                  "Liters",
+                  "Pieces"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit",
+            "description": "'KG', 'Liters', 'Pieces' only"
+          },
+          "price_per_unit": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Per Unit"
+          },
+          "total_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Price"
+          }
+        },
+        "type": "object",
+        "required": [
+          "mapped_sku"
+        ],
+        "title": "Item"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

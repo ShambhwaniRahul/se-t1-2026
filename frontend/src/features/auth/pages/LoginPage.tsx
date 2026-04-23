@@ -1,5 +1,6 @@
 import { LoginForm } from "../components/LoginForm";
-import { Zap, ChefHat, Package } from "lucide-react";
+import { Zap, ChefHat, Sparkles, ChartNoAxesCombined } from "lucide-react";
+
 
 const features = [
   {
@@ -12,11 +13,18 @@ const features = [
     title: "Orchestrated Kitchens",
     description: "Seamless ticket flow from table to prep station.",
   },
+
   {
-    icon: Package,
-    title: "Intelligent Inventory",
-    description: "Real-time tracking and automated stock forecasting.",
+    icon: Sparkles,
+    title: "AI-Powered Inventory & Purchasing",
+    description: "Automate inventory management using GenAI OCR.",
   },
+
+  {
+    icon: ChartNoAxesCombined,
+    title: "Data-Driven Insights & Analytics",
+    description: "Analyze performance, forecast sales and make informed decisions with real-time data visualization.",
+  }
 ];
 
 export default function LoginPage() {
