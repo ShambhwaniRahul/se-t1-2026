@@ -8,7 +8,7 @@ from .models import Customer, CustomerPayment, CustomerPointsBank
 from .serializers import (
     CustomerSerializer,CustomerReadSerializer,
     CustomerPaymentSerializer, CustomerPointsBankSerializer,
-    PointsBankUserSerializer,CustomerPaymentReadSerializer,
+    PointsBankUserSerializer,CustomerPaymentReadSerializer,CustomerSearchSerializer,
     CustomerOrdersSerializer)
 from orders.models import Order, OrderMenuItem, DiningTable
 from utils.response import standard_response
@@ -179,7 +179,9 @@ class CustomerSearchAPIView(APIView):
         EmployeeRole.RoleChoices.WAITER
         ]
 
-    
+    @extend_schema(
+        responses = CustomerSearchSerializer
+    ) 
     def get(self, request):
         phone_no = request.data.get("phone_no")
         first_name = request.data.get("first_name")
@@ -348,16 +350,20 @@ class CustomerPaymentListCreateAPIView(APIView):
     
         try:
             with transaction.atomic():
-    
-                # 🔥 3. Compute adjusted amount using loyalty points
-                # result = compute_adjusted_amount(
-                #     final_total=order.final_total,
-                #     customer_id=customer.id
-                # )
-    
-                # amt_paid = result["amt_paid"]
-                # points_adjusted = result["points_used"] 
-    
+
+                is_reedeming = request.data.get("is_reedeming")
+                discount = request.data.get("discount")
+                if discount > 30:
+                    return standard_response(
+                        success=False,
+                        message="Discount cannot be greater than 30%.",
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                    )
+                result = compute_adjusted_amount(final_total=order.final_total, customer_id=customer.id, is_reedeming=is_reedeming, discount=discount)
+
+                amt_paid = result["amt_paid"]
+                points_adjusted = result["points_used"]
+
                 # 🔥 4. Save payment with computed amt_paid
                 payment = serializer.save(amt_paid=order.final_total)
     

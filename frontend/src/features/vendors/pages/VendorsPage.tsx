@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Plus, Pencil, Trash2, Eye, ScanSearch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -7,7 +7,7 @@ import { DataTable, type Column } from "@/components/shared/DataTable";
 import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 import { VendorFormSheet } from "../components/VendorFormSheet";
 import { VendorDetailSheet } from "../components/VendorDetailSheet";
-// import { mockVendorPurchaseOrders } from "../data/mockVendors";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import type {
   Vendor,
@@ -16,83 +16,106 @@ import type {
 } from "../../../config/types/vendor";
 import { toast } from "sonner";
 
-export default function VendorsPage() {
-  const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
+/* ================= API ================= */
 
-  // Form sheet state
+const fetchVendors = async (): Promise<Vendor[]> => {
+  const res = await api.get("/procurement/vendors/");
+  if (!res.data.success) throw new Error(res.data.message);
+  return res.data.data;
+};
+
+const fetchVendorOrders = async (
+  vendorId: number
+): Promise<VendorPurchaseOrder[]> => {
+  const res = await api.get(
+    `/procurement/vendors/${vendorId}/purchase-orders/`
+  );
+  if (!res.data.success) throw new Error(res.data.message);
+  return res.data.data;
+};
+
+/* ================= PAGE ================= */
+
+export default function VendorsPage() {
+  const queryClient = useQueryClient();
+
+  const [search, setSearch] = useState("");
+
   const [formOpen, setFormOpen] = useState(false);
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
 
-  // Detail sheet state
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
 
-  // Delete dialog state
   const [deleteTarget, setDeleteTarget] = useState<Vendor | null>(null);
 
-  // For the Vendor's Purchase Orders
-  const [vendorOrders, setVendorOrders] = useState<
-    VendorPurchaseOrder[] | null
-  >(null);
-  const [ordersLoading, setOrdersLoading] = useState(false); // optional but good
+  /* ================= FETCH VENDORS ================= */
 
-  useEffect(() => {
-    fetchVendors();
-  }, []);
+  const {
+    data: vendors = [],
+    isLoading,
+  } = useQuery({
+    queryKey: ["vendors"],
+    queryFn: fetchVendors,
+  });
 
-  const fetchVendors = async () => {
-    try {
-      // Simulate API call
-      const result = await api.get("/procurement/vendors");
-      if (result.data.success) {
-        setVendors(result.data.data);
-        toast.success(result.data.message || "Vendors fetched successfully");
-      } else {
-        toast.error(result.data.message || "Failed to fetch vendors");
-      }
-    } catch (error) {
-      console.error("Error fetching vendors:", error);
-      toast.error("Failed to fetch vendors");
-    } finally {
-      setLoading(false);
-    }
-  };
+  /* ================= FETCH ORDERS ================= */
 
-  const fetchVendorOrders = async (vendorId: number) => {
-    setOrdersLoading(true);
-    try {
-      const result = await api.get(
-        `/procurement/vendors/${vendorId}/purchase-orders/`,
-      );
-      if (result.data.success) {
-        setVendorOrders(result.data.data);
-      }
-    } catch (error) {
-      console.error("Error fetching vendor purchase orders:", error);
-    } finally {
-      setOrdersLoading(false);
-    }
-  };
+  const {
+    data: vendorOrders = [],
+    isLoading: ordersLoading,
+  } = useQuery({
+    queryKey: ["vendor-orders", selectedVendor?.id],
+    queryFn: () => fetchVendorOrders(selectedVendor!.id),
+    enabled: !!selectedVendor,
+  });
 
-  useEffect(() => {
-    if (selectedVendor) {
-      fetchVendorOrders(selectedVendor.id);
-    } else {
-      setVendorOrders(null);
-    }
-  }, [selectedVendor]);
+  /* ================= MUTATIONS ================= */
+
+  const createVendor = useMutation({
+    mutationFn: (values: VendorFormValues) =>
+      api.post("/procurement/vendors/", values),
+    onSuccess: (res) => {
+      toast.success(res.data.message || "Vendor added");
+      queryClient.invalidateQueries({ queryKey: ["vendors"] });
+    },
+    onError: () => toast.error("Failed to add vendor"),
+  });
+
+  const updateVendor = useMutation({
+    mutationFn: ({ id, values }: { id: number; values: VendorFormValues }) =>
+      api.patch(`/procurement/vendors/${id}/`, values),
+    onSuccess: (res) => {
+      toast.success(res.data.message || "Vendor updated");
+      queryClient.invalidateQueries({ queryKey: ["vendors"] });
+    },
+    onError: () => toast.error("Failed to update vendor"),
+  });
+
+  const deleteVendor = useMutation({
+    mutationFn: (id: number) =>
+      api.delete(`/procurement/vendors/${id}/`),
+    onSuccess: (res) => {
+      toast.success(res.data.message || "Vendor deleted");
+      queryClient.invalidateQueries({ queryKey: ["vendors"] });
+    },
+    onError: () => toast.error("Failed to delete vendor"),
+  });
+
+  /* ================= FILTER ================= */
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     if (!q) return vendors;
+
     return vendors.filter(
       (v) =>
         `${v.first_name} ${v.last_name}`.toLowerCase().includes(q) ||
-        v.email.toLowerCase().includes(q),
+        v.email.toLowerCase().includes(q)
     );
   }, [vendors, search]);
+
+  /* ================= ACTIONS ================= */
 
   const handleAdd = () => {
     setEditingVendor(null);
@@ -109,137 +132,94 @@ export default function VendorsPage() {
     setDetailOpen(true);
   };
 
-  const handleFormSubmit = useCallback(
-    async (values: VendorFormValues) => {
-      if (editingVendor) {
-        // Simulate API call
-        try {
-          const result = await api.patch(
-            `/procurement/vendors/${editingVendor.id}/`,
-            values,
-          );
-          if (result.data.success) {
-            toast.success(result.data.message || "Vendor updated successfully");
-          } else {
-            toast.error(result.data.message || "Failed to update vendor");
-          }
-        } catch (error) {
-          toast.error("Failed to update vendor");
-        } finally {
-          fetchVendors();
-        }
-      } else {
-        // Simulate API call
-        try {
-          const result = await api.post("/procurement/vendors/", values);
-          if (result.data.success) {
-            toast.success(result.data.message || "Vendor added successfully");
-          } else {
-            toast.error(result.data.message || "Failed to add vendor");
-          }
-        } catch (error) {
-          toast.error("Failed to add vendor");
-        } finally {
-          fetchVendors();
-        }
-      }
-    },
-    [editingVendor],
-  );
-
-  const confirmDelete = async () => {
-    if (!deleteTarget) return;
-    setVendors((prev) => prev.filter((v) => v.id !== deleteTarget.id));
-    toast.success("Vendor deleted");
-    try {
-      const result = await api.delete(
-        `/procurement/vendors/${deleteTarget.id}/`,
-      );
-      if (result.data.success) {
-        toast.success(result.data.message || "Vendor deleted successfully");
-      } else {
-        toast.error(result.data.message || "Failed to delete vendor");
-      }
-    } catch (error) {
-      toast.error("Failed to delete vendor");
-    } finally {
-      fetchVendors();
-      setDeleteTarget(null);
+  const handleFormSubmit = (values: VendorFormValues) => {
+    if (editingVendor) {
+      updateVendor.mutate({ id: editingVendor.id, values });
+    } else {
+      createVendor.mutate(values);
     }
   };
 
-  const columns: Column<Vendor>[] = useMemo(
-    () => [
-      {
-        key: "name",
-        header: "Name",
-        render: (row) => (
-          <span className="font-medium">
-            {row.first_name} {row.last_name}
-          </span>
-        ),
-      },
-      { key: "contact_no", header: "Contact No" },
-      { key: "email", header: "Email" },
-      {
-        key: "gst_no",
-        header: "GST Number",
-        render: (row) => (
-          <span className="font-mono text-xs">{row.gst_no}</span>
-        ),
-      },
-      {
-        key: "actions",
-        header: "Actions",
-        className: "text-right",
-        render: (row) => (
-          <div className="flex items-center justify-end gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleViewDetail(row);
-              }}
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleEdit(row);
-              }}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-destructive hover:text-destructive"
-              onClick={(e) => {
-                e.stopPropagation();
-                setDeleteTarget(row);
-              }}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        ),
-      },
-    ],
-    [],
-  );
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    deleteVendor.mutate(deleteTarget.id);
+    setDeleteTarget(null);
+  };
+
+  /* ================= TABLE ================= */
+
+  const columns: Column<Vendor>[] = [
+    {
+      key: "name",
+      header: "Name",
+      render: (row) => (
+        <span className="font-medium">
+          {row.first_name} {row.last_name}
+        </span>
+      ),
+    },
+    { key: "contact_no", header: "Contact No" },
+    { key: "email", header: "Email" },
+    {
+      key: "gst_no",
+      header: "GST Number",
+      render: (row) => (
+        <span className="font-mono text-xs">{row.gst_no}</span>
+      ),
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      className: "text-right",
+      render: (row) => (
+        <div className="flex items-center justify-end gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleViewDetail(row);
+            }}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEdit(row);
+            }}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-destructive"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteTarget(row);
+            }}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
+  /* ================= UI ================= */
 
   return (
     <div className="space-y-6 p-4 md:p-6">
-      {loading && (
+      {/* LOADER */}
+      {isLoading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <div className="flex flex-col items-center p-8 bg-card rounded-xl shadow-2xl border text-center max-w-sm w-full mx-4">
-            <ScanSearch className="h-12 w-12 text-primary animate-pulse mb-6" />
+          <div className="flex flex-col items-center p-8 bg-card rounded-xl shadow-2xl border text-center">
+            <ScanSearch className="h-12 w-12 animate-pulse mb-6" />
             <h3 className="text-xl font-semibold">Loading Vendors</h3>
           </div>
         </div>
@@ -286,13 +266,14 @@ export default function VendorsPage() {
         onOpenChange={setDetailOpen}
         vendor={selectedVendor}
         purchaseOrders={vendorOrders}
+        loading={ordersLoading}
       />
 
       <ConfirmationDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
         title="Delete Vendor"
-        description={`Are you sure you want to delete ${deleteTarget?.first_name} ${deleteTarget?.last_name}? This action cannot be undone.`}
+        description={`Are you sure you want to delete ${deleteTarget?.first_name} ${deleteTarget?.last_name}?`}
         confirmLabel="Delete"
         onConfirm={confirmDelete}
         variant="destructive"
