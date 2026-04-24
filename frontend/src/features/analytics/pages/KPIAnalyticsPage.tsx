@@ -1,5 +1,4 @@
-import { useState, useEffect, use } from "react";
-import { createPortal } from "react-dom";
+import { useState, useEffect } from "react";
 import { PageLayout } from "@/components/shared/PageLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -53,7 +52,7 @@ export default function KPIAnalyticsPage() {
     timeZone: "Asia/Kolkata",
   }).format(oneMonthBack);
 
-  const [kpiData, setKPIData] = useState<RevenueKPIs | []>([]);
+  const [kpiData, setKPIData] = useState<RevenueKPIs | any>(null);
   const [revenueOverTime, setRevenueOverTime] = useState<RevenueOverTime[] | []>([]);
   const [monthRevenue, setMonthRevenue] = useState<RevenueOverTime[] | []>([]);
   const [orderVersusRevenue, setOrderVersusRevenue] = useState<OrderVersusRevenue[] | []>([]);
@@ -165,18 +164,18 @@ export default function KPIAnalyticsPage() {
 
   return (
     <PageLayout>
-      {/* Full-screen blocking overlay active during data fetch and AI forecasting */}
-      {isProcessing && createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <div className="flex flex-col items-center p-8 bg-card rounded-xl shadow-2xl border text-center max-w-sm w-full mx-4">
-            <ScanSearch className="h-12 w-12 text-primary animate-pulse mb-6" />
-            <h3 className="text-xl font-semibold mb-2">Analyzing Data</h3>
-            <p className="text-sm text-muted-foreground animate-pulse h-6">
-              {PROCESSING_STEPS[processStep]}
-            </p>
+      {isProcessing && (
+        <div className="absolute inset-0 z-50 bg-background/80 backdrop-blur-sm rounded-lg overflow-hidden">
+          <div className="sticky top-0 h-[calc(100vh-8rem)] flex items-center justify-center">
+            <div className="flex flex-col items-center p-8 bg-card rounded-xl shadow-2xl border text-center max-w-sm w-full mx-4">
+              <ScanSearch className="h-12 w-12 text-primary animate-pulse mb-6" />
+              <h3 className="text-xl font-semibold mb-2">Analyzing Data</h3>
+              <p className="text-sm text-muted-foreground animate-pulse h-6">
+                {PROCESSING_STEPS[processStep]}
+              </p>
+            </div>
           </div>
-        </div>,
-        document.body
+        </div>
       )}
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { PageLayout } from "@/components/shared/PageLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatsCard } from "@/components/shared/StatsCard";
@@ -16,7 +15,7 @@ import {
   type TopSellingItems,
   type RecentOrders,
 } from "@/features/dashboard/data/dashboardData";
-import { DollarSign, ShoppingCart, Receipt, UtensilsCrossed, IndianRupee, IndianRupeeIcon, ScanSearch } from "lucide-react";
+import { ShoppingCart, UtensilsCrossed, IndianRupee, ScanSearch } from "lucide-react";
 
 export default function DashboardPage() {
   const [revenueKPIs, setRevenueKPIs] = useState<RevenueKPIs | null>(null);
@@ -26,7 +25,7 @@ export default function DashboardPage() {
   const [categoryBreakdown, setCategoryBreakdown] = useState<SalesByCategory[]>([]);
   const [topItems, setTopItems] = useState<TopSellingItems[]>([]);
   const [recentOrders, setRecentOrders] = useState<RecentOrders[]>([]);
-  
+
   // State for handling the static AI processing UI
   const [isProcessing, setIsProcessing] = useState(true);
 
@@ -79,89 +78,89 @@ export default function DashboardPage() {
 
   const fetchRevenueKPIs = async () => {
     try {
-        const result = await api.get(`/analytics/revenue-kpis?start_date=${istDate}&end_date=${istDate}&end_time=${istTime}`);
-        const resultYesterday = await api.get(`/analytics/revenue-kpis?start_date=${istYesterday}&end_date=${istYesterday}&end_time=${istTime}`);
-        if (result.data.success) {
-            setRevenueKPIs(result.data.data);
-        }
-        if (resultYesterday.data.success) {
-            setRevenueKPIsYesterday(resultYesterday.data.data);
-        }
+      const result = await api.get(`/analytics/revenue-kpis?start_date=${istDate}&end_date=${istDate}&end_time=${istTime}`);
+      const resultYesterday = await api.get(`/analytics/revenue-kpis?start_date=${istYesterday}&end_date=${istYesterday}&end_time=${istTime}`);
+      if (result.data.success) {
+        setRevenueKPIs(result.data.data);
+      }
+      if (resultYesterday.data.success) {
+        setRevenueKPIsYesterday(resultYesterday.data.data);
+      }
     } catch (err) {
-        console.error("Failed to fetch revenue KPIs", err);
+      console.error("Failed to fetch revenue KPIs", err);
     }
   }
 
   const fetchActiveTables = async () => {
     try {
-        const result = await api.get("/analytics/active-tables/");
-        if (result.data.success) {
-            setActiveTables(result.data.data);
-        }
+      const result = await api.get("/analytics/active-tables/");
+      if (result.data.success) {
+        setActiveTables(result.data.data);
+      }
     } catch (err) {
-        console.error("Failed to fetch active tables", err);
+      console.error("Failed to fetch active tables", err);
     }
   }
 
   const fetchRevenueTrend = async () => {
     try {
-        const result = await api.get(`/analytics/revenue-by-date?start_date=${istTwoWeeksBack}&end_date=${istDate}`);
-        if (result.data.success) {
-            setRevenueTrend(result.data.data);
-        }
+      const result = await api.get(`/analytics/revenue-by-date?start_date=${istTwoWeeksBack}&end_date=${istDate}`);
+      if (result.data.success) {
+        setRevenueTrend(result.data.data);
+      }
     } catch (err) {
-        console.error("Failed to fetch revenue trend", err);
+      console.error("Failed to fetch revenue trend", err);
     }
   }
 
   const fetchSalesByCategory = async () => {
     try {
-        const result = await api.get(`/analytics/sales-by-category?start_date=${istDate}&end_date=${istDate}`);
-        if (result.data.success) {
-            setCategoryBreakdown(result.data.data);
-        }
+      const result = await api.get(`/analytics/sales-by-category?start_date=${istDate}&end_date=${istDate}`);
+      if (result.data.success) {
+        setCategoryBreakdown(result.data.data);
+      }
     } catch (err) {
-        console.error("Failed to fetch sales by category", err);
+      console.error("Failed to fetch sales by category", err);
     }
   }
 
   const fetchTopItems = async () => {
     try {
-        const result = await api.get(`/analytics/top-selling-items?start_date=${istDate}&end_date=${istDate}`);
-        if (result.data.success) {
-            setTopItems(result.data.data);
-        }
-        console.log("Fetched top selling items", result.data.data);
+      const result = await api.get(`/analytics/top-selling-items?start_date=${istDate}&end_date=${istDate}`);
+      if (result.data.success) {
+        setTopItems(result.data.data);
+      }
+      console.log("Fetched top selling items", result.data.data);
     } catch (err) {
-        console.error("Failed to fetch top selling items", err);
+      console.error("Failed to fetch top selling items", err);
     }
   };
 
   const fetchRecentOrders = async () => {
     try {
-        const result = await api.get("/analytics/recent-orders");
-        if (result.data.success) {
-            setRecentOrders(result.data.data);
-        }
+      const result = await api.get("/analytics/recent-orders");
+      if (result.data.success) {
+        setRecentOrders(result.data.data);
+      }
     } catch (err) {
-        console.error("Failed to fetch recent orders", err);
+      console.error("Failed to fetch recent orders", err);
     }
   };
 
   return (
     <PageLayout>
-      {/* Full-screen blocking overlay active during data fetch/processing */}
-      {isProcessing && createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <div className="flex flex-col items-center p-8 bg-card rounded-xl shadow-2xl border text-center max-w-sm w-full mx-4">
-            <ScanSearch className="h-12 w-12 text-primary animate-pulse mb-6" />
-            <h3 className="text-xl font-semibold mb-2">Loading Dashboard</h3>
-            <p className="text-sm text-muted-foreground animate-pulse h-6">
-              Analyzing insights
-            </p>
+      {isProcessing && (
+        <div className="absolute inset-0 z-50 bg-background/80 backdrop-blur-sm rounded-lg overflow-hidden">
+          <div className="sticky top-0 h-[calc(100vh-8rem)] flex items-center justify-center">
+            <div className="flex flex-col items-center p-8 bg-card rounded-xl shadow-2xl border text-center max-w-sm w-full mx-4">
+              <ScanSearch className="h-12 w-12 text-primary animate-pulse mb-6" />
+              <h3 className="text-xl font-semibold mb-2">Loading Dashboard</h3>
+              <p className="text-sm text-muted-foreground animate-pulse h-6">
+                Analyzing insights
+              </p>
+            </div>
           </div>
-        </div>,
-        document.body
+        </div>
       )}
 
       <PageHeader
