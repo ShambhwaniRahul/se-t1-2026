@@ -9,7 +9,7 @@ export type CustomerInfo = {
   first_name: string;
   last_name: string;
   phone_no: string;
-  loyalty_points: number;
+  total_points: number;
   created_at: string;
   updated_at: string;
 };

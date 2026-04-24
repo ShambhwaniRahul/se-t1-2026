@@ -10,7 +10,7 @@ class Converter(Enum):
     RUPEES_TO_POINTS = 0.02
 
 
-def compute_adjusted_amount(final_total, customer_id, is_reedeming, discount):
+def compute_adjusted_amount(final_total, customer_id, is_redeeming, discount):
     """
     Computes how much amount the customer needs to pay after applying loyalty points.
     Also updates the points in FIFO manner (oldest first).
@@ -23,7 +23,7 @@ def compute_adjusted_amount(final_total, customer_id, is_reedeming, discount):
         }
     """
 
-    if not is_reedeming:
+    if not is_redeeming:
         amt_paid = final_total - (final_total * discount / 100)
         return {"amt_paid": amt_paid, "points_used": 0}
 

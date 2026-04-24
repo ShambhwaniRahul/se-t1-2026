@@ -10,7 +10,7 @@ class CustomerAdmin(admin.ModelAdmin):
 
 @admin.register(CustomerPayment)
 class CustomerPaymentAdmin(admin.ModelAdmin):
-    list_display = ('payment_mode', 'customer','order','amt_paid')
+    list_display = ('payment_mode', 'customer','order','amt_paid','discount')
     search_fields = ('customer__first_name', 'order__table_number')
     sortable_by = ('created_at',)
     list_filter = ('payment_mode','amt_paid')
