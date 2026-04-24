@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { format } from "date-fns";
 import { Users, ScanSearch } from "lucide-react";
 import { PageLayout } from "@/components/shared/PageLayout";
@@ -7,6 +7,7 @@ import { SearchInput } from "@/components/shared/SearchInput";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { CustomerDrawer } from "../components/CustomerDrawer";
+import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { toast } from "sonner";
 
@@ -30,6 +31,25 @@ interface CustomerOrderResponse {
   created_at: string;
   order_items: string[];
 }
+
+/* ================= API ================= */
+
+const fetchCustomers = async (): Promise<Customer[]> => {
+  const res = await api.get("/customers/");
+  return res.data?.data || [];
+};
+
+const fetchOrders = async (
+  customerId: number
+): Promise<CustomerOrderResponse[]> => {
+  const res = await api.get(`/customers/${customerId}/orders`);
+
+  if (!res.data.success) {
+    throw new Error(res.data.message || "Failed to fetch orders");
+  }
+
+  return res.data?.data || [];
+};
 
 /* ================= TABLE ================= */
 
@@ -81,63 +101,41 @@ const columns: Column<Customer>[] = [
 /* ================= PAGE ================= */
 
 export default function CrmPage() {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [orders, setOrders] = useState<CustomerOrderResponse[]>([]);
-
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [ordersLoading, setOrdersLoading] = useState(false);
-
   const [selectedCustomer, setSelectedCustomer] =
     useState<Customer | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  /* ================= FETCH CUSTOMERS ================= */
+  /* ================= CUSTOMERS ================= */
 
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
+  const {
+    data: customers = [],
+    isLoading: customersLoading,
+  } = useQuery<Customer[]>({
+    queryKey: ["customers"],
+    queryFn: fetchCustomers,
+  });
 
-  const fetchCustomers = async () => {
-    try {
-      const res = await api.get("/customers/"); // ✅ trailing slash important
+  /* ================= ORDERS ================= */
 
-      console.log("CUSTOMERS:", res.data);
+const {
+  data,
+  isLoading: ordersLoading,
+  error: ordersError,
+  isError,
+} = useQuery<CustomerOrderResponse[]>({
+  queryKey: ["customer-orders", selectedCustomer?.id],
+  queryFn: () => fetchOrders(selectedCustomer!.id),
+  enabled: !!selectedCustomer,
+});
 
-      const data = res.data?.data || [];
-      setCustomers(data);
-    } catch (err) {
-      console.error("Failed to fetch customers:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+const orders: CustomerOrderResponse[] = data ?? [];
 
-  /* ================= FETCH ORDERS ================= */
-
-  const fetchOrders = async (customerId: number) => {
-    setOrdersLoading(true);
-    try {
-      const res = await api.get(`/customers/${customerId}/orders`);
-      
-      if(res.data.success){
-        console.log("ORDERS:", res.data.data);
-        toast.success(res.data.message || "Customer orders loaded");
-        const data = res.data?.data || [];
-        setOrders(data);
-      }
-      else{
-        // console.error("Failed to fetch orders:", res.data);
-        toast.error(res.data.message || "Failed to fetch customer orders");
-      }
-    } catch (err) {
-      console.error("Failed to fetch orders:", err);
-      toast.error("Failed to fetch customer orders");
-      setOrders([]);
-    } finally {
-      setOrdersLoading(false);
-    }
-  };
+useEffect(() => {
+  if (isError && ordersError instanceof Error) {
+    toast.error(ordersError.message);
+  }
+}, [isError, ordersError]);
 
   /* ================= SEARCH ================= */
 
@@ -152,21 +150,18 @@ export default function CrmPage() {
     );
   }, [customers, search]);
 
-  /* ================= ROW CLICK ================= */
+  /* ================= ACTIONS ================= */
 
   const handleRowClick = (customer: Customer) => {
     setSelectedCustomer(customer);
     setDrawerOpen(true);
-    fetchOrders(customer.id); // 🔥 important
   };
 
   /* ================= UI ================= */
 
   return (
     <PageLayout>
-
-      {/* 🔥 FULL PAGE LOADER */}
-      {loading && (
+      {customersLoading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
           <div className="flex flex-col items-center p-8 bg-card rounded-xl shadow-2xl border text-center">
             <ScanSearch className="h-12 w-12 text-primary animate-pulse mb-6" />
@@ -201,7 +196,6 @@ export default function CrmPage() {
         }
       />
 
-      {/* 🔥 FIXED DRAWER */}
       <CustomerDrawer
         customer={selectedCustomer}
         orders={orders}
@@ -209,7 +203,6 @@ export default function CrmPage() {
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
       />
-
     </PageLayout>
   );
 }

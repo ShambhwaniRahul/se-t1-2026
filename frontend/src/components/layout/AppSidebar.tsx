@@ -1,6 +1,6 @@
 import {
   ShoppingCart, ChefHat, Package, ClipboardList, Users, BarChart3, Store, ClipboardCheck,
-  LayoutDashboard, UserCog, CalendarCheck, CalendarClock, Wallet, UtensilsCrossed, UsersRound
+  LayoutDashboard, Wallet, UtensilsCrossed, UsersRound
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
