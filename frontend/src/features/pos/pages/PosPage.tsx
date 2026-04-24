@@ -12,6 +12,7 @@ import api from "@/lib/api";
 import { CustomerInfoModal } from "../components/CustomerInfoModal";
 import type { CustomerInfo } from "../data/types";
 import { useCustomerLookup } from "../hooks/useCustomerLookup";
+import PosPageSkeleton from "@/components/skeleton/PosPageSkeleton";
 
 export default function PosPage() {
 
@@ -84,7 +85,7 @@ export default function PosPage() {
   }, [cart, clearCustomer]);;
 
 
-  if (loading) return (<div> Loading... </div>);
+if (loading) return <PosPageSkeleton />;
 
   return (
     <div className="-m-4 md:-m-6 flex h-[calc(100svh-3.5rem)] flex-col">

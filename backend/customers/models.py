@@ -67,4 +67,4 @@ class CustomerPointsBank(TimeStampedModel):
         verbose_name_plural = 'Customer Points Banks'
 
     def __str__(self):
-        return f"Points for payment {self.paymemt.id} by {self.paymemt.customer.full_name}"
+        return f"Points for payment {self.payment.id} by {self.payment.customer.full_name}"
