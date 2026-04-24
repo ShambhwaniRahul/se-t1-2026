@@ -1285,7 +1285,7 @@ class GetOrdersByDiningTableAPIView(APIView):
 
         return standard_response(
             success=True,
-            message="Orders retrieved successfully.",
+            message="Orders retrieved successfully." if len(serializer.data)>0 else "No orders found for this dining table.",
             data=serializer.data,
             status_code=status.HTTP_200_OK
         )

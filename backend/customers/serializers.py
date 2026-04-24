@@ -3,7 +3,7 @@ from .models import Customer, CustomerPayment, CustomerPointsBank
 from django.db.models import Sum, Q
 from orders.models import Order, OrderMenuItem
 from django.utils import timezone
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 class CustomerSerializer(serializers.ModelSerializer):
     """
@@ -37,6 +37,7 @@ class CustomerSearchSerializer(serializers.Serializer):
     class Meta:
         model = Customer
         fields = ['phone_no', 'first_name', 'last_name']
+
 class CustomerReadSerializer(serializers.ModelSerializer):
     """
     Transforms Customer model instances into JSON payloads.
@@ -67,14 +68,15 @@ class CustomerReadSerializer(serializers.ModelSerializer):
     
     def get_last_visit(self, obj):
         last_payment = CustomerPayment.objects.filter(customer=obj).order_by('-created_at').first()
-        return last_payment.created_at if last_payment else None
+        return last_payment.created_at if last_payment else datetime.now()
 
     def get_total_spent(self, obj):
-        return CustomerPayment.objects.filter(customer=obj).aggregate(total=Sum('amt_paid'))['total']    
+        return CustomerPayment.objects.filter(customer=obj).aggregate(total=Sum('amt_paid'))['total'] or 0
+     
 
 
     def get_total_visits(self, obj):
-        return CustomerPayment.objects.filter(customer=obj).count()    
+        return CustomerPayment.objects.filter(customer=obj).count() or 0
 
     def get_total_points(self, obj):
         # Calculate the date 30 days ago
@@ -101,9 +103,6 @@ class CustomerPaymentSerializer(serializers.ModelSerializer):
         source="customer.full_name", read_only=True
     )
 
-    order_id = serializers.IntegerField(
-        source="order.id", read_only=True
-    )
 
     # 🔥 amt_paid should be read-only (calculated in backend)
     amt_paid = serializers.FloatField(read_only=True)
@@ -115,10 +114,10 @@ class CustomerPaymentSerializer(serializers.ModelSerializer):
             "payment_mode",
             "payment_mode_display",
             "order",
-            "order_id",
             "customer",
             "customer_name",
             "amt_paid",
+            "discount",
             "created_at",
             "updated_at",
         ]
@@ -126,7 +125,7 @@ class CustomerPaymentSerializer(serializers.ModelSerializer):
             "id",
             "created_at",
             "updated_at",
-            "amt_paid",
+            # "amt_paid",
         ]
 
     def validate(self, attrs):
@@ -134,7 +133,8 @@ class CustomerPaymentSerializer(serializers.ModelSerializer):
         Optional: Add custom validations if needed
         """
         order = attrs.get("order")
-
+        # order = Order.objects.filter(id=attrs.get("order")).first()
+        
         if order and order.status == Order.StatusChoices.CLOSED:
             raise serializers.ValidationError("Order is already closed.")
 

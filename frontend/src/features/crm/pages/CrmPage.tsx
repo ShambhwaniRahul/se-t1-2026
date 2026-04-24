@@ -69,19 +69,19 @@ const columns: Column<Customer>[] = [
   {
     key: "points",
     header: "Points",
-    render: (c) => <span>{c.total_points}</span>,
+    render: (c) => <span>{(c.total_points)}</span>,
   },
   {
     key: "visits",
     header: "Visits",
-    render: (c) => <span>{c.total_visits}</span>,
+    render: (c) => <span>{(c.total_visits)}</span>,
   },
   {
     key: "spent",
     header: "Total Spent",
     render: (c) => (
       <span className="font-medium">
-        ₹ {c.total_spent.toLocaleString()}
+        ₹ {(c.total_spent).toFixed(2)}
       </span>
     ),
   },

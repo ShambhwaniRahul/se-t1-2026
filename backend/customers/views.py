@@ -19,7 +19,7 @@ from django.db import transaction
 from datetime import timedelta
 from django.utils import timezone
 
-class CustomerListCreateAPIView(APIView):
+class CustomerListAPIView(APIView):
     """
     Handles customer listing and creation operations.
     Requires OWNER or MANAGER role for access.
@@ -183,9 +183,13 @@ class CustomerSearchAPIView(APIView):
         responses = CustomerSearchSerializer
     ) 
     def get(self, request):
-        phone_no = request.data.get("phone_no")
-        first_name = request.data.get("first_name")
-        last_name = request.data.get("last_name")
+        # phone_no = request.data.get("phone_no")
+        # first_name = request.data.get("first_name")
+        # last_name = request.data.get("last_name")
+
+        phone_no = request.query_params.get("phone_no")
+        first_name = request.query_params.get("first_name")
+        last_name = request.query_params.get("last_name")
 
         if not phone_no and not first_name and not last_name:
             return standard_response(
@@ -351,7 +355,7 @@ class CustomerPaymentListCreateAPIView(APIView):
         try:
             with transaction.atomic():
 
-                is_reedeming = request.data.get("is_reedeming")
+                is_redeeming = request.data.get("is_redeeming")
                 discount = request.data.get("discount")
                 if discount > 30:
                     return standard_response(
@@ -359,13 +363,13 @@ class CustomerPaymentListCreateAPIView(APIView):
                         message="Discount cannot be greater than 30%.",
                         status_code=status.HTTP_400_BAD_REQUEST,
                     )
-                result = compute_adjusted_amount(final_total=order.final_total, customer_id=customer.id, is_reedeming=is_reedeming, discount=discount)
+                result = compute_adjusted_amount(final_total=order.final_total, customer_id=customer.id, is_redeeming=is_redeeming, discount=discount)
 
                 amt_paid = result["amt_paid"]
                 points_adjusted = result["points_used"]
 
                 # 🔥 4. Save payment with computed amt_paid
-                payment = serializer.save(amt_paid=order.final_total)
+                payment = serializer.save(amt_paid=amt_paid)
     
                 # 🔥 5. Close order
                 order.status = Order.StatusChoices.CLOSED
