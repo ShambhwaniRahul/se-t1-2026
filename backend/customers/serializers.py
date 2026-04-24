@@ -25,6 +25,18 @@ class CustomerSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at", "updated_at"]
         # read_only_fields = ['id']
 
+class CustomerSearchSerializer(serializers.Serializer):
+    """
+    Validates incoming search query parameters for customer search.
+    """
+
+    phone_no = serializers.CharField(required=False, max_length=20)
+    first_name = serializers.CharField(required=False, max_length=50)
+    last_name = serializers.CharField(required=False, max_length=50)
+    
+    class Meta:
+        model = Customer
+        fields = ['phone_no', 'first_name', 'last_name']
 class CustomerReadSerializer(serializers.ModelSerializer):
     """
     Transforms Customer model instances into JSON payloads.

@@ -96,9 +96,9 @@ export default function PurchaseOrdersPage() {
     () => ({
       total: purchaseOrders.length,
 
-      pending: purchaseOrders.filter((p) => p.status === "Pending").length, // ✅ fixed
-      received: purchaseOrders.filter((p) => p.status === "Received").length, // ✅ fixed
-      cancelled: purchaseOrders.filter((p) => p.status === "Cancelled").length, // ✅ fixed
+      pending: purchaseOrders.filter((p) => p.status === "Pending").length, 
+      received: purchaseOrders.filter((p) => p.status === "Received").length,
+      cancelled: purchaseOrders.filter((p) => p.status === "Cancelled").length,
     }),
     [purchaseOrders],
   );

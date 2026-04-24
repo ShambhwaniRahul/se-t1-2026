@@ -50,6 +50,7 @@ interface VendorDetailSheetProps {
   onOpenChange: (open: boolean) => void;
   vendor: Vendor | null;
   purchaseOrders: VendorPurchaseOrder[] | null;
+  loading?: boolean;
 }
 
 export function VendorDetailSheet({ open, onOpenChange, vendor, purchaseOrders }: VendorDetailSheetProps) {
