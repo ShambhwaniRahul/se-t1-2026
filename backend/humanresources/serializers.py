@@ -164,6 +164,15 @@ class SalarySlipSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+    def validate_salary_slip(self, value):
+        employee = value.employee
+        month = value.month
+
+        if SalarySlip.objects.filter(employee=employee, month=month).exclude(id=self.instance.id if self.instance else None).exists():
+            raise serializers.ValidationError("A salary slip for this employee and month already exists.")
+        return value    
+
+
 
 class ShiftSerializer(serializers.ModelSerializer):
     employee_name = serializers.CharField(source='employee.full_name', read_only=True)

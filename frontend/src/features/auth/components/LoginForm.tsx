@@ -171,7 +171,7 @@ export function LoginForm() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-3 pt-5">
-          <Button type="submit" className="w-full">
+          <Button type="submit" className="w-full cursor-pointer">
             {"Sign in"}
           </Button>
             <p className="text-center text-sm text-muted-foreground">

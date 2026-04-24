@@ -5,14 +5,19 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from humanresources.models import EmployeeRole
 from core.permissions import RequiresRole
 from .models import Customer, CustomerPayment, CustomerPointsBank
-from .serializers import CustomerSerializer,CustomerReadSerializer,CustomerPaymentSerializer
+from .serializers import (
+    CustomerSerializer,CustomerReadSerializer,
+    CustomerPaymentSerializer, CustomerPointsBankSerializer,
+    PointsBankUserSerializer,CustomerPaymentReadSerializer,
+    CustomerOrdersSerializer)
 from orders.models import Order, OrderMenuItem, DiningTable
 from utils.response import standard_response
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from utils.loyalty_points import Converter, compute_adjusted_amount
 from django.db import transaction 
-
+from datetime import timedelta
+from django.utils import timezone
 
 class CustomerListCreateAPIView(APIView):
     """
@@ -64,17 +69,17 @@ class CustomerDetailAPIView(APIView):
         )
     
     @extend_schema(
-        responses=CustomerSerializer
+        responses=CustomerReadSerializer
     )
     def get(self, request, pk):
         customer = self.get_object(pk)
         if customer is None:
             return self.standard_error_response()
-        serializer = CustomerSerializer(customer)
+        serializer = CustomerReadSerializer(customer)
         return standard_response(
             success=True,
             message="Customer retrieved successfully.",
-            data={serializer.data},
+            data=serializer.data,
             status_code=status.HTTP_200_OK,
         )
     
@@ -195,7 +200,7 @@ class CustomerSearchAPIView(APIView):
         if last_name:
             queryset = queryset.filter(last_name__icontains=last_name)
 
-        serializer = CustomerSerializer(queryset, many=True)
+        serializer = CustomerReadSerializer(queryset, many=True)
 
         return standard_response(
             success=True,
@@ -204,6 +209,53 @@ class CustomerSearchAPIView(APIView):
             status_code=status.HTTP_200_OK,
         )
     
+
+class CustomerOrdersListAPIView(APIView):
+    """Retrieve last 5 orders of a customer along with their items."""
+
+    permission_classes = [RequiresRole]
+    required_roles = [
+        EmployeeRole.RoleChoices.OWNER,
+        EmployeeRole.RoleChoices.MANAGER,
+        EmployeeRole.RoleChoices.WAITER,
+    ]
+
+    def get_customer(self, customer_id):
+        return Customer.objects.filter(id=customer_id).first()
+
+    @extend_schema(responses=CustomerOrdersSerializer(many=True))
+    def get(self, request, pk):
+        customer = self.get_customer(pk)
+
+        if not customer:
+            return standard_response(
+                success=False,
+                message="Customer not found.",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+
+        orders = (
+    Order.objects.filter(
+        customerpayment__customer=customer
+    )
+    .prefetch_related("items__menu_item")  # important
+    .order_by("-created_at")[:5]
+)
+
+        serializer = CustomerOrdersSerializer(orders, many=True)
+
+        return standard_response(
+            success=True,
+            message=(
+                "Customer orders retrieved successfully."
+                if orders.exists()
+                else "No orders found for this customer."
+            ),
+            data=serializer.data,
+            status_code=status.HTTP_200_OK,
+        )
+
+
 
 class CustomerPaymentListCreateAPIView(APIView):
     """
@@ -240,7 +292,7 @@ class CustomerPaymentListCreateAPIView(APIView):
         if usage_type and usage_type.strip().isnumeric():
             payments = payments.filter(usage_type=int(usage_type.strip()))
 
-        serializer = CustomerPaymentSerializer(payments, many=True)
+        serializer = CustomerPaymentReadSerializer(payments, many=True)
         print("Data: ", serializer.data)
 
 
@@ -351,17 +403,24 @@ class CustomerPaymentDetailAPIView(APIView):
 
     permission_classes = [RequiresRole]
     required_roles = [EmployeeRole.RoleChoices.OWNER, EmployeeRole.RoleChoices.MANAGER]    
-
-    def get(self, request, pk):
-        customer_id = request.query_params.get("customer_id")
-        if not customer_id or not customer_id.strip().isnumeric():
+    
+    def get_customer(self, customer_id):
+        try:
+            return Customer.objects.get(id=customer_id)
+        except Customer.DoesNotExist:
+            return None
+    def get(self, request,customer_id):
+        customer = self.get_customer(customer_id)
+        if not customer:
             return standard_response(
                 success=False,
-                message="Customer ID is required and must be numeric.",
-                status_code=status.HTTP_400_BAD_REQUEST,
+                message="Customer not found.",
+                status_code=status.HTTP_404_NOT_FOUND,
             )
-        payment = CustomerPayment.objects.get(pk=pk, customer_id=int(customer_id.strip()))
-        serializer = CustomerPaymentSerializer(payment)
+        print("❌❌❌Received customer_id: ", customer_id)
+        payment = CustomerPayment.objects.filter(customer=customer).all().order_by("-created_at")
+        print("✅✅✅Received payments queryset: ", len(payment))
+        serializer = CustomerPaymentReadSerializer(payment, many=True)
 
         if not serializer.data:
             return standard_response(
@@ -369,9 +428,40 @@ class CustomerPaymentDetailAPIView(APIView):
                 message="Customer payment not found.",
                 status_code=status.HTTP_404_NOT_FOUND,
             )
+        
+        print("✅✅✅❌❌❌Data: ", serializer.data)
         return standard_response(
             success=True,
             message="Customer payments retrieved successfully.",
             data=serializer.data,
             status_code=status.HTTP_200_OK,
+        )
+
+class CustomerPointsBankListAPIView(APIView):
+
+    def get(self, request, customer_id):
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        
+        queryset = CustomerPointsBank.objects.filter(
+            payment__customer__id=customer_id,
+            payment__order__created_at__gte=thirty_days_ago
+        ).select_related("payment", "payment__customer", "payment__order")
+
+        # if not queryset.exists():
+            # return standard_response(
+                # success=False,
+                # message="No points found for this customer.",
+                # data=[],
+                # status_code=status.HTTP_404_NOT_FOUND
+            # )
+
+
+        serializer = PointsBankUserSerializer(queryset, many=True)
+        print("✅✅✅Data: ", len(serializer.data))
+
+        return standard_response(            
+                success=True,
+                message="Customer points fetched successfully." if len(serializer.data)>0 else "No points found for this customer in the last 30 days.",
+                data=serializer.data,
+                status_code=status.HTTP_200_OK
         )

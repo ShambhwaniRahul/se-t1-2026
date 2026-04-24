@@ -1,5 +1,12 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Package, Truck, XCircle, CheckCircle2, ScanSearch } from "lucide-react";
+import {
+  ArrowLeft,
+  Package,
+  Truck,
+  XCircle,
+  CheckCircle2,
+  ScanSearch,
+} from "lucide-react";
 import { PageLayout } from "@/components/shared/PageLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import {
@@ -33,7 +40,7 @@ const PROCESSING_STEPS = [
   "Uploading invoice image...",
   "Running AI OCR extraction...",
   "Mapping items to inventory...",
-  "Finalizing receipt..."
+  "Finalizing receipt...",
 ];
 
 export default function PurchaseOrderDetailsPage() {
@@ -47,7 +54,7 @@ export default function PurchaseOrderDetailsPage() {
   const [cancelOpen, setCancelOpen] = useState(false);
 
   const [status, setStatus] = useState<POStatus>("Pending");
-  
+
   const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
 
   // States for handling the extended AI processing UI
@@ -60,8 +67,8 @@ export default function PurchaseOrderDetailsPage() {
     if (isProcessing) {
       setProcessStep(0);
       interval = setInterval(() => {
-        setProcessStep((prev) => 
-          prev < PROCESSING_STEPS.length - 1 ? prev + 1 : prev
+        setProcessStep((prev) =>
+          prev < PROCESSING_STEPS.length - 1 ? prev + 1 : prev,
         );
       }, 10000);
     }
@@ -163,14 +170,14 @@ export default function PurchaseOrderDetailsPage() {
   const totalAmount = items.reduce((sum, i) => sum + i.total, 0);
 
   const handleDownloadReceipt = () => {
-  const printWindow = window.open("", "_blank");
+    const printWindow = window.open("", "_blank");
 
-  if (!printWindow) {
-    toast.error("Please allow pop-ups to download receipt.");
-    return;
-  }
+    if (!printWindow) {
+      toast.error("Please allow pop-ups to download receipt.");
+      return;
+    }
 
-  const html = `
+    const html = `
     <!DOCTYPE html>
     <html>
     <head>
@@ -252,7 +259,7 @@ export default function PurchaseOrderDetailsPage() {
                       <td>₹${item.unit_price ?? "-"}</td>
                       <td>₹${item.total}</td>
                   </tr>
-                `
+                `,
                   )
                   .join("")}
             </tbody>
@@ -273,10 +280,9 @@ export default function PurchaseOrderDetailsPage() {
     </html>
   `;
 
-  printWindow.document.write(html);
-  printWindow.document.close();
-};
-
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
 
   if (loading) {
     return <div>Loading...</div>;
@@ -384,7 +390,7 @@ export default function PurchaseOrderDetailsPage() {
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <Button 
+                  <Button
                     onClick={() => setReceiveOpen(true)}
                     disabled={!invoiceFile || isProcessing}
                   >
@@ -400,14 +406,25 @@ export default function PurchaseOrderDetailsPage() {
                     <XCircle className="h-4 w-4 mr-1" />
                     Cancel Order
                   </Button>
+                  <Button
+                    onClick={handleDownloadReceipt}
+                    disabled={isProcessing}
+                    className="cursor-pointer"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-1" />
+                    Download PO Details
+                  </Button>
                 </div>
               </>
             )}
 
             {status === "Received" && (
-             <Button onClick={handleDownloadReceipt} disabled={isProcessing} className="cursor-pointer">
+              <Button
+                disabled={isProcessing}
+                className="cursor-pointer"
+              >
                 <CheckCircle2 className="h-4 w-4 mr-1" />
-                Download Receipt
+                Order Received
               </Button>
             )}
 

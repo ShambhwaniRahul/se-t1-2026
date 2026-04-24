@@ -69,6 +69,7 @@ export function CartSummary({
         <div className="flex justify-between text-lg font-bold pt-1">
           <span>Total</span>
           <span>₹{total.toFixed(2)}</span>
+          <span>₹ {total.toFixed(2)}</span>
         </div>
 
       </div>
