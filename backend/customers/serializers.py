@@ -88,7 +88,8 @@ class CustomerReadSerializer(serializers.ModelSerializer):
         #     Q(payment__customer=obj),
         #     Q(points__gt=0) & Q(created_at__gte=expiry_threshold)
         # ).aggregate(total=Sum('points'))['total']
-        total = CustomerPointsBank.objects.filter(payment__customer=obj,payment__order__created_at__date__gte=expiry_threshold,created_at__gte=expiry_threshold).aggregate(total=Sum('points'))['total']
+        total = CustomerPointsBank.objects.filter(payment__customer=obj,
+    created_at__gte=expiry_threshold).aggregate(total=Sum('points'))['total']
         
         return total or 0
 
