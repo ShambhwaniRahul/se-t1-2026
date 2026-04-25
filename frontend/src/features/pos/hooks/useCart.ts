@@ -142,6 +142,7 @@ export function useCart(tableId: string) {
     [subtotal, discountAmount]
   );
 
+
   const draftItemCount = useMemo(
     () => draftItems.reduce((sum, i) => sum + i.quantity, 0),
     [draftItems]

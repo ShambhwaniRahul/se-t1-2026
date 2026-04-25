@@ -1,9 +1,9 @@
 import { jsPDF } from "jspdf";
-import type { CartItem } from "./data";
-import type { CustomerInfo } from "./CustomerInfoModal";
+import type { CustomerInfo } from "./data/types";
+import type { GroupedItem } from "@/config/types/order";
 
 interface ReceiptData {
-  items: CartItem[];
+  items: GroupedItem[];
   subtotal: number;
   discountPercent: number;
   discountAmount: number;
@@ -15,10 +15,9 @@ interface ReceiptData {
 }
 
 export function generateReceiptPdf(data: ReceiptData) {
-  // 80mm thermal-style receipt: 80mm wide, dynamic height
   const width = 80;
   const lineH = 4;
-  const baseHeight = 90;
+  const baseHeight = 95;
   const itemsHeight = data.items.length * lineH;
   const height = baseHeight + itemsHeight + (data.customer ? 12 : 0);
 
@@ -37,16 +36,26 @@ export function generateReceiptPdf(data: ReceiptData) {
       opts.align === "center"
         ? width / 2
         : opts.align === "right"
-        ? width - margin
-        : margin;
+          ? width - margin
+          : margin;
     doc.text(str, x, y, { align: opts.align ?? "left" });
   };
 
   const row = (left: string, right: string, bold = false) => {
+    const rightColWidth = 20; // mm reserved for price
+    const leftColWidth = contentW - rightColWidth;
+
     doc.setFont("helvetica", bold ? "bold" : "normal");
     doc.setFontSize(8);
-    doc.text(left, margin, y);
-    doc.text(right, width - margin, y, { align: "right" });
+
+    // 🔹 Trim left text to fit available width
+    const trimmedLeft = doc.splitTextToSize(left, leftColWidth)[0] || left;
+
+    // 🔹 Left text
+    doc.text(trimmedLeft, margin, y);
+
+    // 🔹 Right text aligned to the right margin with negative charSpace to compress the numbers
+    doc.text(right, width - margin, y, { align: "right", charSpace: -0.3 });
   };
 
   const hr = () => {
@@ -68,9 +77,9 @@ export function generateReceiptPdf(data: ReceiptData) {
 
   // Customer
   if (data.customer) {
-    text(`Customer: ${data.customer.firstName} ${data.customer.lastName}`, { size: 7 });
+    text(`Customer: ${data.customer.first_name} ${data.customer.last_name}`, { size: 7 });
     y += 3;
-    text(`Phone: ${data.customer.phone}`, { size: 7 });
+    text(`Phone: ${data.customer.phone_no}`, { size: 7 });
     y += 4;
     hr();
     y += 4;
@@ -79,32 +88,46 @@ export function generateReceiptPdf(data: ReceiptData) {
   // Items
   text("ITEMS", { bold: true, size: 8 });
   y += 4;
+
   data.items.forEach((item) => {
     const name =
-      item.product.name.length > 22 ? item.product.name.slice(0, 22) + "…" : item.product.name;
-    const qtyName = `${item.quantity}× ${name}`;
-    const lineTotal = `₹${(item.product.price * item.quantity).toFixed(2)}`;
+      item.name.length > 22 ? item.name.slice(0, 22) + "…" : item.name;
+
+    const qty = item.items.length;
+    const qtyName = `${qty}× ${name}`;
+    const lineTotal = `Rs. ${(item.price * qty).toFixed(2)}`;
+
     row(qtyName, lineTotal);
     y += lineH;
   });
+
   y += 1;
   hr();
   y += 4;
 
   // Totals
-  row("Subtotal", `₹${data.subtotal.toFixed(2)}`);
+  row("Subtotal", `Rs. ${data.subtotal.toFixed(2)}`);
   y += 4;
-  if (data.discountPercent > 0) {
-    row(`Discount (${data.discountPercent}%)`, `-₹${data.discountAmount.toFixed(2)}`);
-    y += 4;
-  }
+
   if (data.loyaltyPointsApplied > 0) {
-    row(`Loyalty (${data.loyaltyPointsApplied} pts)`, `-₹${data.loyaltyValue.toFixed(2)}`);
+    row(
+      `Loyalty (${data.loyaltyPointsApplied} pts)`,
+      `- ${data.loyaltyValue.toFixed(2)}`
+    );
     y += 4;
   }
+
+  if (data.discountPercent > 0) {
+    row(
+      `Discount (${data.discountPercent}%)`,
+      `- ${data.discountAmount.toFixed(2)}`
+    );
+    y += 4;
+  }
+
   hr();
   y += 4;
-  row("TOTAL", `₹${data.finalTotal.toFixed(2)}`, true);
+  row("TOTAL", `Rs. ${data.finalTotal.toFixed(2)}`, true);
   y += 5;
 
   if (data.customer && data.pointsEarned > 0) {

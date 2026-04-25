@@ -305,6 +305,7 @@ class CustomerPaymentListCreateAPIView(APIView):
         serializer = CustomerPaymentSerializer(data=request.data)
     
         if not serializer.is_valid():
+            print(serializer.errors)
             return standard_response(
                 success=False,
                 message="Invalid data provided.",
@@ -317,6 +318,7 @@ class CustomerPaymentListCreateAPIView(APIView):
         customer = validated_data.get("customer")
     
         if order.status == Order.StatusChoices.CLOSED:
+            print("here!!")
             return standard_response(
                 success=False,
                 message="Order is already closed.",
@@ -364,7 +366,7 @@ class CustomerPaymentListCreateAPIView(APIView):
                 
                 CustomerPointsBank.objects.create(
                     payment=payment,
-                    points=order.final_total * Converter.RUPEES_TO_POINTS.value
+                    points=amt_paid * Converter.RUPEES_TO_POINTS.value
                 )
     
             return standard_response(

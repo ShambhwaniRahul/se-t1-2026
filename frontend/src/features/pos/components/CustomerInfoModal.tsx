@@ -27,7 +27,7 @@ export function CustomerInfoModal({ open, onOpenChange, onContinue }: CustomerIn
   const [customer, setCustomer] = useState<CustomerInfo | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [loading, setLoading] = useState(false);
-    const [form, setForm] = useState({
+  const [form, setForm] = useState({
     first_name: "",
     last_name: "",
   });
@@ -80,7 +80,7 @@ export function CustomerInfoModal({ open, onOpenChange, onContinue }: CustomerIn
         });
 
         if (!res.data.success) throw new Error();
-        
+
         finalCustomer = {
           ...res.data.data,
           total_points: 0,
@@ -120,7 +120,7 @@ export function CustomerInfoModal({ open, onOpenChange, onContinue }: CustomerIn
         <div className="space-y-3">
           <div>
             <Label>Phone Number</Label>
-            <Input 
+            <Input
               className="mt-2"
               type="tel"
               value={phone}
@@ -133,17 +133,34 @@ export function CustomerInfoModal({ open, onOpenChange, onContinue }: CustomerIn
           </Button>
         </div>
 
-        <Separator />
-
         {/* Existing Customer */}
+
         {customer && !isNew && (
-          <div className="space-y-2">
-            <p>
-              {customer.first_name} {customer.last_name}
-            </p>
-            <p>Phone: {customer.phone_no}</p>
-            <p>Points: {customer.total_points}</p>
-          </div>
+          <>
+            <Separator />
+            <div className="rounded-xl border bg-muted/40 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Customer</p>
+                  <p className="text-base font-semibold">
+                    {customer.first_name} {customer.last_name}
+                  </p>
+                </div>
+
+                <div className="text-right">
+                  <p className="text-sm text-muted-foreground">Points</p>
+                  <p className="text-lg font-bold text-primary">
+                    {customer.total_points}
+                  </p>
+                </div>
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Phone</span>
+                <span className="font-medium">{customer.phone_no}</span>
+              </div>
+            </div>
+          </>
         )}
 
         {/* New Customer */}
@@ -178,50 +195,50 @@ export function CustomerInfoModal({ open, onOpenChange, onContinue }: CustomerIn
   );
 }
 
-  // return (
-  //   <Dialog open={open} onOpenChange={onOpenChange}>
-  //     <DialogContent className="sm:max-w-md">
-  //       <DialogHeader>
-  //         <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-  //           <UserPlus className="h-5 w-5 text-primary" />
-  //         </div>
-  //         <DialogTitle>Customer details</DialogTitle>
-  //         <DialogDescription>
-  //           Add the customer to apply loyalty rewards on this order.
-  //         </DialogDescription>
-  //       </DialogHeader>
+// return (
+//   <Dialog open={open} onOpenChange={onOpenChange}>
+//     <DialogContent className="sm:max-w-md">
+//       <DialogHeader>
+//         <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+//           <UserPlus className="h-5 w-5 text-primary" />
+//         </div>
+//         <DialogTitle>Customer details</DialogTitle>
+//         <DialogDescription>
+//           Add the customer to apply loyalty rewards on this order.
+//         </DialogDescription>
+//       </DialogHeader>
 
-  //       <div className="grid gap-4 py-2">
-  //         <div className="space-y-1.5">
-  //           <Label htmlFor="phone">Phone number</Label>
-  //           <Input
-  //             id="phone"
-  //             type="tel"
-  //             value={phone}
-  //             onChange={(e) => setPhone(e.target.value)}
-  //           />
-  //           {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
-  //         </div>
-  //       </div>
+//       <div className="grid gap-4 py-2">
+//         <div className="space-y-1.5">
+//           <Label htmlFor="phone">Phone number</Label>
+//           <Input
+//             id="phone"
+//             type="tel"
+//             value={phone}
+//             onChange={(e) => setPhone(e.target.value)}
+//           />
+//           {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
+//         </div>
+//       </div>
 
-  //       <Separator />
+//       <Separator />
 
-  //       { (customer !== null) &&
-  //         <>
-  //           <div className="grid gap-4 py-2">
-  //             <p>Name: {customer.first_name} {customer.last_name}</p>
-  //             <p>Phone Number: {customer.phone_no}</p>
-  //             <p>Loyalty Points: {customer.total_points}</p>
-  //           </div>
+//       { (customer !== null) &&
+//         <>
+//           <div className="grid gap-4 py-2">
+//             <p>Name: {customer.first_name} {customer.last_name}</p>
+//             <p>Phone Number: {customer.phone_no}</p>
+//             <p>Loyalty Points: {customer.total_points}</p>
+//           </div>
 
-  //           <DialogFooter className="flex-row gap-2 sm:gap-2">
-  //             <Button className="flex-1 min-h-[44px]" onClick={(e) => resolveCustomer(e)}>
-  //               Continue to payment
-  //             </Button>
-  //           </DialogFooter>
-  //         </>
-  //       }
-  //     </DialogContent>
-  //   </Dialog>
-  // );
+//           <DialogFooter className="flex-row gap-2 sm:gap-2">
+//             <Button className="flex-1 min-h-[44px]" onClick={(e) => resolveCustomer(e)}>
+//               Continue to payment
+//             </Button>
+//           </DialogFooter>
+//         </>
+//       }
+//     </DialogContent>
+//   </Dialog>
+// );
 // }

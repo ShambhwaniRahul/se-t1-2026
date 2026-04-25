@@ -63,7 +63,7 @@ def compute_adjusted_amount(final_total, customer_id, is_redeeming, discount):
 
         # ✅ Case 2: Partial usage
         else:
-            points_needed = int(remaining_amount / Converter.RUPEES_TO_POINTS.value)  # RUPEES_TO_POINTS inverse
+            points_needed = int(remaining_amount * Converter.RUPEES_TO_POINTS.value)  # RUPEES_TO_POINTS inverse
 
             entry.points -= points_needed
             points_used += points_needed

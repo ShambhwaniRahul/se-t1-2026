@@ -164,17 +164,19 @@ export default function TablePage() {
       </div>
 
       <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-        {tables.map((table) => (
-          <TableCard
-            key={table.id}
-            id={table.id}
-            total_seats={table.total_seats}
-            table_number={table.table_number}
-            is_available={table.is_available}
-            canManage={canManageTables}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
+        {[...tables]
+          .sort((a, b) => a.table_number - b.table_number)
+          .map((table) => (
+            <TableCard
+              key={table.id}
+              id={table.id}
+              total_seats={table.total_seats}
+              table_number={table.table_number}
+              is_available={table.is_available}
+              canManage={canManageTables}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
         ))}
       </div>
 
