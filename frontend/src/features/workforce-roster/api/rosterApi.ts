@@ -8,17 +8,19 @@ export const fetchDailyRoster = async (dateString: string): Promise<RosterEntry[
 };
 
 // 2. Shifts
-export const createShift = async (employeeId: number, startTime: string, endTime: string) => {
+export const createShift = async (employeeId: number, date: string, startTime: string, endTime: string) => {
   const response = await api.post("/hr/auth/shifts/", {
     employee: employeeId,
+    date: date,
     start_time: startTime,
     end_time: endTime,
   });
   return response.data;
 };
 
-export const updateShift = async (shiftId: number, startTime: string, endTime: string) => {
+export const updateShift = async (shiftId: number, date: string, startTime: string, endTime: string) => {
   const response = await api.patch(`/hr/auth/shifts/${shiftId}/`, {
+    date: date,
     start_time: startTime,
     end_time: endTime,
   });

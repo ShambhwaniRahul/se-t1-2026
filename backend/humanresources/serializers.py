@@ -184,6 +184,7 @@ class ShiftSerializer(serializers.ModelSerializer):
             'id',
             'employee',
             'employee_name',
+            'date',
             'start_time',
             'end_time',
             'work_hours',
@@ -201,8 +202,8 @@ class AttendanceLogSerializer(serializers.ModelSerializer):
     completed_work_hours = serializers.DurationField(read_only=True)
 
     def validate(self, data):
-         entry = data.get('entry_time')
-         exit = data.get('exit_time')
+         entry = data.get('entry_time', getattr(self.instance, 'entry_time', None))
+         exit = data.get('exit_time', getattr(self.instance, 'exit_time', None))
      
          if entry and exit and exit < entry:
              raise serializers.ValidationError("Exit time cannot be before entry time.")
