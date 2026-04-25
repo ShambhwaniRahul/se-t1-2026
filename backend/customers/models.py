@@ -46,6 +46,7 @@ class CustomerPayment(TimeStampedModel):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, db_column="customer_id")
     # Here, we'll add amt_paid = adjusted_amt. 
     # So, we can compute loyalty_points_used(will put it in the serializer) as order.final_total - customer_payment.adjusted_amt
+    discount = models.FloatField(db_column="discount", null=False, blank=False, default=0.0)
     amt_paid = models.FloatField(db_column="amt_paid", null=False, blank=False)
 
     class Meta:
@@ -67,4 +68,4 @@ class CustomerPointsBank(TimeStampedModel):
         verbose_name_plural = 'Customer Points Banks'
 
     def __str__(self):
-        return f"Points for payment {self.paymemt.id} by {self.paymemt.customer.full_name}"
+        return f"Points for payment {self.payment.id} by {self.payment.customer.full_name}"

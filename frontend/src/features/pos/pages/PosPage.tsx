@@ -1,27 +1,32 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { MENU_CATEGORIES, type MenuCategory, type MenuItem } from "@/config/types/order";
+import { useParams } from "react-router-dom";
+import { toast } from "sonner";
+import api from "@/lib/api";
+import { MENU_CATEGORIES } from "@/config/types/order";
 import { useCart } from "../hooks/useCart";
 import { ItemCategoryBar } from "../components/items/ItemCategoryBar";
 import { ItemGrid } from "../components/items/ItemGrid";
 import { CartPanel } from "../components/cart/CartPanel";
 import { CheckoutBar } from "../components/CheckoutBar";
 import { PaymentModal } from "../components/PaymentModal";
-import { toast } from "sonner";
-import { useParams } from "react-router-dom";
-import api from "@/lib/api";
-import { CustomerInfoModal} from "../components/CustomerInfoModal";
+import { CustomerInfoModal } from "../components/CustomerInfoModal";
+import type { MenuItem } from "@/config/types/order";
 import type { CustomerInfo } from "../data/types";
-import { useCustomerLookup } from "../hooks/useCustomerLookup";
+import PosPageSkeleton from "@/components/skeleton/PosPageSkeleton";
+import { ScanSearch } from "lucide-react";
 
 export default function PosPage() {
-
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [activeCategory, setActiveCategory] = useState<MenuCategory["id"]>(-1);
-  const [paymentOpen, setPaymentOpen] = useState(false);
-  const [customerModalOpen, setCustomerModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
   const { tableId } = useParams();
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [activeCategory, setActiveCategory] = useState(-1);
   
+  const [customer, setCustomer] = useState<CustomerInfo | null>(null);
+  const [customerModalOpen, setCustomerModalOpen] = useState(false);
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const cart = useCart(tableId!);
+
   useEffect(() => {
     async function fetchMenu() {
       try {
@@ -42,9 +47,6 @@ export default function PosPage() {
     fetchMenu();
   }, []);
 
-  const { customer, loyalty, resolveCustomer, clearCustomer, loading: customerLoading } = useCustomerLookup();
-  const cart = useCart(tableId!);
-
   const filteredProducts = useMemo(
     () =>
       activeCategory === -1
@@ -56,35 +58,21 @@ export default function PosPage() {
   const handlePay = useCallback(() => {
     if (!(cart.draftItemCount === 0 && cart.orderedItemCount !== 0)) return;
     setCustomerModalOpen(true);
-    if (customer) {
-      setPaymentOpen(true);
-    } else {
-      setCustomerModalOpen(true);
-    }
-  }, [cart.draftItemCount, cart.orderedItemCount]);
+  }, [cart]);
 
-  // customer search - if not found create a new customer
-  const handleCustomerContinue = useCallback(async (data: CustomerInfo) => {
-    try {
-      await resolveCustomer(data);
-      setCustomerModalOpen(false);
-      setPaymentOpen(true);
-    } catch {
-      toast.error("Customer lookup failed");
-    }
-  }, [resolveCustomer]);
+  const handleCustomerContinue = useCallback((cust: CustomerInfo) => {
+    setCustomer(cust);
+    setPaymentOpen(true);
+  }, []);
 
-
-  // should close the order
   const handleComplete = useCallback(() => {
     setPaymentOpen(false);
+    setCustomer(null);
     cart.clearOrdered();
-    clearCustomer();
     toast.success("Order completed!");
-  }, [cart, clearCustomer]);;
+  }, [cart]);
 
-
-  if (loading) return ( <div> Loading... </div> );
+  if (loading) return <PosPageSkeleton />;
 
   return (
     <div className="-m-4 md:-m-6 flex h-[calc(100svh-3.5rem)] flex-col">
@@ -112,7 +100,7 @@ export default function PosPage() {
           </div>
         </div>
 
-        <div className="hidden w-[340px] shrink-0 border-l bg-card md:flex md:flex-col lg:w-[380px]">
+        <div className="hidden w-[500px] shrink-0 border-l bg-card md:flex md:flex-col lg:w-[600px] xl:w-[650px]">
           <CartPanel
             orderedItems={cart.orderedItems}
             draftItems={cart.draftItems}
@@ -127,26 +115,33 @@ export default function PosPage() {
         </div>
       </div>
 
-        <CheckoutBar
-          total={cart.total}
-          orderedItemCount={cart.orderedItemCount}
-          draftItemCount={cart.draftItemCount}
-          onPay={handlePay}
-          onClear={cart.clearDraft}
-          submitDraft={cart.submitDraft}
-        />
+      <CheckoutBar
+        total={cart.total}
+        orderedItemCount={cart.orderedItemCount}
+        draftItemCount={cart.draftItemCount}
+        onPay={handlePay}
+        onClear={cart.clearDraft}
+        submitDraft={cart.submitDraft}
+      />
 
-        <CustomerInfoModal
-          open={customerModalOpen}
-          onOpenChange={(open) => {
-            if (!open) return;
-            setCustomerModalOpen(open);
-          }}
-          onContinue={handleCustomerContinue}
-          isLoading={customerLoading}
-        />
+      <CustomerInfoModal
+        open={customerModalOpen}
+        onOpenChange={setCustomerModalOpen}
+        onContinue={handleCustomerContinue}
+      />
 
-        {/* <PaymentModal
+      <PaymentModal
+        open={paymentOpen}
+        onOpenChange={setPaymentOpen}
+        total={cart.total}
+        orderedItems={cart.orderedItems}
+        discountPercent={cart.discountPercent}
+        discountAmount={cart.discountAmount}
+        customer={customer}
+        onComplete={handleComplete}
+      />
+
+      {/* <PaymentModal
           open={paymentOpen}
           onOpenChange={setPaymentOpen}
           items={[

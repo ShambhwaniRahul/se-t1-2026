@@ -3,7 +3,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import type { Employee } from "../data/erpData";
-import { Calendar, Mail, Phone, DollarSign, Clock, Briefcase } from "lucide-react";
+import { Calendar, Mail, Phone, IndianRupee, Clock, Briefcase } from "lucide-react";
 
 interface Props {
   employee: Employee | null;
@@ -61,7 +61,7 @@ export function EmployeeProfileDrawer({ employee, open, onOpenChange }: Props) {
 
           <section className="space-y-3">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Compensation</h4>
-            <InfoRow icon={DollarSign} label="Monthly Salary" value={`$${employee.salary.toLocaleString()}`} />
+            <InfoRow icon={IndianRupee} label="Monthly Salary" value={`₹${employee.salary.toLocaleString()}`} />
             <InfoRow icon={Briefcase} label="Department" value={employee.department} />
           </section>
 

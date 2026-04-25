@@ -8,7 +8,6 @@ import { AuthProvider } from "@/features/auth/hooks/useAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
 
-
 import LoginPage from "@/features/auth/pages/LoginPage";
 import EmployeeManagementPage from "@/features/employees/pages/EmployeeManagementPage";
 import { WorkforceRosterPage } from "@/features/workforce-roster";

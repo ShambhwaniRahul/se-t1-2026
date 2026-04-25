@@ -48,12 +48,13 @@ export function EditShiftSheet({ open, onOpenChange, entry, currentDate, onSaved
       // FIX: Backend 'Shifts' uses TimeField, so we just append ":00" for seconds
       const startTimeStr = `${start}:00`;
       const endTimeStr = `${end}:00`;
+      const dateStr = format(currentDate, "yyyy-MM-dd");
 
       if (entry.shift?.id) {
-        await updateShift(entry.shift.id, startTimeStr, endTimeStr);
+        await updateShift(entry.shift.id, dateStr, startTimeStr, endTimeStr);
         toast.success("Shift updated.");
       } else {
-        await createShift(entry.employee_id, startTimeStr, endTimeStr);
+        await createShift(entry.employee_id, dateStr, startTimeStr, endTimeStr);
         toast.success("Shift assigned.");
       }
       onSaved();
@@ -84,15 +85,16 @@ export function EditShiftSheet({ open, onOpenChange, entry, currentDate, onSaved
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent>
-        <SheetHeader>
+      <SheetContent className="w-full sm:max-w-md overflow-y-auto p-0">
+        <SheetHeader className="p-6 pb-4 border-b">
           <SheetTitle>Edit Shift</SheetTitle>
           <SheetDescription>
             {entry.first_name} {entry.last_name} • {format(currentDate, "PPP")}
           </SheetDescription>
         </SheetHeader>
 
-        <div className="grid gap-6 py-6">
+        <div className="p-6">
+          <div className="grid gap-6">
           <div className="grid gap-2">
             <Label>Start Time</Label>
             <Input type="time" value={start} onChange={(e) => setStart(e.target.value)} disabled={isSubmitting} />
@@ -112,6 +114,7 @@ export function EditShiftSheet({ open, onOpenChange, entry, currentDate, onSaved
             <Button onClick={handleSave} disabled={isSubmitting}>Save Shift</Button>
           </div>
         </SheetFooter>
+        </div>
       </SheetContent>
     </Sheet>
   );

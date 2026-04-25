@@ -1,6 +1,6 @@
 import {
   ShoppingCart, ChefHat, Package, ClipboardList, Users, BarChart3, Store, ClipboardCheck,
-  LayoutDashboard, UserCog, CalendarCheck, CalendarClock, Wallet, UtensilsCrossed, UsersRound
+  LayoutDashboard, Wallet, UtensilsCrossed, UsersRound
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
@@ -76,8 +76,8 @@ function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
                 <NavLink
                   to={item.url}
                   end={item.url === "/"}
-                  className="hover:bg-sidebar-accent/50"
-                  activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                  className="transition-all duration-200 hover:bg-sidebar-accent/50 hover:pl-3"
+                  activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-sm ring-1 ring-border/50"
                 >
                   <item.icon className="h-4 w-4" />
                   {!collapsed && <span>{item.title}</span>}
@@ -97,7 +97,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="p-4">
+      <SidebarHeader className="p-2.75">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-bold">
             C

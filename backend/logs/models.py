@@ -43,7 +43,7 @@ class AttendanceLog(TimeStampedModel):
         if not self.entry_time or not self.shift.start_time:
             return timedelta(0)
             
-        shift_start = datetime.combine(self.entry_time.date(), self.shift.start_time)
+        shift_start = datetime.combine(self.shift.date, self.shift.start_time)
         
         # FIX: Make shift_start timezone-aware so Python can safely do the math
         if self.entry_time.tzinfo:
@@ -58,7 +58,7 @@ class AttendanceLog(TimeStampedModel):
         if not self.exit_time or not self.shift.end_time:
             return timedelta(0)
             
-        shift_end = datetime.combine(self.entry_time.date(), self.shift.end_time)
+        shift_end = datetime.combine(self.shift.date, self.shift.end_time)
         
         # FIX: Make shift_end timezone-aware so Python can safely do the math
         if self.exit_time.tzinfo:

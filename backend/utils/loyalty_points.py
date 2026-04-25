@@ -7,10 +7,10 @@ from datetime import timedelta
 
 class Converter(Enum):
     POINTS_TO_RUPEES = 1
-    RUPEES_TO_POINTS = 0.05
+    RUPEES_TO_POINTS = 0.02
 
 
-def compute_adjusted_amount(final_total, customer_id):
+def compute_adjusted_amount(final_total, customer_id, is_redeeming, discount):
     """
     Computes how much amount the customer needs to pay after applying loyalty points.
     Also updates the points in FIFO manner (oldest first).
@@ -23,12 +23,16 @@ def compute_adjusted_amount(final_total, customer_id):
         }
     """
 
+    if not is_redeeming:
+        amt_paid = final_total - (final_total * discount / 100)
+        return {"amt_paid": amt_paid, "points_used": 0}
+
     remaining_amount = final_total
     points_used = 0
     updated_entries = []
 
     # Calculate the date threshold for 30 days ago
-    expiry_threshold = timezone.now() - timedelta(days=7)
+    expiry_threshold = timezone.now() - timedelta(days=30)
 
     # 🔒 Lock rows with the new filter criteria
     loyalty_entries = (
@@ -72,7 +76,9 @@ def compute_adjusted_amount(final_total, customer_id):
     if updated_entries:
         CustomerPointsBank.objects.bulk_update(updated_entries, ["points"])
 
+
+
     return {
-        "amt_paid": remaining_amount,
+        "amt_paid": remaining_amount-(remaining_amount*discount/100),
         "points_used": points_used,
     } 

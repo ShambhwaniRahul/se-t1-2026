@@ -1,68 +1,36 @@
-import { useState, useMemo, useCallback } from "react";
-import { type Customer, type CustomerNote, MOCK_CUSTOMERS } from "../data/crmData";
+import { useState, useMemo } from "react";
+import { type Customer } from "../data/crmData";
 
 export function useCrm() {
-  const [customers, setCustomers] = useState<Customer[]>(MOCK_CUSTOMERS);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [search, setSearch] = useState("");
-  const [selectedTag, setSelectedTag] = useState<string>("all");
 
-  const allTags = useMemo(() => {
-    const tags = new Set<string>();
-    customers.forEach((c) => c.tags.forEach((t) => tags.add(t)));
-    return Array.from(tags).sort();
-  }, [customers]);
-
+  // 🔥 Filtering logic (backend fields ke according)
   const filtered = useMemo(() => {
-    let result = customers;
+    if (!search) return customers;
 
-    if (search) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (c) =>
-          c.name.toLowerCase().includes(q) ||
-          c.phone.replace(/\D/g, "").includes(q.replace(/\D/g, "")) ||
-          c.email.toLowerCase().includes(q)
+    const q = search.toLowerCase();
+
+    return customers.filter((c) => {
+      const fullName = `${c.first_name} ${c.last_name}`.toLowerCase();
+      const phone = c.phone_no || "";
+
+      return (
+        fullName.includes(q) ||
+        phone.includes(q.replace(/\D/g, ""))
       );
-    }
+    });
+  }, [customers, search]);
 
-    if (selectedTag !== "all") {
-      result = result.filter((c) => c.tags.includes(selectedTag));
-    }
-
-    return result;
-  }, [customers, search, selectedTag]);
-
-  const addNote = useCallback((customerId: string, text: string) => {
-    const note: CustomerNote = {
-      id: `n-${Date.now()}`,
-      text,
-      createdAt: new Date().toISOString().split("T")[0],
-    };
-    setCustomers((prev) =>
-      prev.map((c) =>
-        c.id === customerId ? { ...c, notes: [note, ...c.notes] } : c
-      )
-    );
-  }, []);
-
-  const deleteNote = useCallback((customerId: string, noteId: string) => {
-    setCustomers((prev) =>
-      prev.map((c) =>
-        c.id === customerId
-          ? { ...c, notes: c.notes.filter((n) => n.id !== noteId) }
-          : c
-      )
-    );
-  }, []);
+  // 🔥 Setter (API se data daalne ke liye)
+  const setCustomerData = (data: Customer[]) => {
+    setCustomers(data);
+  };
 
   return {
     customers: filtered,
+    setCustomerData,
     search,
     setSearch,
-    selectedTag,
-    setSelectedTag,
-    allTags,
-    addNote,
-    deleteNote,
   };
 }

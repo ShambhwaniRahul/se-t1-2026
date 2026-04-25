@@ -1,5 +1,5 @@
 import { useCallback, useState, useEffect, useMemo } from "react";
-import { type DraftCartItem, type MenuItem, type OrderMenuItem} from "@/config/types/order";
+import { type DraftCartItem, type MenuItem, type OrderMenuItem } from "@/config/types/order";
 import api from "@/lib/api";
 import { toast } from "sonner";
 
@@ -20,17 +20,17 @@ export function useCart(tableId: string) {
       const result = await api.get(`/pos/orders/dining-table/${tableId}/`);
       if (result.data.success) {
 
-        const currentOrderId = result.data.data[0].id;
+        const currentOrderId = result.data.data[0]?.id;
         console.log("Current order for table", tableId, ":", currentOrderId);
         setOrderId(currentOrderId);
-
-        const orderDetails = await api.get(`/pos/orders/${currentOrderId}/menuitems/`);
-        if (orderDetails.data.success) {
-          setOrderedItems(orderDetails.data.data ?? []);
-        } else {
-          toast.error("Failed to load order items!");
+        if (currentOrderId) {
+          const orderDetails = await api.get(`/pos/orders/${currentOrderId}/menuitems/`);
+          if (orderDetails.data.success) {
+            setOrderedItems(orderDetails.data.data ?? []);
+          } else {
+            toast.error("Failed to load order items!");
+          }
         }
-       
       } else {
         toast.error(result.data.message || "Failed to load current order!");
         console.log("Failed to load current order", result.data.message);
@@ -74,20 +74,20 @@ export function useCart(tableId: string) {
 
     try {
       const items = draftItems.flatMap(item =>
-        Array.from({ length: item.quantity }, 
-          () => ({ 
-            menu_item: item.menu_item.id, 
-            special_instructions: "" 
+        Array.from({ length: item.quantity },
+          () => ({
+            menu_item: item.menu_item.id,
+            special_instructions: ""
           }))
       );
-      
+
       const payload = {
         table: parseInt(tableId),
         dining_type: 0,
         packaging_cost: 0,
         items: items
       }
-      
+
       console.log("Submitting draft items:", payload);
 
       let result = null
@@ -96,23 +96,23 @@ export function useCart(tableId: string) {
       }
 
       else {
-        result = await api.post(`/pos/orders/${orderId}/add-items/`, {items: payload.items});
+        result = await api.post(`/pos/orders/${orderId}/add-items/`, { items: payload.items });
       }
 
-      if(result.data.success) {
+      if (result.data.success) {
         toast.success(result.data.message || "Order submitted successfully!");
         await fetchOrder();
       } else {
         toast.error(result.data.message || "Failed to submit order items!");
         console.log("Failed to submit order items", result.data.message);
       }
-      
+
     } catch (err) {
       toast.error("Failed to submit order items!");
       console.log("Failed to submit order items", err);
       console.log(">>> Errors", draftItems);
 
-    } finally{
+    } finally {
       setDraftItems([]);
     }
   }, [draftItems, tableId, orderedItems, orderId]);
@@ -153,7 +153,7 @@ export function useCart(tableId: string) {
   );
 
   return {
-    loading, 
+    loading,
 
     orderedItems,
     clearOrdered,

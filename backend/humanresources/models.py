@@ -180,6 +180,7 @@ class Shifts(TimeStampedModel):
     A table to store the details of shifts for employees.
     """
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, db_column="employee_id")
+    date = models.DateField(default=date.today, db_column="date")
     start_time = models.TimeField(db_column="start_time")
     end_time = models.TimeField(db_column="end_time")
 
