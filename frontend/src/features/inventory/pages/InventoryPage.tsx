@@ -9,7 +9,7 @@ import {
 } from "@/components/shared/StatusBadge";
 import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2, ScanSearch } from "lucide-react";
+import { Plus, Pencil, Trash2, ScanSearch, ChevronLeft, ChevronRight } from "lucide-react";
 import { getPerishableStatus } from "../utils/inventoryData";
 import type { Ingredient } from "../data/type";
 import {
@@ -28,39 +28,56 @@ const STOCK_STATUS_MAP: Record<
   in_stock: { label: "In Stock", variant: "success" },
   low_stock: { label: "Low Stock", variant: "warning" },
   out_of_stock: { label: "Out of Stock", variant: "destructive" },
-
-  // 🔥 NEW
-  expired: { label: "Expired", variant: "secondary" }, // grey
+  expired: { label: "Expired", variant: "secondary" }, 
   expiring_soon: { label: "Expiring Soon", variant: "warning" },
 };
 
 export default function InventoryPage() {
-  const [type, setType] = useState<"perishable" | "non_perishable">(
-    "perishable",
-  );
-
+  const [type, setType] = useState<"perishable" | "non_perishable">("perishable");
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Ingredient | null>(null);
   const [updateTarget, setUpdateTarget] = useState<Ingredient | null>(null);
   const [skuModalOpen, setSkuModalOpen] = useState(false);
 
-  // 🔥 FETCH BASED ON TYPE
-  const fetchInventory = async (selectedType = type) => {
+  /* Pagination State */
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [hasPrevPage, setHasPrevPage] = useState(false);
+
+  /* Core fetch function configured to accept query parameters */
+  const fetchInventory = async (
+    selectedType = type,
+    currentPage = page,
+    currentSearch = search
+  ) => {
     try {
       setLoading(true);
 
+      const endpoint =
+        selectedType === "perishable"
+          ? "/inventory/perishable-inventory/"
+          : "/inventory/non-perishable-inventory/";
+
+      const res = await api.get(endpoint, {
+        params: { page: currentPage, search: currentSearch },
+      });
+
+      const { results, next, previous, total_pages } = res.data.data;
+
       if (selectedType === "perishable") {
-        const res = await api.get("/inventory/perishable-inventory/");
-        const mapped = res.data.data.map(mapPerishableToIngredient);
+        const mapped = results.map(mapPerishableToIngredient);
         setIngredients(mapped);
       } else {
-        const res = await api.get("/inventory/non-perishable-inventory/");
-        const mapped = res.data.data.map(mapNonPerishableToIngredient);
+        const mapped = results.map(mapNonPerishableToIngredient);
         setIngredients(mapped);
       }
+
+      setHasNextPage(next !== null);
+      setHasPrevPage(previous !== null);
+      setTotalPages(total_pages || 1);
     } catch {
       toast.error("Failed to load inventory");
     } finally {
@@ -68,18 +85,27 @@ export default function InventoryPage() {
     }
   };
 
+  /* Debounced effect for handling search and pagination state changes */
   useEffect(() => {
-    fetchInventory();
-  }, [type]);
+    const timeoutId = setTimeout(() => {
+      fetchInventory(type, page, search);
+    }, 400); 
 
-  // 🔍 FILTER
-  const filtered = useMemo(() => {
-    if (!search) return ingredients;
-    const q = search.toLowerCase();
-    return ingredients.filter((i) => i.name.toLowerCase().includes(q));
-  }, [ingredients, search]);
+    return () => clearTimeout(timeoutId);
+  }, [type, page, search]);
 
-  // 🧾 COLUMNS (dynamic)
+  /* Handlers for state resets during navigation or searching */
+  const handleTypeChange = (newType: "perishable" | "non_perishable") => {
+    setType(newType);
+    setPage(1);
+    setSearch("");
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setPage(1); 
+  };
+
   const columns: Column<Ingredient>[] = useMemo(() => {
     const base: Column<Ingredient>[] = [
       {
@@ -114,7 +140,6 @@ export default function InventoryPage() {
       },
     ];
 
-    // 👉 Add expiry column only for perishable
     if (type === "perishable") {
       base.push({
         key: "expiry",
@@ -127,7 +152,6 @@ export default function InventoryPage() {
       });
     }
 
-    // 👉 Actions
     base.push({
       key: "actions",
       header: "",
@@ -161,22 +185,15 @@ export default function InventoryPage() {
       const res = await api.post("/inventory/perishable-skus/", data);
 
       if (res.data.success) {
-        console.log("Data: ",res.data);
-        
         toast.success(res.data.message || "SKU created successfully");
-        // optionally refresh SKU list
       } else {
-        console.log("Data: ",res.data.message)
         toast.error(res.data.message || "Failed to create SKU");
       }
     } catch {
-      console.log("✅✅✅Reached bloody here!");
-      
       toast.error("Something went wrong");
     }
   };
 
-  // 🖊 EDIT
   const handleUpdateQuantity = async (quantity: number) => {
     if (!updateTarget) return;
 
@@ -186,18 +203,17 @@ export default function InventoryPage() {
       if (type === "perishable") {
         res = await api.patch(
           `/inventory/perishable-inventory/${updateTarget.id}/`,
-          { quantity },
+          { quantity }
         );
       } else {
         res = await api.patch(
           `/inventory/non-perishable-inventory/${updateTarget.id}/`,
-          { quantity },
+          { quantity }
         );
       }
-      // console.log("✅✅Res: ", res.data);
+      
       if (res.data.success) {
         toast.success(res.data.message || "Quantity updated");
-
         fetchInventory();
       } else {
         toast.error(res.data.message || "Update failed");
@@ -209,18 +225,17 @@ export default function InventoryPage() {
     }
   };
 
-  // 🗑 DELETE
   const handleDelete = async () => {
     if (!deleteTarget) return;
     let result;
     try {
       if (type === "perishable") {
         result = await api.delete(
-          `/inventory/perishable-inventory/${deleteTarget.id}/`,
+          `/inventory/perishable-inventory/${deleteTarget.id}/`
         );
       } else {
         result = await api.delete(
-          `/inventory/non-perishable-inventory/${deleteTarget.id}/`,
+          `/inventory/non-perishable-inventory/${deleteTarget.id}/`
         );
       }
 
@@ -250,7 +265,7 @@ export default function InventoryPage() {
 
       <PageHeader
         title="Inventory"
-        description={`${ingredients.length} items`}
+        description={`${ingredients.length} items on this page`}
         actions={
           <Button onClick={() => setSkuModalOpen(true)}>
             <Plus className="mr-1 h-4 w-4" />
@@ -259,35 +274,77 @@ export default function InventoryPage() {
         }
       />
 
-      {/* 🔥 TOGGLE BUTTONS */}
       <div className="flex gap-2">
         <Button
           variant={type === "perishable" ? "default" : "outline"}
-          onClick={() => setType("perishable")}
+          onClick={() => handleTypeChange("perishable")}
         >
           Perishable
         </Button>
 
         <Button
           variant={type === "non_perishable" ? "default" : "outline"}
-          onClick={() => setType("non_perishable")}
+          onClick={() => handleTypeChange("non_perishable")}
         >
           Non-Perishable
         </Button>
       </div>
 
-      {/* 🔍 SEARCH */}
       <SearchInput
         value={search}
-        onChange={setSearch}
-        placeholder="Search..."
+        onChange={handleSearchChange}
+        placeholder="Search inventory..."
         className="w-72"
       />
 
-      {/* TABLE */}
-      <DataTable columns={columns} data={filtered} keyExtractor={(i) => i.id} />
+      <DataTable columns={columns} data={ingredients} keyExtractor={(i) => i.id} />
 
-      {/* DELETE */}
+      {/* Pagination Controls Component */}
+      <div className="flex flex-col sm:flex-row items-center justify-between py-4 border-t gap-4">
+        
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">
+            Page {page} of {totalPages}
+          </span>
+          
+          <div className="flex items-center gap-2 border-l pl-3 ml-1">
+            <span className="text-sm text-muted-foreground">Jump to:</span>
+            <input
+              type="number"
+              min={1}
+              max={totalPages}
+              value={page}
+              onChange={(e) => {
+                const requestedPage = parseInt(e.target.value, 10);
+                if (!isNaN(requestedPage) && requestedPage >= 1 && requestedPage <= totalPages) {
+                  setPage(requestedPage);
+                }
+              }}
+              className="w-16 px-2 py-1 text-sm border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!hasPrevPage}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!hasNextPage}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+          >
+            Next <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
+      </div>
+
       <ConfirmationDialog
         open={!!deleteTarget}
         onOpenChange={(o) => !o && setDeleteTarget(null)}
@@ -298,21 +355,17 @@ export default function InventoryPage() {
         onConfirm={handleDelete}
       />
 
-      {/* EDIT - REUSE ADD DIALOG WITH PRE-FILLED DATA */}
       <UpdateQuantityModal
         open={!!updateTarget}
         onClose={() => setUpdateTarget(null)}
         item={updateTarget}
         onSubmit={handleUpdateQuantity}
       />
-    <PerishableSkuModal
-  open={skuModalOpen}
-  onOpenChange={setSkuModalOpen}
-  onSubmit={handleCreateSKU}
-/>
-
+      <PerishableSkuModal
+        open={skuModalOpen}
+        onOpenChange={setSkuModalOpen}
+        onSubmit={handleCreateSKU}
+      />
     </PageLayout>
-
-    
   );
 }
