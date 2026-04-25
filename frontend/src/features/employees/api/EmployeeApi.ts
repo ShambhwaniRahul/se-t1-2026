@@ -35,3 +35,13 @@ export const fetchSalaryHistory = async (month?: string) => {
   const response = await api.get(url);
   return response.data.data;
 };
+
+export const fetchEmployeeShifts = async (employeeId: number) => {
+  const response = await api.get(`/hr/auth/shifts/?employee_id=${employeeId}`);
+  return response.data.data;
+};
+
+export const fetchEmployeeAttendance = async (employeeId: number) => {
+  const response = await api.get(`/hr/auth/attendance-logs/?employee_id=${employeeId}`);
+  return response.data.data;
+};
