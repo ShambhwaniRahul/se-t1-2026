@@ -1,4 +1,4 @@
-import { Check, Printer, Sparkles, User, IndianRupeeIcon } from "lucide-react";
+import { Printer, Sparkles, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -8,7 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { CustomerInfo } from "../data/types";
 import { useMemo, useState } from "react";
 import api from "@/lib/api";
 import { toast } from "sonner";
@@ -16,13 +15,15 @@ import type { GroupedItem, OrderMenuItem } from "@/config/types/order";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
+import {generateReceiptPdf} from "../receiptPdf.ts";
+import type { CustomerInfo } from "../data/types";
 // import { Switch } from "@/components/ui/switch";
 
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  total: number;
+  subtotal: number;
   discountPercent: number;
   discountAmount: number;
   orderedItems: OrderMenuItem[];
@@ -33,7 +34,7 @@ interface Props {
 export function PaymentModal({ 
   open, 
   onOpenChange, 
-  total, 
+  subtotal, 
   discountPercent,
   discountAmount, 
   customer, 
@@ -45,15 +46,16 @@ export function PaymentModal({
   const [redeemPoints, setRedeemPoints] = useState(true);
 
   const maxRedeemablePoints = customer
-    ? Math.min(customer.total_points, Math.floor(total / POINT_VALUE))
-    : 0;
+    ? customer.total_points : 0;
 
   const pointsApplied = redeemPoints ? maxRedeemablePoints : 0;
   console.log(">>> Points applied: ", pointsApplied)
   const loyaltyValue = pointsApplied * POINT_VALUE;
   console.log(">>> Loyalty Points: ", loyaltyValue)
-  const finalTotal = Math.max(total - loyaltyValue, 0);
-  console.log(">>> Final Total: ", finalTotal)
+  const total = Math.max(subtotal - loyaltyValue, 0);
+  console.log(">>> Total after points: ", total);
+  const finalTotal = (total - (total * discountPercent)/100);
+  console.log(">>> Total after discount: ", finalTotal);
   const pointsEarned = Math.floor(finalTotal * 0.02);
   console.log(">>> Points Earned: ", pointsEarned)
 
@@ -96,6 +98,17 @@ export function PaymentModal({
 
       if (result.data.success){
         toast.success(result.data.message || "Payment successful");
+        generateReceiptPdf({
+          items: groupedOrderedItems,
+          subtotal,
+          discountPercent,
+          discountAmount: (total * discountPercent)/100,
+          loyaltyPointsApplied: pointsApplied,
+          loyaltyValue,
+          finalTotal,
+          pointsEarned,
+          customer,
+        });
         onComplete();
       } else {
         toast.error(result.data.message || "Payment failed!");
@@ -168,7 +181,7 @@ export function PaymentModal({
               <div>
                 <p className="text-sm font-medium">Redeem loyalty points</p>
                 <p className="text-xs text-muted-foreground">
-                  Up to {Math.min(customer.total_points, Math.floor(total / POINT_VALUE))} pts ($
+                  Up to {Math.min(customer.total_points, Math.floor(total / POINT_VALUE))} pts (₹
                   {(Math.min(customer.total_points, Math.floor(total / POINT_VALUE)) * POINT_VALUE).toFixed(2)})
                 </p>
               </div>
@@ -181,14 +194,8 @@ export function PaymentModal({
         <div className="space-y-1.5 rounded-lg bg-muted/30 px-3 py-3 text-sm">
           <div className="flex justify-between text-muted-foreground">
             <span>Subtotal</span>
-            <span className="tabular-nums">₹{total.toFixed(2)}</span>
+            <span className="tabular-nums">₹{subtotal.toFixed(2)}</span>
           </div>
-          {discountAmount > 0 && (
-            <div className="flex justify-between text-success">
-              <span>Discount ({discountPercent}%)</span>
-              <span className="tabular-nums">-₹{discountAmount.toFixed(2)}</span>
-            </div>
-          )}
 
           {customer && customer.total_points > 0 && (
             <div className="flex justify-between text-success">
@@ -196,6 +203,15 @@ export function PaymentModal({
               <span className="tabular-nums">-₹{loyaltyValue.toFixed(2)}</span>
             </div>
           )}
+
+          {discountAmount > 0 && (
+            <div className="flex justify-between text-success">
+              <span>Discount ({discountPercent}%)</span>
+              <span className="tabular-nums">-₹{((total * discountPercent)/100).toFixed(2)}</span>
+            </div>
+          )}
+
+          
           <Separator className="my-1" />
           <div className="flex items-baseline justify-between">
             <span className="text-base font-bold">Net Total</span>
@@ -209,27 +225,6 @@ export function PaymentModal({
         </div>
 
         <DialogFooter className="flex-row gap-2 sm:gap-2">
-          <Button
-            variant="outline"
-            className="flex-1 gap-2 min-h-[44px]"
-            // onClick={() => {
-            //   generateReceiptPdf({
-            //     items,
-            //     subtotal,
-            //     discountPercent,
-            //     discountAmount,
-            //     loyaltyPointsApplied: pointsApplied,
-            //     loyaltyValue,
-            //     finalTotal,
-            //     pointsEarned,
-            //     customer,
-            //   });
-            //   toast.success("Receipt downloaded");
-            // }}
-          >
-            <Printer className="h-4 w-4" />
-            Print Receipt
-          </Button>
           <Button className="flex-1 min-h-[44px]" onClick={handlePayment}>
             Pay
           </Button>

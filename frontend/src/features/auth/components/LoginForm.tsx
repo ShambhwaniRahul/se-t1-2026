@@ -171,7 +171,11 @@ export function LoginForm() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-3 pt-5">
+<<<<<<< Updated upstream
           <Button type="submit" className="w-full cursor-pointer">
+=======
+          <Button type="submit" className="w-full">
+>>>>>>> Stashed changes
             {"Sign in"}
           </Button>
             <p className="text-center text-sm text-muted-foreground">
