@@ -51,7 +51,7 @@ class TransactionDataSimulator:
         demand_multipliers = {0: 0.65, 1: 0.70, 2: 0.85, 3: 1.00, 4: 1.60, 5: 1.90, 6: 1.70}
         logger.info(f"Initiating high-speed ORM simulation for {total_days} days.")
         for day_offset in range(total_days):
-            if day_offset < total_days - 5:
+            if day_offset < total_days - 1:
                 continue
             start = time.time()
             current_date = self.start_time + timedelta(days=day_offset)
