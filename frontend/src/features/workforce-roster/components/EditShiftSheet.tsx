@@ -48,12 +48,13 @@ export function EditShiftSheet({ open, onOpenChange, entry, currentDate, onSaved
       // FIX: Backend 'Shifts' uses TimeField, so we just append ":00" for seconds
       const startTimeStr = `${start}:00`;
       const endTimeStr = `${end}:00`;
+      const dateStr = format(currentDate, "yyyy-MM-dd");
 
       if (entry.shift?.id) {
-        await updateShift(entry.shift.id, startTimeStr, endTimeStr);
+        await updateShift(entry.shift.id, dateStr, startTimeStr, endTimeStr);
         toast.success("Shift updated.");
       } else {
-        await createShift(entry.employee_id, startTimeStr, endTimeStr);
+        await createShift(entry.employee_id, dateStr, startTimeStr, endTimeStr);
         toast.success("Shift assigned.");
       }
       onSaved();

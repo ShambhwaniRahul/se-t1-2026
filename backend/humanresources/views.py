@@ -633,15 +633,21 @@ class ShiftListCreateAPIView(APIView):
     @extend_schema(responses=ShiftSerializer(many=True),
             parameters=[
                 OpenApiParameter(
+                    name="date",
+                    type=OpenApiTypes.DATE,
+                    description="Date of the shift in the format YYYY-MM-DD",
+                    required=False
+                ),
+                OpenApiParameter(
                     name="start_time",
-                    type=OpenApiTypes.DATETIME,
-                    description="Start time of the shift in the format YYYY-MM-DD HH:MM:SS",
+                    type=OpenApiTypes.TIME,
+                    description="Start time of the shift in the format HH:MM:SS",
                     required=False
                 ),
                 OpenApiParameter(
                     name="end_time",
-                    type=OpenApiTypes.DATETIME,
-                    description="End time of the shift in the format YYYY-MM-DD HH:MM:SS",
+                    type=OpenApiTypes.TIME,
+                    description="End time of the shift in the format HH:MM:SS",
                     required=False
                 ),
                 OpenApiParameter(
@@ -652,20 +658,18 @@ class ShiftListCreateAPIView(APIView):
                 ),
             ])
     def get(self, request):
-        shifts = Shifts.objects.all().order_by('-created_at')
+        shifts = Shifts.objects.all().order_by('-date')
+        date_param = request.query_params.get('date')
         start_time = request.query_params.get('start_time')
         end_time = request.query_params.get('end_time')
         employee_id = request.query_params.get('employee_id')
 
-
+        if date_param:
+            shifts = shifts.filter(date=date_param)
         if start_time:
-            parsed_start = parse_datetime(start_time)
-            if parsed_start:
-                shifts = shifts.filter(start_time__gte=parsed_start)
+            shifts = shifts.filter(start_time__gte=start_time)
         if end_time:
-            parsed_end = parse_datetime(end_time)
-            if parsed_end:
-                shifts = shifts.filter(end_time__lte=parsed_end)
+            shifts = shifts.filter(end_time__lte=end_time)
         if employee_id:
             shifts = shifts.filter(employee_id=employee_id)        
         serializer = ShiftSerializer(shifts, many=True)
@@ -967,8 +971,8 @@ class DailyRosterAPIView(APIView):
         for emp in employees:
             role_display = emp.employeerole_set.first().get_role_display() if emp.employeerole_set.exists() else "Unknown"
 
-            # 2. FIX: Filter by created_at__date since start_time is just a TimeField
-            shift = Shifts.objects.filter(employee=emp, created_at__date=target_date).first()
+            # 2. Filter by explicitly assigned shift date
+            shift = Shifts.objects.filter(employee=emp, date=target_date).first()
             shift_data = None
             attendance_data = None
 
@@ -1053,8 +1057,8 @@ class SalaryComputationAPIView(APIView):
         # Retrieve all shifts assigned in this specific month
         shifts = Shifts.objects.filter(
             employee=emp, 
-            created_at__year=year, 
-            created_at__month=month
+            date__year=year, 
+            date__month=month
         )
 
         days_worked = 0

@@ -62,7 +62,7 @@ export function EmployeeAttendanceModal({ employee, onClose }: Props) {
   };
 
   const getDayData = (date: Date) => {
-    const shift = shifts.find(s => isSameDay(parseISO(s.created_at), date));
+    const shift = shifts.find(s => s.date === format(date, 'yyyy-MM-dd'));
     let attendance = null;
     if (shift) {
       attendance = attendanceLogs.find(a => a.shift === shift.id);
