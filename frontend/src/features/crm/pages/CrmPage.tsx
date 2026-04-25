@@ -95,6 +95,15 @@ const columns: Column<Customer>[] = [
     ),
   },
   {
+    key: "avgSpent",
+    header: "Avg Spent",
+    render: (c) => (
+      <span className="font-medium">
+        ₹ {((c.total_spent)/(c.total_visits)).toFixed(2)}
+      </span>
+    ),
+  },
+  {
     key: "lastVisit",
     header: "Last Visit",
     render: (c) => (

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import api from "@/lib/api";
-import { MENU_CATEGORIES } from "@/config/types/order";
+import { MENU_CATEGORIES, type MenuItem } from "@/config/types/order";
 import { useCart } from "../hooks/useCart";
 import { ItemCategoryBar } from "../components/items/ItemCategoryBar";
 import { ItemGrid } from "../components/items/ItemGrid";
@@ -10,48 +10,72 @@ import { CartPanel } from "../components/cart/CartPanel";
 import { CheckoutBar } from "../components/CheckoutBar";
 import { PaymentModal } from "../components/PaymentModal";
 import { CustomerInfoModal } from "../components/CustomerInfoModal";
-import type { MenuItem } from "@/config/types/order";
+// import type { MenuItem } from "@/config/types/order";
 import type { CustomerInfo } from "../data/types";
 import PosPageSkeleton from "@/components/skeleton/PosPageSkeleton";
 import { ScanSearch } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 export default function PosPage() {
   const { tableId } = useParams();
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  // const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  // const [isLoading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState(-1);
   
   const [customer, setCustomer] = useState<CustomerInfo | null>(null);
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   const cart = useCart(tableId!);
 
-  useEffect(() => {
-    async function fetchMenu() {
-      try {
-        const result = await api.get("/pos/menuitems/");
-        if (result.data.success) {
-          setMenuItems(result.data.data ?? []);
-        } else {
-          toast.error(result.data.message || "Failed to load menu items!");
-        }
-      } catch (err) {
-        console.error("Failed to load menu items", err);
-        toast.error("Failed to load menu items!");
-      } finally {
-        setLoading(false);
+  const {
+    data: menuItems = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["menuItems"],
+    queryFn: async () => {
+      const result = await api.get("/pos/menuitems/");
+      if (!result.data.success) {
+        throw new Error(result.data.message || "Failed to load menu items!");
       }
-    }
+      return result.data.data ?? [];
+    },
+  });
 
-    fetchMenu();
-  }, []);
+  useEffect(() => {
+    if (isError) {
+      console.error(error);
+      toast.error("Failed to load menu items!");
+    }
+  }, [isError, error]);
+
+  // useEffect(() => {
+  //   async function fetchMenu() {
+  //     try {
+  //       const result = await api.get("/pos/menuitems/");
+  //       if (result.data.success) {
+  //         setMenuItems(result.data.data ?? []);
+  //       } else {
+  //         toast.error(result.data.message || "Failed to load menu items!");
+  //       }
+  //     } catch (err) {
+  //       console.error("Failed to load menu items", err);
+  //       toast.error("Failed to load menu items!");
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   }
+
+  //   fetchMenu();
+  // }, []);
 
   const filteredProducts = useMemo(
     () =>
       activeCategory === -1
         ? menuItems
-        : menuItems.filter((p) => p.category === activeCategory),
+        : menuItems.filter((p : MenuItem) => p.category === activeCategory),
     [activeCategory, menuItems]
   );
 
@@ -72,11 +96,11 @@ export default function PosPage() {
     toast.success("Order completed!");
   }, [cart]);
 
-  if (loading) return <PosPageSkeleton />;
+  if (isLoading) return <PosPageSkeleton />;
 
   return (
     <div className="-m-4 md:-m-6 flex h-[calc(100svh-3.5rem)] flex-col">
-      {loading && (
+      {isLoading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
           <div className="flex flex-col items-center p-8 bg-card rounded-xl shadow-2xl border text-center max-w-sm w-full mx-4">
             <ScanSearch className="h-12 w-12 text-primary animate-pulse mb-6" />
@@ -133,32 +157,13 @@ export default function PosPage() {
       <PaymentModal
         open={paymentOpen}
         onOpenChange={setPaymentOpen}
-        total={cart.total}
+        subtotal={cart.subtotal}
         orderedItems={cart.orderedItems}
         discountPercent={cart.discountPercent}
         discountAmount={cart.discountAmount}
         customer={customer}
         onComplete={handleComplete}
       />
-
-      {/* <PaymentModal
-          open={paymentOpen}
-          onOpenChange={setPaymentOpen}
-          items={[
-            ...cart.orderedItems,
-            ...cart.draftItems.map(i => ({
-              product: i.menu_item,
-              quantity: i.quantity
-            }))
-          ]}
-          subtotal={cart.subtotal}
-          discountPercent={cart.discountPercent}
-          discountAmount={cart.discountAmount}
-          total={cart.total}
-          customer={customer}
-          availableLoyaltyPoints={loyalty?.points ?? 0}
-          onComplete={handleComplete}
-      /> */}
     </div>
   );
 }
