@@ -6,11 +6,12 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { Plus, MoreHorizontal, Pencil, Ban, CheckCircle, Banknote, KeyRound, ScanSearch } from "lucide-react";
+import { Plus, MoreHorizontal, Pencil, Ban, CheckCircle, Banknote, KeyRound, ScanSearch, CalendarDays } from "lucide-react";
 import { ROLES, type Employee } from "@/config/types/role";
 import { EmployeeFormModal } from "../components/EmployeeFormModal";
 import { PaySalaryModal } from "../components/PaySalaryModal";
 import { ResetPasswordModal } from "../components/ResetPasswordModal";
+import { EmployeeAttendanceModal } from "../components/EmployeeAttendanceModal";
 import { fetchEmployees, createEmployee, updateEmployee } from "../api/EmployeeApi";
 import { toast } from "sonner";
 
@@ -36,6 +37,7 @@ export default function EmployeeManagementPage() {
   const [editing, setEditing] = useState<Employee | null>(null);
   const [paySalaryEmployee, setPaySalaryEmployee] = useState<Employee | null>(null);
   const [resetPasswordEmployee, setResetPasswordEmployee] = useState<Employee | null>(null);
+  const [attendanceEmployee, setAttendanceEmployee] = useState<Employee | null>(null);
 
   const loadEmployees = async () => {
     try {
@@ -201,6 +203,10 @@ export default function EmployeeManagementPage() {
                             <KeyRound className="mr-2 h-3.5 w-3.5" /> Reset Password
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => setAttendanceEmployee(emp)}>
+                            <CalendarDays className="mr-2 h-3.5 w-3.5" /> View Attendance
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => setPaySalaryEmployee(emp)}>
                             <Banknote className="mr-2 h-3.5 w-3.5 text-success" /> Pay Salary
                           </DropdownMenuItem>
@@ -238,6 +244,11 @@ export default function EmployeeManagementPage() {
       <PaySalaryModal 
         employee={paySalaryEmployee} 
         onClose={() => setPaySalaryEmployee(null)} 
+      />
+
+      <EmployeeAttendanceModal
+        employee={attendanceEmployee}
+        onClose={() => setAttendanceEmployee(null)}
       />
     </PageLayout>
   );
