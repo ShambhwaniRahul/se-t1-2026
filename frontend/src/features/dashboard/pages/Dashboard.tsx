@@ -33,12 +33,12 @@ export default function DashboardPage() {
 
   // 1) Current date in IST (YYYY-MM-DD)
   const istDate = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Kolkata",
+    timeZone: "UTC",
   }).format(now);
 
   // 2) Current time in IST (HH:MM:SS)
   const istTime = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Asia/Kolkata",
+    timeZone: "UTC",
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
@@ -52,12 +52,14 @@ export default function DashboardPage() {
   twoWeeksBack.setDate(twoWeeksBack.getDate() - 14);
 
   const istYesterday = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Kolkata",
+    timeZone: "UTC",
   }).format(yesterday);
 
   const istTwoWeeksBack = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Kolkata",
+    timeZone: "UTC",
   }).format(twoWeeksBack);
+
+  console.log(">>> DATES: ", istDate, istTime, istYesterday, istTwoWeeksBack)
 
   useEffect(() => {
     const fetchAllData = async () => {
@@ -165,7 +167,13 @@ export default function DashboardPage() {
 
       <PageHeader
         title="Dashboard"
-        description={`Today's snapshot — ${istDate} ${istTime} IST`}
+        description={`Today's snapshot — ${Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(now)} ${Intl.DateTimeFormat("en-GB", {
+          timeZone: "Asia/Kolkata",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false,
+        }).format(now)} IST`}
       />
 
       {/* Stats row */}

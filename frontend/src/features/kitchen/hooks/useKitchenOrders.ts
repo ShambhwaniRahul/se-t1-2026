@@ -3,9 +3,10 @@ import { STATUS_MAP, STATUS_TO_BACKEND, type KitchenItem, type KitchenStatus } f
 import { toast } from "sonner";
 import api from "@/lib/api";
 import type { OrderMenuItem } from "@/config/types/order";
+import { useAuth } from "@/features/auth/hooks/useAuth"; // adjust path if needed
 
 export function useKitchenOrders() {
-
+  const { user } = useAuth(); // or whatever your context hook is
   const [items, setItems] = useState<KitchenItem[]>([]);
 
   useEffect(() => {
@@ -83,17 +84,37 @@ export function useKitchenOrders() {
     []
   );
 
-  const getItemsByStatus = useCallback(
+    const getItemsByStatus = useCallback(
     (status: KitchenStatus) =>
       items
+        .filter((item) => {
+          const isPending = item.status === "pending";
+
+          const isAssignedToChef =
+            item.chef === user?.id;
+
+          return isPending || isAssignedToChef;
+        })
         .filter((item) => item.status === status)
         .sort((a, b) => {
           const timeA = Date.parse(a.created_at);
           const timeB = Date.parse(b.created_at);
           return timeA - timeB;
         }),
-    [items]
+    [items, user]
   );
+
+  // const getItemsByStatus = useCallback(
+  //   (status: KitchenStatus) =>
+  //     items
+  //       .filter((item) => item.status === status)
+  //       .sort((a, b) => {
+  //         const timeA = Date.parse(a.created_at);
+  //         const timeB = Date.parse(b.created_at);
+  //         return timeA - timeB;
+  //       }),
+  //   [items]
+  // );
 
   return {
     items,

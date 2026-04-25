@@ -47,9 +47,9 @@ export function CustomerInfoModal({ open, onOpenChange, onContinue }: CustomerIn
     setLoading(true);
     try {
       const res = await api.get("/customers/auth/search/", { params: { phone_no: phone } });
-
-      if (res.data.success && res.data.data.length > 0) {
-        setCustomer(res.data.data[0]);
+      console.log(">>> CUSTOMER SEARCH PAYLOAD: ", res.data)
+      if (res.data.success && res.data.data.results.length > 0) {
+        setCustomer(res.data.data.results[0]);
         setIsNew(false);
       } else {
         setCustomer(null);
@@ -60,6 +60,7 @@ export function CustomerInfoModal({ open, onOpenChange, onContinue }: CustomerIn
       console.log("Failed to search customer", err);
     } finally {
       setLoading(false);
+      console.log(">>> CUSTOMER", customer)
     }
   };
 

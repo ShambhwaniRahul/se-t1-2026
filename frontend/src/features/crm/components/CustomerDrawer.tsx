@@ -94,7 +94,7 @@ export function CustomerDrawer({
                 Total Spent
               </p>
               <p className="text-lg font-bold">
-                ₹ {customer.total_spent}
+                ₹ {(customer.total_spent).toFixed(0)}
               </p>
             </div>
           </div>
