@@ -1,3 +1,4 @@
+# views.py
 from rest_framework.views import APIView
 from rest_framework import status
 from core.permissions import RequiresRole
@@ -6,16 +7,13 @@ from .serializers import PerishableSKUSerializer, NonPerishableInventorySerializ
 from humanresources.models import EmployeeRole
 from django.utils import timezone
 from django.db.models import F, ExpressionWrapper, DateField, DurationField
-from django.utils import timezone
 from datetime import timedelta
-from utils.response import standard_response
+from utils.response import standard_response, paginated_response
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 
 
 today = timezone.now().date()
-
-# Create your views here.
 
 """ APIs for Perishable SKU Management:"""
 class PerishableSKUListCreateAPIView(APIView):
@@ -41,7 +39,6 @@ class PerishableSKUListCreateAPIView(APIView):
             ]
         return super().get_permissions()
 
-    
     @extend_schema(
         responses=PerishableSKUSerializer,
         parameters=[
@@ -55,13 +52,23 @@ class PerishableSKUListCreateAPIView(APIView):
                 name="max_lifespan",
                 type=OpenApiTypes.INT,
                 description="Maximum lifespan of the perishable SKU in days. Must be a positive integer.",
+                required=False),
+            OpenApiParameter(
+                name="search",
+                type=OpenApiTypes.STR,
+                description="Search term to filter SKUs by name.",
                 required=False)
         ])
     def get(self, request):
         min_lifespan = request.query_params.get('lifespan')
         max_lifespan = request.query_params.get('max_lifespan')
+        search_term = request.query_params.get('search', '')
     
         queryset = PerishableSKU.objects.all()
+    
+        # Apply global text search filter
+        if search_term:
+            queryset = queryset.filter(name__icontains=search_term)
     
         # Min filter (>=)
         if min_lifespan:
@@ -89,13 +96,12 @@ class PerishableSKUListCreateAPIView(APIView):
                     status_code=status.HTTP_400_BAD_REQUEST
                 )
     
-        serializer = PerishableSKUSerializer(queryset, many=True)
-        return standard_response(
-            success=True,
-            message="Perishable SKUs with given query parameters retrieved successfully.",
-            data=serializer.data,
-            status_code=status.HTTP_200_OK
-            )
+        return paginated_response(
+            queryset=queryset,
+            request=request,
+            serializer_class=PerishableSKUSerializer,
+            message="Perishable SKUs retrieved successfully."
+        )
 
     @extend_schema(
         request=PerishableSKUSerializer,
@@ -122,7 +128,6 @@ class PerishableSKUDetailAPIView(APIView):
     """
     Handles retrieve, update, and delete for a single Perishable SKU.
     The Owner, manager, inventory manager, and chef can view it, but the chef can't edit or delete.  
-
     """
     permission_classes = [RequiresRole]
 
@@ -154,7 +159,6 @@ class PerishableSKUDetailAPIView(APIView):
             message=message,
             status_code=status_code
         )    
-
 
     @extend_schema(
         responses=PerishableSKUSerializer
@@ -203,17 +207,11 @@ class PerishableSKUDetailAPIView(APIView):
             status_code=status.HTTP_200_OK)
 
  
-
 """ APIs for Perishable Inventory Management:"""
 class PerishableInventoryListAPIView(APIView):
     """
     Handles the list operations for Perishable Inventory batches.
-    Supports filtering by SKU and expiration status.
-    The type of requests for perishable-inventory/ endpoint are:-
-    1. GET : /perishable-inventory/ : Will return a list of all perishable inventory items.
-    3. GET : /perishable-inventory/?sku=<int:sku_id>/ : Will return a list of perishable inventory items filtered by the specified SKU ID.
-    4. GET : /perishable-inventory/?expiry=true/ : Will return a list of expired perishable inventory items.
-    5. GET : /perishable-inventory/?sku=<int:sku_id>&expired=false : Will return a list of non-expired perishable inventory items filtered by the specified SKU ID.
+    Supports filtering by SKU, expiration status, and search term.
     """
     permission_classes = [RequiresRole]
     required_roles = [
@@ -223,8 +221,6 @@ class PerishableInventoryListAPIView(APIView):
         EmployeeRole.RoleChoices.CHEF,
     ]
 
-
-    
     @extend_schema(
         responses=PerishableInventorySerializer,
         parameters=[
@@ -239,12 +235,19 @@ class PerishableInventoryListAPIView(APIView):
                 type=OpenApiTypes.BOOL,
                 description="Whether to filter by expired perishable inventory items (true) or non-expired perishable inventory items (false).",
                 required=False
+            ),
+            OpenApiParameter(
+                name="search",
+                type=OpenApiTypes.STR,
+                description="Search term to filter inventory items by related SKU name.",
+                required=False
             )
         ]
     )
     def get(self, request):
         sku = request.query_params.get('sku')
         expiry = request.query_params.get('expired')
+        search_term = request.query_params.get('search', '')
     
         today = timezone.now().date()
     
@@ -257,39 +260,33 @@ class PerishableInventoryListAPIView(APIView):
                 output_field=DateField()
             )
         ).order_by('-created_at')
+
+        # Apply global text search filter via related SKU relation
+        if search_term:
+            queryset = queryset.filter(sku__name__icontains=search_term)
     
-        # ✅ Filter by SKU
+        # Filter by SKU
         if sku and sku.isdigit():
             queryset = queryset.filter(sku_id=int(sku))
     
-        # ✅ Filter by expiration status
+        # Filter by expiration status
         if expiry == 'true':
             queryset = queryset.filter(expiry_date__lt=today)
         elif expiry == 'false':
             queryset = queryset.filter(expiry_date__gte=today)
     
-        serializer = PerishableInventorySerializer(queryset, many=True)
-        # if not queryset.exists():
-        #     return standard_response(
-        #         success=False,
-        #         message="No perishable inventory found.",
-        #         status_code=status.HTTP_404_NOT_FOUND
-        #     )
-        return standard_response(
-            success=True,
-            message="Perishable Inventory list retrieved successfully." if len(queryset)>0 else "No perishable inventory found for the given query.",
-            data=serializer.data,
-            status_code=status.HTTP_200_OK
-            )  
+        return paginated_response(
+            queryset=queryset,
+            request=request,
+            serializer_class=PerishableInventorySerializer,
+            message="Perishable Inventory list retrieved successfully."
+        )  
 
 
-
-### APIs for the Perishable Inventory:
 class PerishableInventoryDetailAPIView(APIView):
     """
     Handles retrieve and delete for a single Perishable Inventory batch.
     """
-
     permission_classes = [RequiresRole]
 
     def get_permissions(self):
@@ -310,7 +307,6 @@ class PerishableInventoryDetailAPIView(APIView):
 
         return super().get_permissions()    
     
-
     def get_object(self,pk):
         try:
             return PerishableInventory.objects.get(pk=pk)
@@ -344,7 +340,6 @@ class PerishableInventoryDetailAPIView(APIView):
         if perishable_inventory is None:
             return self.standard_error_response()
         
-        # ✅ FIX HERE
         if "quantity" not in request.data:
             return standard_response(
                 success=False,
@@ -354,7 +349,6 @@ class PerishableInventoryDetailAPIView(APIView):
         
         quantity = request.data.get("quantity")
     
-        # Optional: type safety
         try:
             quantity = float(quantity)
         except:
@@ -387,8 +381,6 @@ class PerishableInventoryDetailAPIView(APIView):
             status_code=status.HTTP_200_OK
         )
 
-
-        
     def delete(self, request, pk):
             perishable_inventory = self.get_object(pk)
             if perishable_inventory is None:
@@ -418,16 +410,30 @@ class NonPerishableInventoryListCreateAPIView(APIView):
     ]
 
     @extend_schema(
-        responses=NonPerishableInventorySerializer(many=True)
+        responses=NonPerishableInventorySerializer(many=True),
+        parameters=[
+            OpenApiParameter(
+                name="search",
+                type=OpenApiTypes.STR,
+                description="Search term to filter inventory items by name.",
+                required=False
+            )
+        ]
     )
     def get(self, request):
-        inventory_items = NonPerishableInventory.objects.all()
-        serializer = NonPerishableInventorySerializer(inventory_items, many=True)
-        return standard_response(
-            success=True, 
-            message="Non-Perishable Inventory list retrieved successfully." if len(inventory_items)>0 else "No non-perishable inventory found.",
-            data=serializer.data,
-            status_code=status.HTTP_200_OK)
+        search_term = request.query_params.get('search', '')
+        queryset = NonPerishableInventory.objects.all()
+        
+        # Apply global text search filter
+        if search_term:
+            queryset = queryset.filter(name__icontains=search_term)
+            
+        return paginated_response(
+            queryset=queryset,
+            request=request,
+            serializer_class=NonPerishableInventorySerializer,
+            message="Non-Perishable Inventory list retrieved successfully."
+        )
     
 
 class NonPerishableInventoryDetailAPIView(APIView):
