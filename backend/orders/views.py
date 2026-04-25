@@ -1508,8 +1508,8 @@ class UpdateOrderMenuItemStatusAPIView(APIView):
 
         elif (
             old_status == OrderMenuItem.StatusChoices.READY_TO_SERVE and
-            new_status == OrderMenuItem.StatusChoices.SERVED and
-            not is_chef
+            new_status == OrderMenuItem.StatusChoices.SERVED 
+            # and not is_chef
         ):
             valid_transition = True
 

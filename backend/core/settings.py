@@ -27,6 +27,8 @@ TIME_ZONE = 'Asia/Kolkata'
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / '.env')
+OCR_URL = os.environ.get('OCR_URL')
+# print("OCR_URL:", os.environ.get("OCR_URL"))
 # print("DATABASE_URL:", os.environ.get("DATABASE_URL"))
 # print("DB HOST:", connection)
 # print("DB NAME:", connection.settings_dict['NAME'])
@@ -40,12 +42,7 @@ SECRET_KEY = 'django-insecure-xk3ti1l8a%z*=9m)47w+r9p%5(6nvgz$+^k5d&#ieic^o&cyi$
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [
-    "se-t1-2026.onrender.com",
-    "localhost",
-    "127.0.0.1"
-]
-
+ALLOWED_HOSTS = ["*"]
 
 # Application definition
 
