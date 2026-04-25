@@ -1,4 +1,5 @@
 from rest_framework.views import APIView
+from core.settings import OCR_URL
 from rest_framework import status
 import json
 from utils.response import standard_response
@@ -23,8 +24,6 @@ from django.shortcuts import get_object_or_404
 from utils.response import standard_response
 from drf_spectacular.utils import extend_schema
 
-# OCR_URL = "https://se-t1-2026-1.onrender.com/scan/"
-OCR_URL = "http://localhost:5000/scan/"
 
 # Create your views here.
 
